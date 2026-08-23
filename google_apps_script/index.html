@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>나의 운동일지 | Workout Log</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      line-height: 1.5;
+      padding-bottom: 40px;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; padding: 12px 16px; }
+
+    /* Header */
+    .header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 16px;
+    }
+    .header-inner {
+      max-width: 680px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo-box { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text h1 { font-size: 17px; font-weight: 800; color: #0f172a; line-height: 1.2; }
+    .logo-text p { font-size: 11px; color: #64748b; font-weight: 500; }
+    
+    .header-actions { display: flex; align-items: center; gap: 6px; }
+    .btn-header {
+      background: #f1f5f9;
+      border: none;
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-header:hover { background: #e2e8f0; color: #0f172a; }
+
+    /* Stat Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    @media (min-width: 480px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat-card {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+    }
+    .stat-label { font-size: 11px; color: #64748b; font-weight: 600; }
+    .stat-val { font-size: 18px; font-weight: 800; margin-top: 2px; color: #0f172a; }
+    .stat-val.orange { color: #ea580c; }
+    .stat-val.emerald { color: #16a34a; }
+    .stat-val.indigo { color: #4f46e5; }
+
+    /* Nav Tabs (3 Tabs) */
+    .nav-tabs {
+      display: flex;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 12px;
+      margin-top: 14px;
+      gap: 4px;
+    }
+    .nav-tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 9px 4px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .nav-tab.active {
+      background: #ffffff;
+      color: #4f46e5;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* Card */
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    /* Sport Selector Buttons */
+    .sport-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+    @media (min-width: 480px) {
+      .sport-grid { grid-template-columns: repeat(6, 1fr); }
+    }
+    .sport-btn {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      transition: all 0.15s;
+    }
+    .sport-btn .icon { font-size: 18px; }
+    .sport-btn.active {
+      background: #eef2ff;
+      border-color: #4f46e5;
+      color: #4338ca;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    }
+
+    /* Form Controls */
+    .form-group { margin-top: 12px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 14px;
+      background: #ffffff;
+      color: #1e293b;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Dynamic Category Box */
+    .dynamic-box {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+
+    /* Multi Photo Upload & Preview Grid */
+    .photo-upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f1f5f9;
+      border: 1px dashed #94a3b8;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .photo-upload-btn:hover { background: #e2e8f0; border-color: #4f46e5; }
+    
+    .photos-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .photo-preview-item {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 1 / 1;
+      background: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+    .photo-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-delete-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(239, 68, 68, 0.9);
+      color: #ffffff;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Submit Button */
+    .submit-btn {
+      width: 100%;
+      margin-top: 16px;
+      background: #4f46e5;
+      color: #ffffff;
+      border: none;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+    }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    /* Filter Pills */
+    .filter-scroll {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-top: 12px;
+    }
+    .filter-pill {
+      white-space: nowrap;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #475569;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .filter-pill.active {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+    }
+
+    /* Log Item Cards */
+    .log-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 10px;
+    }
+    .log-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .log-header-left { display: flex; align-items: center; gap: 6px; }
+    .sport-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #eef2ff;
+      color: #4338ca;
+    }
+    .log-date { font-size: 12px; color: #94a3b8; font-weight: 500; }
+    
+    .log-actions { display: flex; align-items: center; gap: 4px; }
+    .btn-log-action {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+    }
+    .btn-log-action:hover { background: #e2e8f0; color: #0f172a; }
+    .btn-log-action.delete:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+
+    .log-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .log-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .metric-dist { color: #ea580c; }
+    .metric-elev { color: #16a34a; }
+    .metric-depth { color: #0284c7; }
+    .log-notes {
+      font-size: 12px;
+      color: #64748b;
+      background: #f8fafc;
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-top: 6px;
+    }
+
+    /* Log Photo Gallery */
+    .log-photos-gallery {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin-top: 10px;
+      padding-bottom: 4px;
+    }
+    .log-photo-item {
+      flex: 0 0 140px;
+      height: 110px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+    }
+    .log-photo-item.single {
+      flex: 1 1 100%;
+      height: 180px;
+    }
+    .log-photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.2s;
+    }
+    .log-photo-item:hover img { transform: scale(1.03); }
+
+    /* 💬 Always Expanded Comments Section */
+    .comments-box {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+    }
+    .comments-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .comments-list { display: flex; flex-direction: column; gap: 6px; }
+    .comment-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .comment-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+    .comment-author { font-weight: 700; color: #4f46e5; font-size: 12px; }
+    .comment-meta-right { display: flex; align-items: center; gap: 6px; }
+    .comment-time { font-size: 10px; color: #94a3b8; }
+    
+    .comment-action-btn {
+      background: none;
+      border: none;
+      font-size: 11px;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 1px 3px;
+      border-radius: 4px;
+    }
+    .comment-action-btn:hover { color: #4f46e5; background: #eef2ff; }
+    .comment-action-btn.delete:hover { color: #ef4444; background: #fee2e2; }
+
+    .comment-text { color: #334155; line-height: 1.4; word-break: break-word; font-size: 12px; }
+    
+    /* Compact Comment Form */
+    .comment-form {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      align-items: center;
+    }
+    .comment-input-author {
+      width: 65px;
+      flex-shrink: 0;
+      padding: 7px 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 12px;
+      outline: none;
+      text-align: center;
+      font-family: inherit;
+    }
+    .comment-input-text {
+      flex: 1;
+      min-width: 0;
+      padding: 7px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 12px;
+      outline: none;
+      font-family: inherit;
+    }
+    .comment-input-author:focus, .comment-input-text:focus {
+      border-color: #4f46e5;
+    }
+    .comment-btn-submit {
+      background: #4f46e5;
+      color: #ffffff;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .comment-btn-submit:active { transform: scale(0.96); }
+
+    /* Chart Containers */
+    .chart-box {
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .chart-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 10px; }
+    .chart-container { position: relative; height: 220px; width: 100%; }
+
+    .hidden { display: none !important; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 150;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-content {
+      background: #ffffff;
+      border-radius: 16px;
+      max-width: 540px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 18px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+    .modal-title { font-size: 16px; font-weight: 800; color: #0f172a; }
+    .modal-close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #94a3b8;
+      cursor: pointer;
+    }
+
+    #photoModal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      cursor: pointer;
+    }
+    #photoModalImg {
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+      z-index: 100;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo-box">
+        <div class="logo-icon">🏃</div>
+        <div class="logo-text">
+          <h1>나의 운동일지</h1>
+          <p>구글 드라이브 & 실시간 알림</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-header" onclick="testNtfy()">🔔 알림테스트</button>
+        <button class="btn-header" onclick="loadData()">🔄 새로고침</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    
+    <!-- Top Summary Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">총 운동 횟수</div>
+        <div id="stat-total-workouts" class="stat-val">0 회</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">총 운동 시간</div>
+        <div id="stat-total-hours" class="stat-val indigo">0 시간</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">누적 러닝 거리</div>
+        <div id="stat-running-km" class="stat-val orange">0 km</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">누적 등산 고도</div>
+        <div id="stat-elevation-m" class="stat-val emerald">+0 m</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs (3 Tabs) -->
+    <div class="nav-tabs">
+      <button id="tab-new" class="nav-tab active" onclick="switchTab('new')">✍️ 운동 기록</button>
+      <button id="tab-list" class="nav-tab" onclick="switchTab('list')">📋 일지 목록</button>
+      <button id="tab-charts" class="nav-tab" onclick="switchTab('charts')">📊 통계 그래프</button>
+    </div>
+
+    <!-- VIEW 1: FORM -->
+    <section id="view-new" class="card">
+      <form id="workoutForm" onsubmit="handleSubmit(event)">
+        
+        <!-- Sport Selector -->
+        <div>
+          <label class="form-label">운동 종목</label>
+          <div class="sport-grid">
+            <button type="button" data-sport="런닝" class="sport-btn active" onclick="selectSport('런닝')">
+              <span class="icon">🏃</span>
+              <span>런닝</span>
+            </button>
+            <button type="button" data-sport="등산" class="sport-btn" onclick="selectSport('등산')">
+              <span class="icon">⛰️</span>
+              <span>등산</span>
+            </button>
+            <button type="button" data-sport="트레일런닝" class="sport-btn" onclick="selectSport('트레일런닝')">
+              <span class="icon">🌲</span>
+              <span>트레일런</span>
+            </button>
+            <button type="button" data-sport="프리다이빙" class="sport-btn" onclick="selectSport('프리다이빙')">
+              <span class="icon">🤿</span>
+              <span>프리다이빙</span>
+            </button>
+            <button type="button" data-sport="걷기" class="sport-btn" onclick="selectSport('걷기')">
+              <span class="icon">🚶</span>
+              <span>걷기</span>
+            </button>
+            <button type="button" data-sport="기타" class="sport-btn" onclick="selectSport('기타')">
+              <span class="icon">🏅</span>
+              <span>기타</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Date -->
+        <div class="form-group">
+          <label class="form-label">날짜</label>
+          <input id="inputDate" type="date" required class="form-input">
+        </div>
+
+        <!-- Title -->
+        <div class="form-group">
+          <label class="form-label">운동 제목 / 코스명</label>
+          <input id="inputTitle" type="text" placeholder="예: 문수산 힐클라임 러닝" class="form-input">
+        </div>
+
+        <!-- Duration & Intensity -->
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">운동 시간 (분)</label>
+            <input id="inputDuration" type="number" min="0" placeholder="예: 45" class="form-input">
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between;">
+              <label class="form-label">운동 강도 (RPE)</label>
+              <span id="rpeText" style="font-size:12px; font-weight:700; color:#4f46e5;">5 / 10</span>
+            </div>
+            <input id="inputIntensity" type="range" min="1" max="10" value="5" oninput="document.getElementById('rpeText').textContent = this.value + ' / 10'" style="width:100%; margin-top:8px;">
+          </div>
+        </div>
+
+        <!-- DYNAMIC: RUNNING / WALKING / TRAIL -->
+        <div id="box-running" class="dynamic-box">
+          <div class="grid-2">
+            <div>
+              <label class="form-label">거리 (km)</label>
+              <input id="inputDistance" type="number" step="0.01" min="0" placeholder="예: 5.20" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">평균 페이스</label>
+              <input id="inputPace" type="text" placeholder="예: 5'30&quot;" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- DYNAMIC: HIKING / TRAIL ELEVATION -->
+        <div id="box-hiking" class="dynamic-box hidden">
+          <div class="grid-2">
+            <div>
+              <label class="form-label">획득 고도 (m)</label>
+              <input id="inputElevation" type="number" min="0" placeholder="예: 450" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">최고 고도 (m)</label>
+              <input id="inputMaxAlt" type="number" min="0" placeholder="예: 600" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- DYNAMIC: FREEDIVING -->
+        <div id="box-freedive" class="dynamic-box hidden">
+          <div class="grid-2">
+            <div>
+              <label class="form-label">최대 수심 (m)</label>
+              <input id="inputDepth" type="number" step="0.1" min="0" placeholder="예: 18.5" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">종목 (CWT, FIM 등)</label>
+              <input id="inputDiscipline" type="text" placeholder="예: CWTB" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- DYNAMIC: OTHER SPORT -->
+        <div id="box-other" class="dynamic-box hidden">
+          <label class="form-label">종목명 직접 입력</label>
+          <input id="inputCustomSport" type="text" placeholder="예: 수영, 클라이밍, 헬스 등" class="form-input">
+        </div>
+
+        <!-- Location & Weather -->
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">장소 / 세부 위치</label>
+            <input id="inputLocation" type="text" placeholder="예: 태화강 국가정원" class="form-input">
+          </div>
+          <div>
+            <label class="form-label">날씨</label>
+            <select id="inputWeather" class="form-select">
+              <option value="맑음">☀️ 맑음</option>
+              <option value="구름조금">⛅ 구름조금</option>
+              <option value="흐림">☁️ 흐림</option>
+              <option value="비">🌧️ 비</option>
+              <option value="실내">🏠 실내</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label class="form-label">메모 & 후기</label>
+          <textarea id="inputNotes" rows="2" placeholder="컨디션, 특이사항, 장비 착용 메모 등" class="form-textarea"></textarea>
+        </div>
+
+        <!-- MULTI PHOTO UPLOAD (최대 5장) -->
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label class="form-label" style="margin:0;">📸 운동 사진 첨부 (<span id="photoCountText">0/5</span>장)</label>
+            <span style="font-size:11px; color:#64748b;">최대 5장 선택 가능</span>
+          </div>
+          
+          <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+            <label for="inputPhoto" class="photo-upload-btn">
+              <span>📷 사진 추가하기 (+ 선택)</span>
+            </label>
+            <input type="file" id="inputPhoto" accept="image/*" multiple style="display:none;" onchange="handlePhotosSelect(event, 'new')">
+            <button type="button" id="btnRemoveAllPhotos" onclick="removeAllPhotos('new')" class="hidden" style="background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;">전체 삭제</button>
+          </div>
+
+          <div id="photosPreviewGrid" class="photos-preview-grid hidden"></div>
+        </div>
+
+        <!-- Submit Button -->
+        <button id="submitBtn" type="submit" class="submit-btn">
+          💾 구글 드라이브에 저장하기
+        </button>
+      </form>
+    </section>
+
+    <!-- VIEW 2: LIST -->
+    <section id="view-list" class="hidden">
+      <!-- Filter Pills -->
+      <div class="filter-scroll">
+        <button class="filter-pill active" onclick="filterLogs('all')">전체</button>
+        <button class="filter-pill" onclick="filterLogs('런닝')">🏃 런닝</button>
+        <button class="filter-pill" onclick="filterLogs('등산')">⛰️ 등산</button>
+        <button class="filter-pill" onclick="filterLogs('트레일런닝')">🌲 트레일런</button>
+        <button class="filter-pill" onclick="filterLogs('프리다이빙')">🤿 프리다이빙</button>
+        <button class="filter-pill" onclick="filterLogs('걷기')">🚶 걷기</button>
+        <button class="filter-pill" onclick="filterLogs('기타')">🏅 기타</button>
+      </div>
+
+      <!-- Logs Container -->
+      <div id="logsContainer" style="margin-top: 10px;">
+        <div style="text-align:center; padding:30px; color:#94a3b8; font-size:14px;">데이터를 불러오는 중입니다...</div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: CHARTS -->
+    <section id="view-charts" class="hidden">
+      <div class="chart-box">
+        <div class="chart-title">📊 월별 운동 횟수 (종목별)</div>
+        <div class="chart-container">
+          <canvas id="chartActivity"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-box">
+        <div class="chart-title">📈 러닝 / 걷기 거리 추세 (km)</div>
+        <div class="chart-container">
+          <canvas id="chartMileage"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-box">
+        <div class="chart-title">⛰️ 등산 / 트레일런 획득고도 추세 (m)</div>
+        <div class="chart-container">
+          <canvas id="chartElevation"></canvas>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ✏️ EDIT MODAL -->
+  <div id="editModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">✏️ 운동 일지 수정</div>
+        <button type="button" class="modal-close-btn" onclick="closeEditModal()">✕</button>
+      </div>
+      
+      <form id="editForm" onsubmit="handleEditSubmit(event)">
+        <input type="hidden" id="editRowIndex">
+        
+        <div class="form-group">
+          <label class="form-label">운동 종목</label>
+          <select id="editSport" class="form-select" onchange="handleEditSportChange(this.value)">
+            <option value="런닝">🏃 런닝</option>
+            <option value="등산">⛰️ 등산</option>
+            <option value="트레일런닝">🌲 트레일런닝</option>
+            <option value="프리다이빙">🤿 프리다이빙</option>
+            <option value="걷기">🚶 걷기</option>
+            <option value="기타">🏅 기타</option>
+          </select>
+        </div>
+
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">날짜</label>
+            <input id="editDate" type="date" required class="form-input">
+          </div>
+          <div>
+            <label class="form-label">운동 시간 (분)</label>
+            <input id="editDuration" type="number" min="0" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">운동 제목 / 코스명</label>
+          <input id="editTitle" type="text" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between;">
+            <label class="form-label">운동 강도 (RPE)</label>
+            <span id="editRpeText" style="font-size:12px; font-weight:700; color:#4f46e5;">5 / 10</span>
+          </div>
+          <input id="editIntensity" type="range" min="1" max="10" value="5" oninput="document.getElementById('editRpeText').textContent = this.value + ' / 10'" style="width:100%; margin-top:8px;">
+        </div>
+
+        <!-- Dynamic Edit Sections -->
+        <div id="edit-box-running" class="dynamic-box">
+          <div class="grid-2">
+            <div>
+              <label class="form-label">거리 (km)</label>
+              <input id="editDistance" type="number" step="0.01" min="0" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">평균 페이스</label>
+              <input id="editPace" type="text" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <div id="edit-box-hiking" class="dynamic-box hidden">
+          <div class="grid-2">
+            <div>
+              <label class="form-label">획득 고도 (m)</label>
+              <input id="editElevation" type="number" min="0" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">최고 고도 (m)</label>
+              <input id="editMaxAlt" type="number" min="0" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <div id="edit-box-freedive" class="dynamic-box hidden">
+          <div class="grid-2">
+            <div>
+              <label class="form-label">최대 수심 (m)</label>
+              <input id="editDepth" type="number" step="0.1" min="0" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">종목</label>
+              <input id="editDiscipline" type="text" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <div id="edit-box-other" class="dynamic-box hidden">
+          <label class="form-label">종목명</label>
+          <input id="editCustomSport" type="text" class="form-input">
+        </div>
+
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">장소</label>
+            <input id="editLocation" type="text" class="form-input">
+          </div>
+          <div>
+            <label class="form-label">날씨</label>
+            <select id="editWeather" class="form-select">
+              <option value="맑음">☀️ 맑음</option>
+              <option value="구름조금">⛅ 구름조금</option>
+              <option value="흐림">☁️ 흐림</option>
+              <option value="비">🌧️ 비</option>
+              <option value="실내">🏠 실내</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">메모 & 후기</label>
+          <textarea id="editNotes" rows="2" class="form-textarea"></textarea>
+        </div>
+
+        <!-- Existing Photos & Add Photos -->
+        <div class="form-group">
+          <label class="form-label">📸 등록된 사진</label>
+          <div id="editExistingPhotos" class="photos-preview-grid"></div>
+          
+          <div style="margin-top:10px;">
+            <label for="editInputPhoto" class="photo-upload-btn" style="font-size:12px; padding:8px 12px;">
+              <span>➕ 추가 사진 등록</span>
+            </label>
+            <input type="file" id="editInputPhoto" accept="image/*" multiple style="display:none;" onchange="handlePhotosSelect(event, 'edit')">
+          </div>
+          <div id="editPhotosPreviewGrid" class="photos-preview-grid hidden" style="margin-top:6px;"></div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <button type="button" class="btn-header" style="flex:1; justify-content:center; padding:12px;" onclick="closeEditModal()">취소</button>
+          <button type="submit" id="btnEditSubmit" class="submit-btn" style="flex:2; margin-top:0;">💾 수정 내용 저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Fullscreen Photo Modal -->
+  <div id="photoModal" class="hidden" onclick="closePhotoModal()">
+    <img id="photoModalImg" src="" alt="확대 사진" referrerpolicy="no-referrer">
+  </div>
+
+  <div id="toast">알림</div>
+
+  <script>
+    let curSport = '런닝';
+    let allLogs = [];
+    let curFilter = 'all';
+    let monthlyTrendsData = [];
+    let chart1 = null, chart2 = null, chart3 = null;
+    let selectedPhotos = [];
+    let editSelectedPhotos = [];
+    let editExistingPhotoIds = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+      initPaceAutoCalc();
+      loadData();
+    });
+
+    function selectSport(sport) {
+      curSport = sport;
+      document.querySelectorAll('.sport-btn').forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-sport') === sport);
+      });
+
+      document.getElementById('box-running').classList.toggle('hidden', !['런닝', '걷기', '트레일런닝'].includes(sport));
+      document.getElementById('box-hiking').classList.toggle('hidden', !['등산', '트레일런닝'].includes(sport));
+      document.getElementById('box-freedive').classList.toggle('hidden', sport !== '프리다이빙');
+      document.getElementById('box-other').classList.toggle('hidden', sport !== '기타');
+    }
+
+    function switchTab(tab) {
+      document.getElementById('view-new').classList.toggle('hidden', tab !== 'new');
+      document.getElementById('view-list').classList.toggle('hidden', tab !== 'list');
+      document.getElementById('view-charts').classList.toggle('hidden', tab !== 'charts');
+
+      document.getElementById('tab-new').classList.toggle('active', tab === 'new');
+      document.getElementById('tab-list').classList.toggle('active', tab === 'list');
+      document.getElementById('tab-charts').classList.toggle('active', tab === 'charts');
+
+      if (tab === 'list') renderLogs();
+      if (tab === 'charts') renderAllCharts();
+    }
+
+    function handlePhotosSelect(e, mode) {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+
+      const targetArray = mode === 'edit' ? editSelectedPhotos : selectedPhotos;
+      const currentTotal = (mode === 'edit' ? editExistingPhotoIds.length : 0) + targetArray.length;
+      const remainingSlots = 5 - currentTotal;
+
+      if (remainingSlots <= 0) {
+        alert('사진은 최대 5장까지만 등록할 수 있습니다.');
+        return;
+      }
+
+      const filesToProcess = files.slice(0, remainingSlots);
+      showToast(filesToProcess.length + '장의 사진 최적화 중...');
+
+      let processedCount = 0;
+      filesToProcess.forEach(function(file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const img = new Image();
+          img.onload = function() {
+            const maxDim = 1280;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+
+            targetArray.push(base64);
+            processedCount++;
+
+            if (processedCount === filesToProcess.length) {
+              if (mode === 'edit') renderEditPhotoPreviews();
+              else renderPhotoPreviews();
+              showToast('사진이 첨부되었습니다! 📸');
+            }
+          };
+          img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      e.target.value = '';
+    }
+
+    function renderPhotoPreviews() {
+      const grid = document.getElementById('photosPreviewGrid');
+      const countText = document.getElementById('photoCountText');
+      const removeBtn = document.getElementById('btnRemoveAllPhotos');
+
+      countText.textContent = selectedPhotos.length + '/5';
+
+      if (selectedPhotos.length === 0) {
+        grid.innerHTML = '';
+        grid.classList.add('hidden');
+        removeBtn.classList.add('hidden');
+        return;
+      }
+
+      grid.classList.remove('hidden');
+      removeBtn.classList.remove('hidden');
+
+      grid.innerHTML = selectedPhotos.map(function(b64, idx) {
+        return '<div class="photo-preview-item">' +
+          '<img src="' + b64 + '" alt="미리보기">' +
+          '<button type="button" class="photo-delete-btn" onclick="removePhotoAt(' + idx + ', \'new\')" title="삭제">✕</button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function renderEditPhotoPreviews() {
+      const grid = document.getElementById('editPhotosPreviewGrid');
+      if (editSelectedPhotos.length === 0) {
+        grid.innerHTML = '';
+        grid.classList.add('hidden');
+        return;
+      }
+      grid.classList.remove('hidden');
+      grid.innerHTML = editSelectedPhotos.map(function(b64, idx) {
+        return '<div class="photo-preview-item">' +
+          '<img src="' + b64 + '" alt="새 사진">' +
+          '<button type="button" class="photo-delete-btn" onclick="removePhotoAt(' + idx + ', \'edit\')" title="삭제">✕</button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function removePhotoAt(idx, mode) {
+      if (mode === 'edit') {
+        editSelectedPhotos.splice(idx, 1);
+        renderEditPhotoPreviews();
+      } else {
+        selectedPhotos.splice(idx, 1);
+        renderPhotoPreviews();
+      }
+    }
+
+    function removeAllPhotos(mode) {
+      if (mode === 'edit') {
+        editSelectedPhotos = [];
+        renderEditPhotoPreviews();
+      } else {
+        selectedPhotos = [];
+        renderPhotoPreviews();
+      }
+    }
+
+    function removeExistingPhoto(idx) {
+      editExistingPhotoIds.splice(idx, 1);
+      renderExistingEditPhotos();
+    }
+
+    function renderExistingEditPhotos() {
+      const container = document.getElementById('editExistingPhotos');
+      if (editExistingPhotoIds.length === 0) {
+        container.innerHTML = '<div style="font-size:12px; color:#94a3b8;">등록된 기존 사진이 없습니다.</div>';
+        return;
+      }
+      container.innerHTML = editExistingPhotoIds.map(function(id, idx) {
+        const cdnUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s400';
+        return '<div class="photo-preview-item">' +
+          '<img src="' + cdnUrl + '" alt="기존 사진">' +
+          '<button type="button" class="photo-delete-btn" onclick="removeExistingPhoto(' + idx + ')" title="삭제">✕</button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function openPhotoModal(imgUrl) {
+      document.getElementById('photoModalImg').src = imgUrl;
+      document.getElementById('photoModal').classList.remove('hidden');
+    }
+
+    function closePhotoModal() {
+      document.getElementById('photoModal').classList.add('hidden');
+    }
+
+    function initPaceAutoCalc() {
+      const dist = document.getElementById('inputDistance');
+      const dur = document.getElementById('inputDuration');
+      const pace = document.getElementById('inputPace');
+
+      function calc() {
+        if (!dist || !dur || !pace) return;
+        const d = parseFloat(dist.value);
+        const t = parseFloat(dur.value);
+        if (d > 0 && t > 0) {
+          const paceDec = t / d;
+          const m = Math.floor(paceDec);
+          const s = Math.round((paceDec - m) * 60);
+          pace.value = m + "'" + (s < 10 ? '0' : '') + s + '"';
+        }
+      }
+      dist.addEventListener('input', calc);
+      dur.addEventListener('input', calc);
+    }
+
+    function loadData() {
+      showToast('구글 드라이브 동기화 중...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          allLogs = (res && res.logs) || [];
+          monthlyTrendsData = (res && res.monthly_trends) || [];
+          updateStats(res && res.overview);
+          renderLogs();
+          showToast('동기화 완료!');
+        })
+        .withFailureHandler(function(err) {
+          showToast('오류: ' + err.message);
+        })
+        .getWorkoutData();
+    }
+
+    function updateStats(overview) {
+      if (!overview) return;
+      document.getElementById('stat-total-workouts').textContent = (overview.total_workouts || 0) + ' 회';
+      document.getElementById('stat-total-hours').textContent = (overview.total_duration_hours || 0) + ' 시간';
+      document.getElementById('stat-running-km').textContent = (overview.running_total_km || 0) + ' km';
+      document.getElementById('stat-elevation-m').textContent = '+' + (overview.total_elevation_gain || 0).toLocaleString() + ' m';
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = selectedPhotos.length > 0 ? ('사진 ' + selectedPhotos.length + '장 및 일지 저장 중...') : '저장 중...';
+
+      const data = {
+        date: document.getElementById('inputDate').value,
+        sport: curSport,
+        title: document.getElementById('inputTitle').value.trim(),
+        duration_minutes: parseInt(document.getElementById('inputDuration').value) || 0,
+        intensity: parseInt(document.getElementById('inputIntensity').value) || 5,
+        distance_km: parseFloat(document.getElementById('inputDistance').value) || '',
+        pace: document.getElementById('inputPace').value.trim(),
+        elevation_gain: parseInt(document.getElementById('inputElevation').value) || '',
+        max_altitude: parseInt(document.getElementById('inputMaxAlt').value) || '',
+        freedive_depth: parseFloat(document.getElementById('inputDepth').value) || '',
+        discipline: (curSport === '기타' ? document.getElementById('inputCustomSport').value.trim() : (document.getElementById('inputDiscipline') ? document.getElementById('inputDiscipline').value.trim() : '')),
+        location_course: document.getElementById('inputLocation').value.trim(),
+        weather: document.getElementById('inputWeather').value,
+        notes: document.getElementById('inputNotes').value.trim(),
+        photos: selectedPhotos
+      };
+
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('구글 드라이브에 저장 완료! 📸');
+          document.getElementById('workoutForm').reset();
+          document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+          removeAllPhotos('new');
+          btn.disabled = false;
+          btn.textContent = '💾 구글 드라이브에 저장하기';
+          loadData();
+          switchTab('list');
+        })
+        .withFailureHandler(function(err) {
+          alert('저장 실패: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = '다시 시도';
+        })
+        .saveWorkout(data);
+    }
+
+    function filterLogs(sport) {
+      curFilter = sport;
+      document.querySelectorAll('.filter-pill').forEach(function(p) {
+        p.classList.toggle('active', p.textContent.includes(sport === 'all' ? '전체' : sport));
+      });
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('logsContainer');
+      const filtered = allLogs.filter(function(l) { return curFilter === 'all' || l.sport === curFilter; });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8; font-size:13px;">기록이 없습니다.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(function(log) {
+        let photosHtml = '';
+        let ids = [];
+        if (Array.isArray(log.photo_ids)) {
+          ids = log.photo_ids;
+        } else if (typeof log.photo_ids === 'string' && log.photo_ids) {
+          ids = log.photo_ids.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+        }
+
+        if (ids.length > 0) {
+          const isSingle = ids.length === 1;
+          const itemsHtml = ids.map(function(id) {
+            const cdnUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s800';
+            const fullUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s1600';
+            const fallbackUrl = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w800';
+
+            return '<div class="log-photo-item ' + (isSingle ? 'single' : '') + '" onclick="openPhotoModal(\'' + fullUrl + '\')">' +
+              '<img src="' + cdnUrl + '" onerror="this.onerror=null; this.src=\'' + fallbackUrl + '\';" referrerpolicy="no-referrer" loading="lazy" alt="운동 사진">' +
+            '</div>';
+          }).join('');
+
+          photosHtml = '<div style="margin-top:8px;">' +
+            (!isSingle ? '<div style="font-size:11px; font-weight:700; color:#64748b; margin-bottom:4px;">📸 사진 ' + ids.length + '장 (좌우 스크롤 / 터치하여 확대)</div>' : '') +
+            '<div class="log-photos-gallery">' + itemsHtml + '</div>' +
+          '</div>';
+        }
+
+        // 💬 Comments HTML (Always expanded, with edit & delete buttons)
+        const comments = log.comments || [];
+        const commentsHtml = comments.map(function(c) {
+          const safeText = encodeURIComponent(c.text || '');
+          return '<div class="comment-item">' +
+            '<div class="comment-meta">' +
+              '<span class="comment-author">' + (c.author || '작성자') + '</span>' +
+              '<div class="comment-meta-right">' +
+                '<span class="comment-time">' + (c.createdAt || '') + (c.updatedAt ? ' (수정됨)' : '') + '</span>' +
+                '<button type="button" class="comment-action-btn" onclick="editComment(' + log.rowIndex + ', \'' + c.id + '\', \'' + safeText + '\')" title="수정">✏️</button>' +
+                '<button type="button" class="comment-action-btn delete" onclick="deleteComment(' + log.rowIndex + ', \'' + c.id + '\')" title="삭제">🗑️</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="comment-text">' + (c.text || '') + '</div>' +
+          '</div>';
+        }).join('');
+
+        const savedAuthor = localStorage.getItem('workout_author') || '';
+
+        return '<div class="log-item">' +
+          '<div class="log-item-header">' +
+            '<div class="log-header-left">' +
+              '<span class="sport-tag">' + log.sport + '</span>' +
+              '<span class="log-date">' + log.date + ' (RPE ' + (log.intensity || 5) + ')</span>' +
+            '</div>' +
+            '<div class="log-actions">' +
+              '<button type="button" class="btn-log-action" onclick="openEditModal(' + log.rowIndex + ')">✏️ 수정</button>' +
+              '<button type="button" class="btn-log-action delete" onclick="confirmDelete(' + log.rowIndex + ')">🗑️ 삭제</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="log-title">' + (log.title || log.sport + ' 운동') + '</div>' +
+          '<div class="log-metrics">' +
+            (log.distance_km ? '<span class="metric-dist">📍 ' + log.distance_km + ' km</span>' : '') +
+            (log.pace ? '<span>⏱️ ' + log.pace + '</span>' : '') +
+            (log.elevation_gain ? '<span class="metric-elev">⛰️ +' + log.elevation_gain + 'm</span>' : '') +
+            (log.freedive_depth ? '<span class="metric-depth">🤿 ' + log.freedive_depth + 'm</span>' : '') +
+            (log.duration_minutes ? '<span>⌛ ' + log.duration_minutes + '분</span>' : '') +
+          '</div>' +
+          (log.notes ? '<div class="log-notes">' + log.notes + '</div>' : '') +
+          photosHtml +
+          
+          '<!-- 💬 Always Visible Comments Area -->' +
+          '<div class="comments-box">' +
+            '<div class="comments-header">' +
+              '<span>💬 댓글 & 피드백 (' + comments.length + ')</span>' +
+            '</div>' +
+            '<div class="comments-list">' +
+              (commentsHtml || '<div style="font-size:11px; color:#94a3b8; padding:4px 0;">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</div>') +
+            '</div>' +
+            '<form class="comment-form" onsubmit="handleCommentSubmit(event, ' + log.rowIndex + ')">' +
+              '<input type="text" class="comment-input-author" placeholder="작성자" value="' + savedAuthor + '" required>' +
+              '<input type="text" class="comment-input-text" placeholder="응원이나 피드백을 남겨주세요" required>' +
+              '<button type="submit" class="comment-btn-submit">등록</button>' +
+            '</form>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // ✏️ EDIT MODAL LOGIC
+    function openEditModal(rowIndex) {
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+      if (!log) return;
+
+      document.getElementById('editRowIndex').value = rowIndex;
+      document.getElementById('editSport').value = log.sport;
+      document.getElementById('editDate').value = log.date;
+      document.getElementById('editTitle').value = log.title || '';
+      document.getElementById('editDuration').value = log.duration_minutes || '';
+      document.getElementById('editIntensity').value = log.intensity || 5;
+      document.getElementById('editRpeText').textContent = (log.intensity || 5) + ' / 10';
+      document.getElementById('editDistance').value = log.distance_km || '';
+      document.getElementById('editPace').value = log.pace || '';
+      document.getElementById('editElevation').value = log.elevation_gain || '';
+      document.getElementById('editMaxAlt').value = log.max_altitude || '';
+      document.getElementById('editDepth').value = log.freedive_depth || '';
+      document.getElementById('editDiscipline').value = log.discipline || '';
+      document.getElementById('editCustomSport').value = log.sport === '기타' ? (log.discipline || '') : '';
+      document.getElementById('editLocation').value = log.location_course || '';
+      document.getElementById('editWeather').value = log.weather || '맑음';
+      document.getElementById('editNotes').value = log.notes || '';
+
+      handleEditSportChange(log.sport);
+
+      editExistingPhotoIds = Array.isArray(log.photo_ids) ? log.photo_ids.slice() : [];
+      editSelectedPhotos = [];
+      renderExistingEditPhotos();
+      renderEditPhotoPreviews();
+
+      document.getElementById('editModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.add('hidden');
+    }
+
+    function handleEditSportChange(sport) {
+      document.getElementById('edit-box-running').classList.toggle('hidden', !['런닝', '걷기', '트레일런닝'].includes(sport));
+      document.getElementById('edit-box-hiking').classList.toggle('hidden', !['등산', '트레일런닝'].includes(sport));
+      document.getElementById('edit-box-freedive').classList.toggle('hidden', sport !== '프리다이빙');
+      document.getElementById('edit-box-other').classList.toggle('hidden', sport !== '기타');
+    }
+
+    function handleEditSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnEditSubmit');
+      btn.disabled = true;
+      btn.textContent = '수정 저장 중...';
+
+      const rowIndex = parseInt(document.getElementById('editRowIndex').value);
+      const sport = document.getElementById('editSport').value;
+
+      const data = {
+        rowIndex: rowIndex,
+        date: document.getElementById('editDate').value,
+        sport: sport,
+        title: document.getElementById('editTitle').value.trim(),
+        duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
+        intensity: parseInt(document.getElementById('editIntensity').value) || 5,
+        distance_km: parseFloat(document.getElementById('editDistance').value) || '',
+        pace: document.getElementById('editPace').value.trim(),
+        elevation_gain: parseInt(document.getElementById('editElevation').value) || '',
+        max_altitude: parseInt(document.getElementById('editMaxAlt').value) || '',
+        freedive_depth: parseFloat(document.getElementById('editDepth').value) || '',
+        discipline: (sport === '기타' ? document.getElementById('editCustomSport').value.trim() : document.getElementById('editDiscipline').value.trim()),
+        location_course: document.getElementById('editLocation').value.trim(),
+        weather: document.getElementById('editWeather').value,
+        notes: document.getElementById('editNotes').value.trim(),
+        existingPhotoIds: editExistingPhotoIds,
+        photos: editSelectedPhotos
+      };
+
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('운동 일지가 수정되었습니다! ✏️');
+          btn.disabled = false;
+          btn.textContent = '💾 수정 내용 저장';
+          closeEditModal();
+          loadData();
+        })
+        .withFailureHandler(function(err) {
+          alert('수정 실패: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = '다시 시도';
+        })
+        .updateWorkout(data);
+    }
+
+    // 🗑️ DELETE WORKOUT LOGIC
+    function confirmDelete(rowIndex) {
+      if (!confirm('정말 이 운동 기록을 삭제하시겠습니까? (삭제 후 복구할 수 없습니다)')) {
+        return;
+      }
+      showToast('삭제 중...');
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('운동 기록이 삭제되었습니다! 🗑️');
+          loadData();
+        })
+        .withFailureHandler(function(err) {
+          alert('삭제 실패: ' + err.message);
+        })
+        .deleteWorkout(rowIndex);
+    }
+
+    // 💬 COMMENT SUBMIT LOGIC
+    function handleCommentSubmit(e, rowIndex) {
+      e.preventDefault();
+      const form = e.target;
+      const authorInput = form.querySelector('.comment-input-author');
+      const textInput = form.querySelector('.comment-input-text');
+      const submitBtn = form.querySelector('.comment-btn-submit');
+
+      const author = authorInput.value.trim() || '작성자';
+      const text = textInput.value.trim();
+
+      if (!text) return;
+
+      localStorage.setItem('workout_author', author);
+      submitBtn.disabled = true;
+      submitBtn.textContent = '...';
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          showToast('댓글이 등록되었습니다! 💬');
+          textInput.value = '';
+          submitBtn.disabled = false;
+          submitBtn.textContent = '등록';
+          loadData();
+        })
+        .withFailureHandler(function(err) {
+          alert('댓글 등록 실패: ' + err.message);
+          submitBtn.disabled = false;
+          submitBtn.textContent = '등록';
+        })
+        .addWorkoutComment(rowIndex, { author: author, text: text });
+    }
+
+    // ✏️ COMMENT EDIT
+    function editComment(rowIndex, commentId, safeText) {
+      const currentText = decodeURIComponent(safeText || '');
+      const newText = prompt('댓글을 수정하세요:', currentText);
+      if (newText === null || newText.trim() === '' || newText.trim() === currentText) return;
+
+      showToast('댓글 수정 중...');
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('댓글이 수정되었습니다! ✏️');
+          loadData();
+        })
+        .withFailureHandler(function(err) {
+          alert('댓글 수정 실패: ' + err.message);
+        })
+        .updateWorkoutComment(rowIndex, commentId, newText.trim());
+    }
+
+    // 🗑️ COMMENT DELETE
+    function deleteComment(rowIndex, commentId) {
+      if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
+
+      showToast('댓글 삭제 중...');
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('댓글이 삭제되었습니다! 🗑️');
+          loadData();
+        })
+        .withFailureHandler(function(err) {
+          alert('댓글 삭제 실패: ' + err.message);
+        })
+        .deleteWorkoutComment(rowIndex, commentId);
+    }
+
+    // 🔔 TEST NTFY
+    function testNtfy() {
+      showToast('스마트폰 알림 발송 중...');
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('ntfy 알림 발송 완료! 스마트폰을 확인해보세요 🔔');
+        })
+        .withFailureHandler(function(err) {
+          alert('알림 발송 실패: ' + err.message);
+        })
+        .testWorkoutNtfyAlert();
+    }
+
+    // CHARTS RENDERING
+    function renderAllCharts() {
+      if (typeof Chart === 'undefined') return;
+
+      const ctx1 = document.getElementById('chartActivity');
+      if (ctx1 && monthlyTrendsData.length > 0) {
+        if (chart1) chart1.destroy();
+        const months = monthlyTrendsData.map(function(m) { return m.month; });
+        const sports = ['런닝', '등산', '트레일런닝', '프리다이빙', '걷기', '기타'];
+        const colors = {
+          '런닝': '#ea580c', '등산': '#16a34a', '트레일런닝': '#0d9488',
+          '프리다이빙': '#0284c7', '걷기': '#9333ea', '기타': '#e11d48'
+        };
+
+        const datasets = sports.map(function(sp) {
+          return {
+            label: sp,
+            data: monthlyTrendsData.map(function(m) { return (m.data && m.data[sp]) || (m.counts && m.counts[sp]) || 0; }),
+            backgroundColor: colors[sp] || '#64748b',
+            borderRadius: 4
+          };
+        });
+
+        chart1 = new Chart(ctx1, {
+          type: 'bar',
+          data: { labels: months, datasets: datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      }
+
+      const ctx2 = document.getElementById('chartMileage');
+      if (ctx2 && allLogs.length > 0) {
+        if (chart2) chart2.destroy();
+        const runWalkLogs = allLogs.filter(function(l) {
+          return (l.sport === '런닝' || l.sport === '걷기' || l.sport === '트레일런닝') && l.distance_km > 0;
+        }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+        
+        if (runWalkLogs.length > 0) {
+          chart2 = new Chart(ctx2, {
+            type: 'line',
+            data: {
+              labels: runWalkLogs.map(function(l) { return l.date; }),
+              datasets: [{
+                label: '거리 (km)',
+                data: runWalkLogs.map(function(l) { return l.distance_km; }),
+                borderColor: '#ea580c',
+                backgroundColor: 'rgba(234, 88, 12, 0.1)',
+                tension: 0.2,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true } }
+            }
+          });
+        }
+      }
+
+      const ctx3 = document.getElementById('chartElevation');
+      if (ctx3 && allLogs.length > 0) {
+        if (chart3) chart3.destroy();
+        const hikeLogs = allLogs.filter(function(l) {
+          return (l.sport === '등산' || l.sport === '트레일런닝') && l.elevation_gain > 0;
+        }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+
+        if (hikeLogs.length > 0) {
+          chart3 = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+              labels: hikeLogs.map(function(l) { return l.date; }),
+              datasets: [{
+                label: '획득고도 (m)',
+                data: hikeLogs.map(function(l) { return l.elevation_gain; }),
+                backgroundColor: '#16a34a',
+                borderRadius: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true } }
+            }
+          });
+        }
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(function() { t.classList.remove('show'); }, 2200);
+    }
+  </script>
+</body>
+</html>

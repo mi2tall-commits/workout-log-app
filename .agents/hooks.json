@@ -1,0 +1,11 @@
+{
+  "iphone-ntfy-notifier": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python ./scripts/notify.py",
+        "timeout": 10
+      }
+    ]
+  }
+}

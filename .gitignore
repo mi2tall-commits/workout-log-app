@@ -1,0 +1,14 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.log
+__pycache__/
+*.pyc
+
+# Local IDE / Editors
+.vscode/
+.idea/

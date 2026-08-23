@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🎾 나의 테니스 일지 | Tennis Journal</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background-color: #f6f8fa;
+      color: #1e293b;
+      line-height: 1.5;
+      padding-bottom: 40px;
+    }
+
+    .container { max-width: 640px; margin: 0 auto; padding: 12px 16px; }
+
+    /* Header */
+    .header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 12px 16px;
+    }
+    .header-inner {
+      max-width: 640px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo-box { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #16a34a, #059669);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text h1 { font-size: 17px; font-weight: 800; color: #0f172a; line-height: 1.2; }
+    .logo-text p { font-size: 11px; color: #64748b; font-weight: 500; }
+    
+    .header-actions { display: flex; align-items: center; gap: 6px; }
+    .btn-header {
+      background: #f1f5f9;
+      border: none;
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-header:hover { background: #e2e8f0; color: #0f172a; }
+
+    /* Stat Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    @media (min-width: 480px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat-card {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+    }
+    .stat-label { font-size: 11px; color: #64748b; font-weight: 600; }
+    .stat-val { font-size: 18px; font-weight: 800; margin-top: 2px; color: #0f172a; }
+    .stat-val.green { color: #16a34a; }
+    .stat-val.blue { color: #2563eb; }
+    .stat-val.amber { color: #d97706; }
+
+    /* Nav Tabs */
+    .nav-tabs {
+      display: flex;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 12px;
+      margin-top: 14px;
+      gap: 4px;
+    }
+    .nav-tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 9px 4px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .nav-tab.active {
+      background: #ffffff;
+      color: #16a34a;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* Card */
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    /* Edit Mode Banner */
+    .edit-banner {
+      background: #fef3c7;
+      border: 1px solid #fde047;
+      color: #854d0e;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .edit-cancel-btn {
+      background: #ffffff;
+      border: 1px solid #facc15;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #a16207;
+    }
+
+    /* Category Selector */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .cat-btn {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      transition: all 0.15s;
+    }
+    .cat-btn .icon { font-size: 18px; }
+    .cat-btn.active {
+      background: #f0fdf4;
+      border-color: #16a34a;
+      color: #15803d;
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    }
+
+    /* Form Controls */
+    .form-group { margin-top: 12px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 14px;
+      background: #ffffff;
+      color: #1e293b;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: #16a34a;
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.15);
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+    /* Dynamic Boxes */
+    .dynamic-box {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #bbf7d0;
+      background: #f0fdf4;
+    }
+    .dynamic-box.blue {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+    }
+
+    /* Multi-select Skill Chips */
+    .skill-chips-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+    @media (min-width: 480px) {
+      .skill-chips-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .skill-chip {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .skill-chip.active {
+      background: #16a34a;
+      border-color: #16a34a;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25);
+    }
+
+    /* Result Buttons */
+    .result-btn {
+      padding: 9px 4px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      text-align: center;
+    }
+    .result-btn.active-win { background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700; }
+    .result-btn.active-loss { background: #ef4444; border-color: #ef4444; color: #ffffff; font-weight: 700; }
+    .result-btn.active-draw { background: #64748b; border-color: #64748b; color: #ffffff; font-weight: 700; }
+
+    /* Multi Photo Upload & Preview Grid */
+    .photo-upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f1f5f9;
+      border: 1px dashed #94a3b8;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .photo-upload-btn:hover { background: #e2e8f0; border-color: #16a34a; }
+    
+    .photos-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .photo-preview-item {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 1 / 1;
+      background: #0f172a;
+      border: 1px solid #cbd5e1;
+    }
+    .photo-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-delete-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(239, 68, 68, 0.9);
+      color: #ffffff;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Submit Button */
+    .submit-btn {
+      width: 100%;
+      margin-top: 16px;
+      background: #16a34a;
+      color: #ffffff;
+      border: none;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+    }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    /* Filter Pills */
+    .filter-scroll {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-top: 12px;
+    }
+    .filter-pill {
+      white-space: nowrap;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #475569;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .filter-pill.active {
+      background: #16a34a;
+      color: #ffffff;
+      border-color: #16a34a;
+    }
+
+    /* Log Item Cards */
+    .log-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 10px;
+    }
+    .log-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .cat-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    .cat-tag.game { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .cat-tag.practice { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+
+    .badge-win { background: #dcfce7; color: #15803d; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px; }
+    .badge-loss { background: #fee2e2; color: #b91c1c; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px; }
+    
+    .log-date { font-size: 12px; color: #94a3b8; font-weight: 500; }
+    .log-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    
+    .log-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-action {
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-action.edit:hover { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+    .btn-action.del:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+
+    .log-info-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      align-items: center;
+    }
+    .info-score { color: #2563eb; font-weight: 800; }
+    .info-skill { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+
+    .log-notes {
+      font-size: 12px;
+      color: #334155;
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 6px;
+      border-left: 3px solid #16a34a;
+    }
+
+    /* Log Photo Gallery */
+    .log-photos-gallery {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      margin-top: 10px;
+      padding-bottom: 4px;
+    }
+    .log-photo-item {
+      flex: 0 0 140px;
+      height: 110px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+    }
+    .log-photo-item.single {
+      flex: 1 1 100%;
+      height: 180px;
+    }
+    .log-photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.2s;
+    }
+    .log-photo-item:hover img { transform: scale(1.03); }
+
+    /* 💬 ALWAYS EXPANDED COMMENTS SECTION */
+    .comments-wrapper {
+      margin-top: 12px;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 10px;
+    }
+    .comments-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .comment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .comment-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+    .comment-author {
+      font-weight: 700;
+      color: #15803d;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+    }
+    .comment-meta-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .comment-time { font-size: 10px; color: #94a3b8; }
+    
+    .comment-action-btn {
+      background: none;
+      border: none;
+      font-size: 11px;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 1px 3px;
+      border-radius: 4px;
+    }
+    .comment-action-btn:hover { color: #16a34a; background: #f0fdf4; }
+    .comment-action-btn.delete:hover { color: #ef4444; background: #fee2e2; }
+
+    .comment-text { color: #1e293b; line-height: 1.4; word-break: break-word; font-size: 12px; }
+
+    /* Compact Comment Form */
+    .comment-form {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      align-items: center;
+    }
+    .comment-input-author {
+      width: 65px;
+      flex-shrink: 0;
+      padding: 7px 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 12px;
+      outline: none;
+      background: #ffffff;
+      text-align: center;
+      font-family: inherit;
+    }
+    .comment-input-text {
+      flex: 1;
+      min-width: 0;
+      padding: 7px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 12px;
+      outline: none;
+      background: #ffffff;
+      font-family: inherit;
+    }
+    .comment-input-author:focus, .comment-input-text:focus {
+      border-color: #16a34a;
+    }
+    .comment-submit-btn {
+      background: #16a34a;
+      color: #ffffff;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .comment-submit-btn:active { transform: scale(0.96); }
+    .comment-submit-btn:disabled { background: #94a3b8; }
+
+    /* Charts */
+    .chart-box {
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .chart-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 10px; }
+    .chart-container { position: relative; height: 220px; width: 100%; }
+
+    .hidden { display: none !important; }
+
+    /* 🖼️ ENHANCED PHOTO LIGHTBOX MODAL WITH SWIPE & NAV */
+    #photoModal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: pan-y;
+      user-select: none;
+    }
+    .modal-topbar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 220;
+    }
+    .modal-counter {
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.22);
+      padding: 5px 14px;
+      border-radius: 20px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .modal-close-btn {
+      background: rgba(255, 255, 255, 0.22);
+      border: none;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 700;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: background 0.2s;
+    }
+    .modal-close-btn:active { background: rgba(255, 255, 255, 0.4); }
+
+    .modal-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.22);
+      border: none;
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 300;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 220;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: background 0.2s, transform 0.1s;
+    }
+    .modal-nav-btn:active { transform: translateY(-50%) scale(0.92); background: rgba(255, 255, 255, 0.4); }
+    .modal-nav-btn.prev { left: 12px; }
+    .modal-nav-btn.next { right: 12px; }
+
+    .modal-img-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 14px;
+    }
+    #photoModalImg {
+      max-width: 100%;
+      max-height: 84vh;
+      object-fit: contain;
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      transition: opacity 0.15s ease-in-out;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+      z-index: 100;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo-box">
+        <div class="logo-icon">🎾</div>
+        <div class="logo-text">
+          <h1>나의 테니스 일지</h1>
+          <p>레슨 & 클럽 매치 기록</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-header" onclick="testNtfy()">🔔 알림테스트</button>
+        <button class="btn-header" onclick="loadData()">🔄 새로고침</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    
+    <!-- Top Summary Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">총 테니스 활동</div>
+        <div id="stat-total" class="stat-val">0 회</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">레슨 횟수</div>
+        <div id="stat-lessons" class="stat-val green">0 회</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">클럽 경기 전적</div>
+        <div id="stat-record" class="stat-val blue">0승 0패</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">매치 승률</div>
+        <div id="stat-winrate" class="stat-val amber">0%</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button id="tab-list" class="nav-tab active" onclick="switchTab('list')">📋 테니스 일지</button>
+      <button id="tab-new" class="nav-tab" onclick="switchTab('new')">✍️ 일지 쓰기</button>
+      <button id="tab-charts" class="nav-tab" onclick="switchTab('charts')">📊 전적 & 통계</button>
+    </div>
+
+    <!-- VIEW 1: LIST -->
+    <section id="view-list">
+      <div class="filter-scroll">
+        <button class="filter-pill active" onclick="filterLogs('all')">전체</button>
+        <button class="filter-pill" onclick="filterLogs('레슨')">🎾 레슨</button>
+        <button class="filter-pill" onclick="filterLogs('클럽게임')">🏆 클럽게임</button>
+        <button class="filter-pill" onclick="filterLogs('랠리/연습')">🎯 랠리/연습</button>
+      </div>
+
+      <div id="logsContainer" style="margin-top: 10px;">
+        <div style="text-align:center; padding:30px; color:#94a3b8; font-size:14px;">데이터를 불러오는 중입니다...</div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: FORM -->
+    <section id="view-new" class="card hidden">
+      <div id="editBanner" class="edit-banner hidden">
+        <span>✏️ 일지 수정 모드 진행 중입니다.</span>
+        <button type="button" class="edit-cancel-btn" onclick="cancelEditMode()">수정 취소</button>
+      </div>
+
+      <form id="tennisForm" onsubmit="handleSubmit(event)">
+        
+        <div>
+          <label class="form-label">활동 구분</label>
+          <div class="category-grid">
+            <button type="button" data-cat="레슨" class="cat-btn active" onclick="selectCat('레슨')">
+              <span class="icon">🎾</span>
+              <span>레슨</span>
+            </button>
+            <button type="button" data-cat="클럽게임" class="cat-btn" onclick="selectCat('클럽게임')">
+              <span class="icon">🏆</span>
+              <span>클럽게임</span>
+            </button>
+            <button type="button" data-cat="랠리/연습" class="cat-btn" onclick="selectCat('랠리/연습')">
+              <span class="icon">🎯</span>
+              <span>랠리/연습</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">날짜</label>
+          <input id="inputDate" type="date" required class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">제목 / 오늘 테마</label>
+          <input id="inputTitle" type="text" placeholder="예: 백핸드 크로스 & 발리 교정" class="form-input">
+        </div>
+
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">소요 시간 (분)</label>
+            <input id="inputDuration" type="number" min="0" placeholder="예: 60" class="form-input">
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between;">
+              <label class="form-label">운동 강도 (RPE)</label>
+              <span id="rpeText" style="font-size:12px; font-weight:700; color:#16a34a;">7 / 10</span>
+            </div>
+            <input id="inputIntensity" type="range" min="1" max="10" value="7" oninput="document.getElementById('rpeText').textContent = this.value + ' / 10'" style="width:100%; margin-top:8px;">
+          </div>
+        </div>
+
+        <div id="box-lesson" class="dynamic-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label class="form-label" style="color:#15803d; font-weight:700; margin:0;">🎾 레슨 중점 기술 (중복 선택 가능)</label>
+            <span style="font-size:11px; color:#16a34a; font-weight:600;">터치하여 선택/해제</span>
+          </div>
+          <div class="skill-chips-grid">
+            <button type="button" class="skill-chip active" onclick="toggleSkill(this, '포핸드 스트로크')">🎾 포핸드</button>
+            <button type="button" class="skill-chip" onclick="toggleSkill(this, '백핸드 스트로크')">🎾 백핸드</button>
+            <button type="button" class="skill-chip" onclick="toggleSkill(this, '발리 & 네트')">🏸 발리/네트</button>
+            <button type="button" class="skill-chip" onclick="toggleSkill(this, '서브 & 리턴')">⚡ 서브/리턴</button>
+            <button type="button" class="skill-chip" onclick="toggleSkill(this, '스매시 & 로브')">💥 스매시/로브</button>
+            <button type="button" class="skill-chip" onclick="toggleSkill(this, '스텝 & 풋워크')">👟 풋워크/스텝</button>
+            <button type="button" class="skill-chip" onclick="toggleSkill(this, '게임 전술/랠리')">🎯 랠리/전술</button>
+            <button type="button" class="skill-chip" onclick="toggleSkill(this, '종합 레슨')">📋 종합 레슨</button>
+          </div>
+        </div>
+
+        <div id="box-game" class="dynamic-box blue hidden">
+          <label class="form-label" style="color:#1d4ed8; font-weight:700; margin-bottom:8px;">🏆 경기 결과 & 스코어</label>
+          <div class="grid-3" style="margin-bottom:10px;">
+            <button type="button" class="result-btn active-win" id="btn-win" onclick="setResult('승')">🥇 승리</button>
+            <button type="button" class="result-btn" id="btn-loss" onclick="setResult('패')">🥈 패배</button>
+            <button type="button" class="result-btn" id="btn-draw" onclick="setResult('연습')">🤝 연습/무</button>
+          </div>
+          <div class="grid-2">
+            <div>
+              <label class="form-label">세트 스코어</label>
+              <input id="inputScore" type="text" placeholder="예: 6-4, 7-5" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">파트너 & 상대방</label>
+              <input id="inputPlayers" type="text" placeholder="예: 김OO / 이OO 박OO" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">🏟️ 테니스 구장</label>
+            <select id="inputVenueSelect" class="form-select" onchange="handleVenueChange(this.value)">
+              <option value="문수 테니스장">문수 테니스장</option>
+              <option value="중구 테니스장" selected>중구 테니스장</option>
+              <option value="야음 테니스장">야음 테니스장</option>
+              <option value="남산 테니스장">남산 테니스장</option>
+              <option value="동서 테니스장">동서 테니스장</option>
+              <option value="유곡 테니스장">유곡 테니스장</option>
+              <option value="직접입력">✏️ 기타 (직접 입력)</option>
+            </select>
+            <input id="inputCustomVenue" type="text" placeholder="구장 이름을 직접 입력하세요" class="form-input hidden" style="margin-top:6px;">
+          </div>
+          <div>
+            <label class="form-label">코트 종류</label>
+            <select id="inputCourtType" class="form-select">
+              <option value="인조잔디" selected>인조잔디</option>
+              <option value="하드코트">하드코트</option>
+              <option value="클레이코트">클레이코트</option>
+              <option value="실내코트">실내코트</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label id="notesLabel" class="form-label">💡 코치 피드백 & 오늘 배운 점</label>
+          <textarea id="inputNotes" rows="3" placeholder="오늘 잘된 점, 코치님이 지적해주신 교정 포인트를 적어보세요." class="form-textarea"></textarea>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label class="form-label" style="margin:0;">📸 테니스 사진 첨부 (<span id="photoCountText">0/5</span>장)</label>
+            <span style="font-size:11px; color:#64748b;">최대 5장</span>
+          </div>
+          
+          <div style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+            <label for="inputPhoto" class="photo-upload-btn">
+              <span>📷 사진 추가하기 (+ 선택)</span>
+            </label>
+            <input type="file" id="inputPhoto" accept="image/*" multiple style="display:none;" onchange="handlePhotosSelect(event)">
+            <button type="button" id="btnRemoveAllPhotos" onclick="removeAllPhotos()" class="hidden" style="background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;">전체 삭제</button>
+          </div>
+
+          <div id="photosPreviewGrid" class="photos-preview-grid hidden"></div>
+        </div>
+
+        <button id="submitBtn" type="submit" class="submit-btn">
+          🎾 테니스 일지 저장하기
+        </button>
+      </form>
+    </section>
+
+    <!-- VIEW 3: CHARTS -->
+    <section id="view-charts" class="hidden">
+      <div class="chart-box">
+        <div class="chart-title">📊 월별 테니스 활동 (레슨 vs 게임)</div>
+        <div class="chart-container">
+          <canvas id="chartActivity"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-box">
+        <div class="chart-title">🏆 클럽 경기 승패 전적</div>
+        <div class="chart-container">
+          <canvas id="chartWinLoss"></canvas>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- 🖼️ ENHANCED PHOTO LIGHTBOX MODAL WITH SWIPE & NAV -->
+  <div id="photoModal" class="hidden" onclick="handleModalBackdropClick(event)">
+    <div class="modal-topbar">
+      <span id="modalCounter" class="modal-counter">1 / 1</span>
+      <button type="button" class="modal-close-btn" onclick="closePhotoModal()">✕</button>
+    </div>
+    
+    <button type="button" id="modalPrevBtn" class="modal-nav-btn prev" onclick="prevModalPhoto(event)">‹</button>
+    
+    <div class="modal-img-container" id="modalImgContainer">
+      <img id="photoModalImg" src="" alt="확대 사진" referrerpolicy="no-referrer">
+    </div>
+    
+    <button type="button" id="modalNextBtn" class="modal-nav-btn next" onclick="nextModalPhoto(event)">›</button>
+  </div>
+
+  <div id="toast">알림</div>
+
+  <script>
+    let curCat = '레슨';
+    let curResult = '승';
+    let allLogs = [];
+    let curFilter = 'all';
+    let monthlyTrendsData = [];
+    let chart1 = null, chart2 = null;
+    let selectedSkills = ['포핸드 스트로크'];
+    let selectedPhotos = [];
+    let existingPhotoIds = [];
+    let editingRowIndex = null;
+
+    let savedAuthor = localStorage.getItem('tennis_author_name') || '';
+
+    // 🖼️ 갤러리 뷰어 상태 변수
+    let galleryPhotoIds = [];
+    let curGalleryIdx = 0;
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+      initModalTouchEvents();
+      loadData();
+    });
+
+    // 🖼️ 사진 갤러리 모달 열기
+    function openLogGallery(rowIndex, photoIdx) {
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+      if (!log || !Array.isArray(log.photo_ids) || log.photo_ids.length === 0) return;
+      
+      galleryPhotoIds = log.photo_ids;
+      curGalleryIdx = photoIdx || 0;
+      updateModalView();
+      document.getElementById('photoModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function updateModalView() {
+      if (galleryPhotoIds.length === 0) return;
+      const id = galleryPhotoIds[curGalleryIdx];
+      const fullUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s1600';
+      const fallbackUrl = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1600';
+      
+      const img = document.getElementById('photoModalImg');
+      img.style.opacity = '0.3';
+      img.src = fullUrl;
+      img.onerror = function() {
+        this.onerror = null;
+        this.src = fallbackUrl;
+      };
+      img.onload = function() {
+        img.style.opacity = '1';
+      };
+
+      const counter = document.getElementById('modalCounter');
+      counter.textContent = (curGalleryIdx + 1) + ' / ' + galleryPhotoIds.length;
+
+      const hasMultiple = galleryPhotoIds.length > 1;
+      document.getElementById('modalPrevBtn').style.display = hasMultiple ? 'flex' : 'none';
+      document.getElementById('modalNextBtn').style.display = hasMultiple ? 'flex' : 'none';
+      counter.style.display = hasMultiple ? 'block' : 'none';
+    }
+
+    function nextModalPhoto(e) {
+      if (e) e.stopPropagation();
+      if (galleryPhotoIds.length <= 1) return;
+      curGalleryIdx = (curGalleryIdx + 1) % galleryPhotoIds.length;
+      updateModalView();
+    }
+
+    function prevModalPhoto(e) {
+      if (e) e.stopPropagation();
+      if (galleryPhotoIds.length <= 1) return;
+      curGalleryIdx = (curGalleryIdx - 1 + galleryPhotoIds.length) % galleryPhotoIds.length;
+      updateModalView();
+    }
+
+    function closePhotoModal() {
+      document.getElementById('photoModal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    function handleModalBackdropClick(e) {
+      if (e.target.id === 'photoModal' || e.target.id === 'modalImgContainer') {
+        closePhotoModal();
+      }
+    }
+
+    // 👆 터치 스와이프 및 키보드 이벤트 등록
+    function initModalTouchEvents() {
+      const modal = document.getElementById('photoModal');
+      modal.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+
+      modal.addEventListener('touchend', function(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchEndX - touchStartX;
+        if (Math.abs(diff) > 40) {
+          if (diff < 0) nextModalPhoto();
+          else prevModalPhoto();
+        }
+      }, { passive: true });
+
+      document.addEventListener('keydown', function(e) {
+        if (modal.classList.contains('hidden')) return;
+        if (e.key === 'ArrowRight') nextModalPhoto();
+        if (e.key === 'ArrowLeft') prevModalPhoto();
+        if (e.key === 'Escape') closePhotoModal();
+      });
+    }
+
+    function selectCat(cat) {
+      curCat = cat;
+      document.querySelectorAll('.cat-btn').forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-cat') === cat);
+      });
+
+      document.getElementById('box-lesson').classList.toggle('hidden', cat !== '레슨');
+      document.getElementById('box-game').classList.toggle('hidden', cat !== '클럽게임');
+
+      const notesLabel = document.getElementById('notesLabel');
+      if (cat === '레슨') {
+        notesLabel.textContent = '💡 코치 피드백 & 오늘 배운 점';
+      } else if (cat === '클럽게임') {
+        notesLabel.textContent = '📝 경기 복기 (위닝 샷 & 아쉬웠던 점)';
+      } else {
+        notesLabel.textContent = '📝 연습 메모 & 느낀 점';
+      }
+    }
+
+    function toggleSkill(btn, skillName) {
+      const idx = selectedSkills.indexOf(skillName);
+      if (idx > -1) {
+        selectedSkills.splice(idx, 1);
+        btn.classList.remove('active');
+      } else {
+        selectedSkills.push(skillName);
+        btn.classList.add('active');
+      }
+    }
+
+    function setResult(res) {
+      curResult = res;
+      document.getElementById('btn-win').className = res === '승' ? 'result-btn active-win' : 'result-btn';
+      document.getElementById('btn-loss').className = res === '패' ? 'result-btn active-loss' : 'result-btn';
+      document.getElementById('btn-draw').className = res === '연습' ? 'result-btn active-draw' : 'result-btn';
+    }
+
+    function handleVenueChange(val) {
+      const customInput = document.getElementById('inputCustomVenue');
+      if (val === '직접입력') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+      } else {
+        customInput.classList.add('hidden');
+      }
+    }
+
+    function switchTab(tab) {
+      document.getElementById('view-new').classList.toggle('hidden', tab !== 'new');
+      document.getElementById('view-list').classList.toggle('hidden', tab !== 'list');
+      document.getElementById('view-charts').classList.toggle('hidden', tab !== 'charts');
+
+      document.getElementById('tab-new').classList.toggle('active', tab === 'new');
+      document.getElementById('tab-list').classList.toggle('active', tab === 'list');
+      document.getElementById('tab-charts').classList.toggle('active', tab === 'charts');
+
+      if (tab === 'list') renderLogs();
+      if (tab === 'charts') renderAllCharts();
+    }
+
+    function handlePhotosSelect(e) {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+
+      const totalPhotosCount = selectedPhotos.length + existingPhotoIds.length;
+      const remainingSlots = 5 - totalPhotosCount;
+      if (remainingSlots <= 0) {
+        alert('사진은 최대 5장까지만 등록할 수 있습니다.');
+        return;
+      }
+
+      const filesToProcess = files.slice(0, remainingSlots);
+      showToast(filesToProcess.length + '장의 사진 최적화 중...');
+
+      let processedCount = 0;
+      filesToProcess.forEach(function(file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const img = new Image();
+          img.onload = function() {
+            const maxDim = 1280;
+            let w = img.width, h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+              else { w = Math.round((w * maxDim) / h); h = maxDim; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+
+            selectedPhotos.push(base64);
+            processedCount++;
+
+            if (processedCount === filesToProcess.length) {
+              renderPhotoPreviews();
+              showToast('사진이 첨부되었습니다! 📸');
+            }
+          };
+          img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      e.target.value = '';
+    }
+
+    function renderPhotoPreviews() {
+      const grid = document.getElementById('photosPreviewGrid');
+      const countText = document.getElementById('photoCountText');
+      const removeBtn = document.getElementById('btnRemoveAllPhotos');
+
+      const totalCount = selectedPhotos.length + existingPhotoIds.length;
+      countText.textContent = totalCount + '/5';
+
+      if (totalCount === 0) {
+        grid.innerHTML = '';
+        grid.classList.add('hidden');
+        removeBtn.classList.add('hidden');
+        return;
+      }
+
+      grid.classList.remove('hidden');
+      removeBtn.classList.remove('hidden');
+
+      let html = '';
+      existingPhotoIds.forEach(function(id, idx) {
+        const thumbUrl = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w400';
+        html += '<div class="photo-preview-item">' +
+          '<img src="' + thumbUrl + '" alt="기존 사진">' +
+          '<button type="button" class="photo-delete-btn" onclick="removeExistingPhotoAt(' + idx + ')" title="삭제">✕</button>' +
+        '</div>';
+      });
+
+      selectedPhotos.forEach(function(b64, idx) {
+        html += '<div class="photo-preview-item">' +
+          '<img src="' + b64 + '" alt="새 사진">' +
+          '<button type="button" class="photo-delete-btn" onclick="removeNewPhotoAt(' + idx + ')" title="삭제">✕</button>' +
+        '</div>';
+      });
+
+      grid.innerHTML = html;
+    }
+
+    function removeNewPhotoAt(idx) {
+      selectedPhotos.splice(idx, 1);
+      renderPhotoPreviews();
+    }
+
+    function removeExistingPhotoAt(idx) {
+      existingPhotoIds.splice(idx, 1);
+      renderPhotoPreviews();
+    }
+
+    function removeAllPhotos() {
+      selectedPhotos = [];
+      existingPhotoIds = [];
+      renderPhotoPreviews();
+    }
+
+    function loadData() {
+      showToast('구글 드라이브 동기화 중...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          allLogs = (res && res.logs) || [];
+          monthlyTrendsData = (res && res.monthly_trends) || [];
+          updateStats(res && res.overview);
+          renderLogs();
+          showToast('동기화 완료!');
+        })
+        .withFailureHandler(function(err) {
+          showToast('오류: ' + err.message);
+        })
+        .getTennisData();
+    }
+
+    function updateStats(overview) {
+      if (!overview) return;
+      document.getElementById('stat-total').textContent = (overview.total_activities || 0) + ' 회';
+      document.getElementById('stat-lessons').textContent = (overview.lesson_count || 0) + ' 회';
+      document.getElementById('stat-record').textContent = (overview.wins || 0) + '승 ' + (overview.losses || 0) + '패';
+      document.getElementById('stat-winrate').textContent = (overview.win_rate || 0) + '%';
+    }
+
+    function startEditLog(rowIndex) {
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+      if (!log) return;
+
+      editingRowIndex = rowIndex;
+      document.getElementById('editBanner').classList.remove('hidden');
+
+      document.getElementById('inputDate').value = log.date || new Date().toISOString().split('T')[0];
+      document.getElementById('inputTitle').value = log.title || '';
+      document.getElementById('inputDuration').value = log.duration_minutes || 60;
+      document.getElementById('inputIntensity').value = log.intensity || 7;
+      document.getElementById('rpeText').textContent = (log.intensity || 7) + ' / 10';
+
+      selectCat(log.category || '레슨');
+
+      selectedSkills = log.focus_skill ? log.focus_skill.split(',').map(function(s) { return s.trim(); }) : [];
+      document.querySelectorAll('.skill-chip').forEach(function(c) {
+        const text = c.textContent.replace(/[^\uAC00-\uD7A3]/g, '');
+        const isMatched = selectedSkills.some(function(s) { return s.includes(text); });
+        c.classList.toggle('active', isMatched);
+      });
+
+      if (log.category === '클럽게임') {
+        setResult(log.result || '승');
+        document.getElementById('inputScore').value = log.score || '';
+        document.getElementById('inputPlayers').value = log.players || '';
+      }
+
+      const venueSelect = document.getElementById('inputVenueSelect');
+      const customVenue = document.getElementById('inputCustomVenue');
+      const options = Array.from(venueSelect.options).map(function(o) { return o.value; });
+
+      if (options.includes(log.location)) {
+        venueSelect.value = log.location;
+        customVenue.classList.add('hidden');
+      } else {
+        venueSelect.value = '직접입력';
+        customVenue.value = log.location || '';
+        customVenue.classList.remove('hidden');
+      }
+
+      document.getElementById('inputCourtType').value = log.court_type || '인조잔디';
+      document.getElementById('inputNotes').value = log.notes || '';
+
+      existingPhotoIds = Array.isArray(log.photo_ids) ? [...log.photo_ids] : [];
+      selectedPhotos = [];
+      renderPhotoPreviews();
+
+      const btn = document.getElementById('submitBtn');
+      btn.textContent = '💾 테니스 일지 수정 완료하기';
+
+      switchTab('new');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEditMode() {
+      editingRowIndex = null;
+      document.getElementById('editBanner').classList.add('hidden');
+      document.getElementById('tennisForm').reset();
+      document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+      removeAllPhotos();
+      selectCat('레슨');
+      selectedSkills = ['포핸드 스트로크'];
+      document.querySelectorAll('.skill-chip').forEach(function(c) {
+        c.classList.toggle('active', c.getAttribute('onclick').includes('포핸드'));
+      });
+      document.getElementById('submitBtn').textContent = '🎾 테니스 일지 저장하기';
+      switchTab('list');
+    }
+
+    function deleteLog(rowIndex) {
+      if (!confirm('정말 이 테니스 일지를 삭제하시겠습니까?\n(삭제 후 복구할 수 없습니다)')) return;
+
+      showToast('일지 삭제 중...');
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('일지가 삭제되었습니다. 🗑️');
+          loadData();
+        })
+        .withFailureHandler(function(err) {
+          alert('삭제 실패: ' + err.message);
+        })
+        .deleteTennisLog(rowIndex);
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+
+      const isEdit = editingRowIndex !== null;
+      btn.textContent = isEdit ? '수정사항 저장 중...' : '일지 저장 중...';
+
+      const venueVal = document.getElementById('inputVenueSelect').value;
+      const customVenue = document.getElementById('inputCustomVenue').value.trim();
+      const finalLocation = venueVal === '직접입력' ? (customVenue || '기타 구장') : venueVal;
+
+      const data = {
+        date: document.getElementById('inputDate').value,
+        category: curCat,
+        title: document.getElementById('inputTitle').value.trim(),
+        duration_minutes: parseInt(document.getElementById('inputDuration').value) || 0,
+        intensity: parseInt(document.getElementById('inputIntensity').value) || 7,
+        result: curCat === '클럽게임' ? curResult : '',
+        score: curCat === '클럽게임' ? document.getElementById('inputScore').value.trim() : '',
+        players: curCat === '클럽게임' ? document.getElementById('inputPlayers').value.trim() : '',
+        court_type: document.getElementById('inputCourtType').value,
+        location: finalLocation,
+        focus_skill: curCat === '레슨' ? selectedSkills.join(', ') : '',
+        notes: document.getElementById('inputNotes').value.trim(),
+        photos: selectedPhotos,
+        existingPhotoIds: existingPhotoIds,
+        rowIndex: editingRowIndex
+      };
+
+      const handler = google.script.run
+        .withSuccessHandler(function() {
+          showToast(isEdit ? '테니스 일지가 수정되었습니다! ✏️' : '테니스 일지가 저장되었습니다! 🎾');
+          cancelEditMode();
+          btn.disabled = false;
+          loadData();
+          switchTab('list');
+        })
+        .withFailureHandler(function(err) {
+          alert('처리 실패: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = isEdit ? '💾 테니스 일지 수정 완료하기' : '🎾 테니스 일지 저장하기';
+        });
+
+      if (isEdit) {
+        handler.updateTennisLog(data);
+      } else {
+        handler.saveTennisLog(data);
+      }
+    }
+
+    function filterLogs(cat) {
+      curFilter = cat;
+      document.querySelectorAll('.filter-pill').forEach(function(p) {
+        p.classList.toggle('active', p.textContent.includes(cat === 'all' ? '전체' : cat));
+      });
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const container = document.getElementById('logsContainer');
+      const filtered = allLogs.filter(function(l) { return curFilter === 'all' || l.category === curFilter; });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8; font-size:13px;">작성된 테니스 일지가 없습니다.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(function(log) {
+        let skillsHtml = '';
+        if (log.focus_skill) {
+          skillsHtml = log.focus_skill.split(',').map(function(s) { 
+            return '<span class="info-skill">🎯 ' + escapeHtml(s.trim()) + '</span>'; 
+          }).join(' ');
+        }
+
+        let photosHtml = '';
+        let ids = Array.isArray(log.photo_ids) ? log.photo_ids : [];
+        if (ids.length > 0) {
+          const isSingle = ids.length === 1;
+          const itemsHtml = ids.map(function(id, idx) {
+            const cdnUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s800';
+            const fallbackUrl = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w800';
+
+            return '<div class="log-photo-item ' + (isSingle ? 'single' : '') + '" onclick="openLogGallery(' + log.rowIndex + ', ' + idx + ')">' +
+              '<img src="' + cdnUrl + '" onerror="this.onerror=null; this.src=\'' + fallbackUrl + '\';" referrerpolicy="no-referrer" loading="lazy" alt="테니스 사진">' +
+            '</div>';
+          }).join('');
+
+          photosHtml = '<div style="margin-top:8px;">' +
+            (!isSingle ? '<div style="font-size:11px; font-weight:700; color:#64748b; margin-bottom:4px;">📸 사진 ' + ids.length + '장 (터치하여 좌우 넘겨보기)</div>' : '') +
+            '<div class="log-photos-gallery">' + itemsHtml + '</div>' +
+          '</div>';
+        }
+
+        // 💬 COMMENTS HTML (Always expanded with Edit ✏️ & Delete 🗑️)
+        const comments = log.comments || [];
+        const commentCount = comments.length;
+        
+        const commentItemsHtml = comments.length > 0 
+          ? comments.map(function(c) {
+              const safeText = encodeURIComponent(c.text || '');
+              return '<div class="comment-item">' +
+                '<div class="comment-header">' +
+                  '<span class="comment-author">💬 ' + escapeHtml(c.author || '작성자') + '</span>' +
+                  '<div class="comment-meta-right">' +
+                    '<span class="comment-time">' + escapeHtml(c.createdAt || '') + (c.updatedAt ? ' (수정됨)' : '') + '</span>' +
+                    '<button type="button" class="comment-action-btn" onclick="editComment(' + log.rowIndex + ', \'' + c.id + '\', \'' + safeText + '\')" title="수정">✏️</button>' +
+                    '<button type="button" class="comment-action-btn delete" onclick="deleteComment(' + log.rowIndex + ', \'' + c.id + '\')" title="삭제">🗑️</button>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="comment-text">' + escapeHtml(c.text || '') + '</div>' +
+              '</div>';
+            }).join('')
+          : '<div style="text-align:center; color:#94a3b8; font-size:11px; padding:4px;">아직 댓글이 없습니다. 첫 피드백이나 응원을 남겨보세요! ✨</div>';
+
+        const commentsSectionHtml = '<div class="comments-wrapper">' +
+          '<div class="comments-header">' +
+            '<span>💬 피드백 & 댓글 (' + commentCount + ')</span>' +
+          '</div>' +
+          '<div class="comment-list" id="comment-list-' + log.rowIndex + '">' +
+            commentItemsHtml +
+          '</div>' +
+          '<form class="comment-form" onsubmit="submitComment(event, ' + log.rowIndex + ')">' +
+            '<input type="text" id="comment-author-' + log.rowIndex + '" class="comment-input-author" placeholder="작성자" value="' + escapeHtml(savedAuthor) + '" required>' +
+            '<input type="text" id="comment-text-' + log.rowIndex + '" class="comment-input-text" placeholder="응원 및 코칭 피드백 작성..." required>' +
+            '<button type="submit" id="comment-btn-' + log.rowIndex + '" class="comment-submit-btn">등록</button>' +
+          '</form>' +
+        '</div>';
+
+        return '<div class="log-item">' +
+          '<div class="log-item-header">' +
+            '<div style="display:flex; align-items:center; gap:6px;">' +
+              '<span class="cat-tag ' + (log.category === '클럽게임' ? 'game' : (log.category === '랠리/연습' ? 'practice' : '')) + '">' + escapeHtml(log.category) + '</span>' +
+              (log.result === '승' ? '<span class="badge-win">승리 🥇</span>' : (log.result === '패' ? '<span class="badge-loss">패배 🥈</span>' : '')) +
+              '<span class="log-date">' + escapeHtml(log.date) + '</span>' +
+            '</div>' +
+            '<div class="log-actions">' +
+              '<button type="button" class="btn-action edit" onclick="startEditLog(' + log.rowIndex + ')">✏️ 수정</button>' +
+              '<button type="button" class="btn-action del" onclick="deleteLog(' + log.rowIndex + ')">🗑️ 삭제</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="log-title">' + escapeHtml(log.title || (log.category + ' 활동')) + '</div>' +
+
+          '<div class="log-info-row">' +
+            (log.score ? '<span class="info-score">🎾 스코어: ' + escapeHtml(log.score) + '</span>' : '') +
+            (log.location ? '<span style="color:#15803d; font-weight:700;">🏟️ ' + escapeHtml(log.location) + '</span>' : '') +
+            (log.court_type ? '<span>(' + escapeHtml(log.court_type) + ')</span>' : '') +
+            (log.duration_minutes ? '<span>⌛ ' + log.duration_minutes + '분 (RPE ' + (log.intensity || 7) + ')</span>' : '') +
+          '</div>' +
+
+          (skillsHtml ? '<div class="log-info-row">' + skillsHtml + '</div>' : '') +
+          (log.players ? '<div style="font-size:12px; color:#64748b; margin-bottom:4px;">👥 ' + escapeHtml(log.players) + '</div>' : '') +
+          (log.notes ? '<div class="log-notes">' + escapeHtml(log.notes) + '</div>' : '') +
+          photosHtml +
+          commentsSectionHtml +
+        '</div>';
+      }).join('');
+    }
+
+    function submitComment(e, rowIndex) {
+      e.preventDefault();
+      const authorInput = document.getElementById('comment-author-' + rowIndex);
+      const textInput = document.getElementById('comment-text-' + rowIndex);
+      const submitBtn = document.getElementById('comment-btn-' + rowIndex);
+
+      const author = authorInput.value.trim() || '작성자';
+      const text = textInput.value.trim();
+      if (!text) return;
+
+      localStorage.setItem('tennis_author_name', author);
+      savedAuthor = author;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '...';
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '등록';
+          textInput.value = '';
+          showToast('댓글이 등록되었습니다! 💬');
+          
+          const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+          if (log) {
+            log.comments = res.comments;
+            renderLogs();
+          }
+        })
+        .withFailureHandler(function(err) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '등록';
+          alert('댓글 등록 실패: ' + err.message);
+        })
+        .addTennisComment(rowIndex, { author: author, text: text });
+    }
+
+    // ✏️ 댓글 수정
+    function editComment(rowIndex, commentId, safeText) {
+      const currentText = decodeURIComponent(safeText || '');
+      const newText = prompt('댓글/피드백을 수정하세요:', currentText);
+      if (newText === null || newText.trim() === '' || newText.trim() === currentText) return;
+
+      showToast('댓글 수정 중...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          showToast('댓글이 수정되었습니다! ✏️');
+          const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+          if (log) {
+            log.comments = res.comments;
+            renderLogs();
+          }
+        })
+        .withFailureHandler(function(err) {
+          alert('댓글 수정 실패: ' + err.message);
+        })
+        .updateTennisComment(rowIndex, commentId, newText.trim());
+    }
+
+    // 🗑️ 댓글 삭제
+    function deleteComment(rowIndex, commentId) {
+      if (!confirm('이 댓글/피드백을 삭제하시겠습니까?')) return;
+
+      showToast('댓글 삭제 중...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          showToast('댓글이 삭제되었습니다! 🗑️');
+          const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+          if (log) {
+            log.comments = res.comments;
+            renderLogs();
+          }
+        })
+        .withFailureHandler(function(err) {
+          alert('댓글 삭제 실패: ' + err.message);
+        })
+        .deleteTennisComment(rowIndex, commentId);
+    }
+
+    // 🔔 ntfy 알림 테스트
+    function testNtfy() {
+      showToast('스마트폰 알림 발송 중...');
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('ntfy 알림 발송 완료! 스마트폰을 확인해보세요 🔔');
+        })
+        .withFailureHandler(function(err) {
+          alert('알림 발송 실패: ' + err.message);
+        })
+        .testTennisNtfyAlert();
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderAllCharts() {
+      if (typeof Chart === 'undefined') return;
+
+      const ctx1 = document.getElementById('chartActivity');
+      if (ctx1 && monthlyTrendsData.length > 0) {
+        if (chart1) chart1.destroy();
+        const months = monthlyTrendsData.map(function(m) { return m.month; });
+
+        chart1 = new Chart(ctx1, {
+          type: 'bar',
+          data: {
+            labels: months,
+            datasets: [
+              {
+                label: '🎾 레슨',
+                data: monthlyTrendsData.map(function(m) { return (m.data && m.data['레슨']) || 0; }),
+                backgroundColor: '#16a34a',
+                borderRadius: 4
+              },
+              {
+                label: '🏆 클럽게임',
+                data: monthlyTrendsData.map(function(m) { return (m.data && m.data['클럽게임']) || 0; }),
+                backgroundColor: '#2563eb',
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      }
+
+      const ctx2 = document.getElementById('chartWinLoss');
+      if (ctx2 && allLogs.length > 0) {
+        if (chart2) chart2.destroy();
+        const wins = allLogs.filter(function(l) { return l.result === '승' || l.result === '승리'; }).length;
+        const losses = allLogs.filter(function(l) { return l.result === '패' || l.result === '패배'; }).length;
+
+        chart2 = new Chart(ctx2, {
+          type: 'doughnut',
+          data: {
+            labels: ['승리 🥇', '패배 🥈'],
+            datasets: [{
+              data: [wins, losses],
+              backgroundColor: ['#16a34a', '#ef4444'],
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(function() { t.classList.remove('show'); }, 2200);
+    }
+  </script>
+</body>
+</html>

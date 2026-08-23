@@ -1,0 +1,150 @@
+/* Custom styles & Sport color schemes */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    letter-spacing: -0.015em;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Sport Badges & Accents */
+.sport-badge-running {
+    background-color: #ffedd5;
+    color: #c2410c;
+    border-color: #fdba74;
+}
+.sport-badge-hiking {
+    background-color: #dcfce7;
+    color: #15803d;
+    border-color: #86efac;
+}
+.sport-badge-trail_running {
+    background-color: #ccfbf1;
+    color: #0f766e;
+    border-color: #5eead4;
+}
+.sport-badge-freediving {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    border-color: #7dd3fc;
+}
+.sport-badge-walking {
+    background-color: #f3e8ff;
+    color: #7e22ce;
+    border-color: #d8b4fe;
+}
+.sport-badge-other {
+    background-color: #ffe4e6;
+    color: #be123c;
+    border-color: #fecdd3;
+}
+
+/* Sport Tab Active Styles */
+.tab-active-all {
+    background-color: #1e293b;
+    color: #ffffff;
+}
+.tab-active-running {
+    background-color: #ea580c;
+    color: #ffffff;
+}
+.tab-active-hiking {
+    background-color: #16a34a;
+    color: #ffffff;
+}
+.tab-active-trail_running {
+    background-color: #0d9488;
+    color: #ffffff;
+}
+.tab-active-freediving {
+    background-color: #0284c7;
+    color: #ffffff;
+}
+.tab-active-walking {
+    background-color: #9333ea;
+    color: #ffffff;
+}
+.tab-active-other {
+    background-color: #e11d48;
+    color: #ffffff;
+}
+
+/* Sport Select Button Active in Form */
+.sport-btn.active-running {
+    border-color: #ea580c;
+    background-color: #fff7ed;
+    color: #ea580c;
+    box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.2);
+}
+.sport-btn.active-hiking {
+    border-color: #16a34a;
+    background-color: #f0fdf4;
+    color: #16a34a;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+.sport-btn.active-trail_running {
+    border-color: #0d9488;
+    background-color: #f0fdfa;
+    color: #0d9488;
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+.sport-btn.active-freediving {
+    border-color: #0284c7;
+    background-color: #f0f9ff;
+    color: #0284c7;
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+}
+.sport-btn.active-walking {
+    border-color: #9333ea;
+    background-color: #faf5ff;
+    color: #9333ea;
+    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2);
+}
+.sport-btn.active-other {
+    border-color: #e11d48;
+    background-color: #fff1f2;
+    color: #e11d48;
+    box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.2);
+}
+
+/* Intensity Meter Colors */
+.intensity-badge-1, .intensity-badge-2, .intensity-badge-3 {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+.intensity-badge-4, .intensity-badge-5, .intensity-badge-6 {
+    background-color: #fef9c3;
+    color: #a16207;
+}
+.intensity-badge-7, .intensity-badge-8 {
+    background-color: #ffedd5;
+    color: #c2410c;
+}
+.intensity-badge-9, .intensity-badge-10 {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+/* Card hover animation */
+.log-card {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.log-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}

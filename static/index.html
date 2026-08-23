@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나의 운동일지 | Workout Log</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-sky-500 to-emerald-400 flex items-center justify-center text-white shadow-md">
+                        <i data-lucide="activity" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-900 leading-tight">나의 운동일지</h1>
+                        <p class="text-xs text-slate-500 font-medium">런닝 • 등산 • 트레일런닝 • 프리다이빙 • 걷기</p>
+                    </div>
+                </div>
+
+                <!-- Nav Tabs -->
+                <nav class="flex items-center gap-1 sm:gap-2">
+                    <button data-view="dashboard" class="nav-tab px-3 sm:px-4 py-2 border-b-2 border-indigo-600 text-indigo-600 text-sm font-semibold flex items-center gap-1.5 transition">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                        <span>대시보드</span>
+                    </button>
+                    <button data-view="new" class="nav-tab px-3 sm:px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 text-sm font-semibold flex items-center gap-1.5 transition">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>기록 작성</span>
+                    </button>
+                    <button data-view="list" class="nav-tab px-3 sm:px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 text-sm font-semibold flex items-center gap-1.5 transition">
+                        <i data-lucide="list" class="w-4 h-4"></i>
+                        <span>일지 목록</span>
+                    </button>
+                    <button data-view="analytics" class="nav-tab px-3 sm:px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 text-sm font-semibold flex items-center gap-1.5 transition">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                        <span>통계 분석</span>
+                    </button>
+                </nav>
+
+                <!-- Data Backup / Port info -->
+                <div class="hidden md:flex items-center gap-2">
+                    <button onclick="switchMainView('data-manage')" class="text-xs text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-3 py-1.5 rounded-lg font-medium flex items-center gap-1 transition">
+                        <i data-lucide="database" class="w-3.5 h-3.5"></i>
+                        <span>데이터 백업</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <!-- ================= VIEW 1: DASHBOARD ================= -->
+        <section id="view-dashboard" class="view-section space-y-6">
+            
+            <!-- Summary Stats Top Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                <!-- Total Workouts -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-medium">총 운동 횟수</span>
+                        <div class="p-1.5 rounded-lg bg-indigo-50 text-indigo-600">
+                            <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div id="stat-total-workouts" class="text-2xl font-black text-slate-900">0 회</div>
+                </div>
+
+                <!-- Total Hours -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-medium">총 운동 시간</span>
+                        <div class="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+                            <i data-lucide="clock" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div id="stat-total-hours" class="text-2xl font-black text-slate-900">0 시간</div>
+                </div>
+
+                <!-- Running Mileage -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-medium">누적 런닝 거리</span>
+                        <div class="p-1.5 rounded-lg bg-orange-50 text-orange-600">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div id="stat-running-km" class="text-2xl font-black text-orange-600">0 km</div>
+                </div>
+
+                <!-- Elevation Gain -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-medium">누적 등산 고도</span>
+                        <div class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                            <i data-lucide="mountain" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div id="stat-elevation-m" class="text-2xl font-black text-emerald-600">+0 m</div>
+                </div>
+
+                <!-- Freediving PB -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between col-span-2 sm:col-span-1">
+                    <div class="flex items-center justify-between text-slate-500 mb-2">
+                        <span class="text-xs font-medium">프리다이빙 PB</span>
+                        <div class="p-1.5 rounded-lg bg-sky-50 text-sky-600">
+                            <i data-lucide="waves" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <div id="stat-freedive-depth" class="text-2xl font-black text-sky-600">-</div>
+                </div>
+            </div>
+
+            <!-- Quick Action Banner -->
+            <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-2xl p-6 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold mb-1">오늘 운동을 완료하셨나요? 🏃‍♂️🤿⛰️</h2>
+                    <p class="text-indigo-200 text-sm">코스 정보, 페이스, 심박수, 다이빙 수심 기록을 남겨보세요.</p>
+                </div>
+                <button onclick="switchMainView('new'); resetForm();" class="px-5 py-2.5 bg-white text-indigo-950 hover:bg-indigo-50 font-bold rounded-xl shadow transition flex items-center gap-2 whitespace-nowrap">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>지금 운동 기록하기</span>
+                </button>
+            </div>
+
+            <!-- Recent Workouts Grid -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="history" class="w-5 h-5 text-indigo-600"></i>
+                        최근 운동 기록
+                    </h2>
+                    <button onclick="switchMainView('list')" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                        전체 보기 <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div id="recentLogsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Dynamic Log Cards -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 2: NEW / EDIT FORM ================= -->
+        <section id="view-new" class="view-section hidden max-w-3xl mx-auto">
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+                
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 rounded-xl bg-indigo-50 text-indigo-600">
+                            <i data-lucide="edit-3" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 id="formHeaderTitle" class="text-xl font-bold text-slate-900">새 운동 기록하기</h2>
+                            <p class="text-xs text-slate-500">종목을 선택하면 맞춤형 상세 입력창이 열립니다.</p>
+                        </div>
+                    </div>
+                    <button id="cancelEditBtn" type="button" class="hidden text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-semibold transition">
+                        수정 취소
+                    </button>
+                </div>
+
+                <form id="workoutForm" class="space-y-6">
+                    
+                    <!-- 1. Sport Selector Buttons -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">운동 종목 선택</label>
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
+                            <button type="button" data-sport="running" class="sport-btn active-running flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition font-medium text-slate-700 text-sm">
+                                <i data-lucide="zap" class="w-5 h-5 mb-1.5 text-orange-500"></i>
+                                <span>런닝</span>
+                            </button>
+                            <button type="button" data-sport="trail_running" class="sport-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition font-medium text-slate-700 text-sm">
+                                <i data-lucide="trees" class="w-5 h-5 mb-1.5 text-teal-600"></i>
+                                <span>트레일런닝</span>
+                            </button>
+                            <button type="button" data-sport="hiking" class="sport-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition font-medium text-slate-700 text-sm">
+                                <i data-lucide="mountain" class="w-5 h-5 mb-1.5 text-emerald-600"></i>
+                                <span>등산</span>
+                            </button>
+                            <button type="button" data-sport="freediving" class="sport-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition font-medium text-slate-700 text-sm">
+                                <i data-lucide="waves" class="w-5 h-5 mb-1.5 text-sky-500"></i>
+                                <span>프리다이빙</span>
+                            </button>
+                            <button type="button" data-sport="walking" class="sport-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition font-medium text-slate-700 text-sm">
+                                <i data-lucide="footprints" class="w-5 h-5 mb-1.5 text-purple-500"></i>
+                                <span>걷기</span>
+                            </button>
+                            <button type="button" data-sport="other" class="sport-btn flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition font-medium text-slate-700 text-sm">
+                                <i data-lucide="dumbbell" class="w-5 h-5 mb-1.5 text-rose-500"></i>
+                                <span>기타</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Common Basic Info -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">운동 날짜 <span class="text-rose-500">*</span></label>
+                            <input id="inputDate" type="date" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">제목 / 코스 요약</label>
+                            <input id="inputTitle" type="text" placeholder="예: 북한산 일출 산행, 호수공원 5k 런" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- 3. Duration & Intensity -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/70 p-4 rounded-xl border border-slate-100">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">총 소요 시간 (분 단위)</label>
+                            <div class="relative">
+                                <input id="inputDuration" type="number" min="0" placeholder="예: 45" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                                <span class="absolute right-3.5 top-2.5 text-xs text-slate-400">분</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-semibold text-slate-600">운동 강도 (RPE 1~10)</label>
+                                <span id="intensityValue" class="text-xs font-bold text-indigo-600">5 / 10</span>
+                            </div>
+                            <input id="inputIntensity" type="range" min="1" max="10" value="5" class="w-full accent-indigo-600 mt-2">
+                            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                                <span>1(매우 가벼움)</span>
+                                <span>5(보통)</span>
+                                <span>10(최대 한계)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. SPORT SPECIFIC DYNAMIC FIELDS -->
+                    
+                    <!-- (A) Running / Walking Fields -->
+                    <div id="fields-running-walking" class="space-y-4 border border-orange-200 bg-orange-50/30 p-4 rounded-2xl">
+                        <h3 class="text-xs font-bold text-orange-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="zap" class="w-4 h-4 text-orange-600"></i>
+                            런닝 / 걷기 세부 지표
+                        </h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">이동 거리 (km)</label>
+                                <input id="inputDistance" type="number" step="0.01" min="0" placeholder="예: 5.2" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">평균 페이스 (자동 계산)</label>
+                                <input id="inputPace" type="text" placeholder="예: 5'30&quot;" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">케이던스 (spm)</label>
+                                <input id="inputCadence" type="number" min="0" placeholder="예: 178" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">평균 심박수 (bpm)</label>
+                                <input id="inputAvgHr" type="number" min="0" placeholder="예: 154" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">최대 심박수 (bpm)</label>
+                                <input id="inputMaxHr" type="number" min="0" placeholder="예: 175" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- (B) Hiking / Trail Running Fields -->
+                    <div id="fields-hiking-trail" class="hidden space-y-4 border border-emerald-200 bg-emerald-50/30 p-4 rounded-2xl">
+                        <h3 class="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="mountain" class="w-4 h-4 text-emerald-600"></i>
+                            등산 / 트레일 세부 지표
+                        </h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div class="col-span-2 sm:col-span-3">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">산 이름 / 코스 경로</label>
+                                <input id="inputLocation" type="text" placeholder="예: 지리산 성중종주, 북한산 백운대 코스" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">누적 상승고도 (m)</label>
+                                <input id="inputElevation" type="number" min="0" placeholder="예: 750" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">최고 고도 (m)</label>
+                                <input id="inputMaxAltitude" type="number" min="0" placeholder="예: 836" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">휴식 시간 (분)</label>
+                                <input id="inputRestMinutes" type="number" min="0" placeholder="예: 30" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">배낭 무게 (kg)</label>
+                                <input id="inputPackWeight" type="number" step="0.1" min="0" placeholder="예: 4.5" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 text-sm">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">노면/등산로 상태</label>
+                                <input id="inputTrailCondition" type="text" placeholder="예: 암릉 건조, 흙길 진흙 약간, 계단 위주" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- (C) Freediving Fields -->
+                    <div id="fields-freediving" class="hidden space-y-4 border border-sky-200 bg-sky-50/40 p-4 rounded-2xl">
+                        <h3 class="text-xs font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="waves" class="w-4 h-4 text-sky-600"></i>
+                            프리다이빙 세부 지표
+                        </h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div class="col-span-2 sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">다이빙 장소 / 포인트</label>
+                                <input id="inputLocationFd" type="text" placeholder="예: 딥스테이션, K26, 송도 풀장, 제주 범섬" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">종목 (Discipline)</label>
+                                <select id="inputDiscipline" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-500 text-sm bg-white">
+                                    <option value="CWT">CWT (바이핀 수심)</option>
+                                    <option value="CWTB">CWTB (바이핀)</option>
+                                    <option value="FIM">FIM (줄당기기)</option>
+                                    <option value="CNF">CNF (노핀 수심)</option>
+                                    <option value="STA">STA (숨참기)</option>
+                                    <option value="DYN">DYN (잠영)</option>
+                                    <option value="트레이닝">종합 트레이닝</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">최대 수심 (m)</label>
+                                <input id="inputDiveDepth" type="number" step="0.1" min="0" placeholder="예: 28.5" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">숨참기 시간 (STA)</label>
+                                <input id="inputDiveSta" type="text" placeholder="예: 3'45&quot;" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">총 다이브 횟수</label>
+                                <input id="inputDiveCount" type="number" min="0" placeholder="예: 12" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">수온 (°C)</label>
+                                <input id="inputWaterTemp" type="number" step="0.1" placeholder="예: 28.5" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">슈트 및 웨이트</label>
+                                <input id="inputSuitWeight" type="text" placeholder="예: 1.5mm / 1kg" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">버디 (Buddy)</label>
+                                <input id="inputBuddy" type="text" placeholder="예: 홍길동 강사님" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-sky-500 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- (D) Other / Custom Sport Fields -->
+                    <div id="fields-other" class="hidden space-y-4 border border-rose-200 bg-rose-50/40 p-4 rounded-2xl">
+                        <h3 class="text-xs font-bold text-rose-800 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="dumbbell" class="w-4 h-4 text-rose-600"></i>
+                            기타 자유 운동 세부 정보
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">운동 종류 / 이름</label>
+                                <input id="inputCustomSport" type="text" placeholder="예: 테니스, 필라테스, 헬스/웨이트, 사이클, 볼더링" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-rose-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">운동 장소 / 시설</label>
+                                <input id="inputLocationOther" type="text" placeholder="예: 문수테니스장, 헬스장, 클라이밍센터" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-rose-500 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Weather, Condition, Gear -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">날씨</label>
+                            <select id="inputWeather" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 text-sm bg-white">
+                                <option value="맑음">☀️ 맑음</option>
+                                <option value="구름조금">⛅ 구름조금</option>
+                                <option value="흐림">☁️ 흐림</option>
+                                <option value="비">🌧️ 비</option>
+                                <option value="눈">❄️ 눈</option>
+                                <option value="실내">🏢 실내/다이빙풀</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">기온 (°C)</label>
+                            <input id="inputTemperature" type="number" step="0.5" placeholder="예: 22.5" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">착용 장비 (신발/슈트/핀 등)</label>
+                            <input id="inputGear" type="text" placeholder="예: 나이키 베이퍼플라이, 스피드고트 5" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- 6. Condition & Notes -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">몸 상태 / 컨디션 요약</label>
+                        <input id="inputCondition" type="text" placeholder="예: 수면 7시간 충분, 종아리 약간 뻐근함, 이퀄라이징 원활" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">운동 메모 및 피드백</label>
+                        <textarea id="inputNotes" rows="3" placeholder="오늘 운동하면서 느낀 점, 좋았던 점, 다음 훈련 시 보완할 점을 자유롭게 기록하세요." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="pt-4 flex items-center justify-end gap-3">
+                        <button type="button" onclick="resetForm(); switchMainView('list');" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold text-sm transition">
+                            취소
+                        </button>
+                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition flex items-center gap-2">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            <span id="submitBtnText">운동 기록 저장하기</span>
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: LOG LIST & FILTER ================= -->
+        <section id="view-list" class="view-section hidden space-y-6">
+            
+            <!-- Filters & Search Bar -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <!-- Sport Filter Tabs -->
+                <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-100">
+                    <button data-sport="all" class="filter-tab px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition tab-active-all">전체 보기</button>
+                    <button data-sport="running" class="filter-tab px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">🏃 런닝</button>
+                    <button data-sport="trail_running" class="filter-tab px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">🌲 트레일런닝</button>
+                    <button data-sport="hiking" class="filter-tab px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">⛰️ 등산</button>
+                    <button data-sport="freediving" class="filter-tab px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">🤿 프리다이빙</button>
+                    <button data-sport="walking" class="filter-tab px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">🚶 걷기</button>
+                    <button data-sport="other" class="filter-tab px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 transition">🎯 기타</button>
+                </div>
+
+                <!-- Search & Date Range Filters -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-3 items-center">
+                    <div class="sm:col-span-2 relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                        <input id="searchInput" type="text" placeholder="코스명, 메모, 장비, 날씨 등 검색..." class="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input id="filterStartDate" type="date" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500">
+                        <span class="text-slate-400 text-xs">~</span>
+                        <input id="filterEndDate" type="date" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <button id="resetFilterBtn" class="w-full py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-600 transition flex items-center justify-center gap-1">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            필터 초기화
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List Count Badge -->
+            <div class="flex items-center justify-between">
+                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-indigo-600"></i>
+                    운동 일지 타임라인
+                </h2>
+                <span id="logsCountBadge" class="text-xs font-semibold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-100">0개의 기록</span>
+            </div>
+
+            <!-- All Logs Grid -->
+            <div id="allLogsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Log Cards will be rendered here -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 4: ANALYTICS & CHARTS ================= -->
+        <section id="view-analytics" class="view-section hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">통계 & 트렌드 분석</h2>
+                    <p class="text-xs text-slate-500">월별 운동 빈도 및 종목별 성취도 그래프입니다.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 1. Monthly Activity Count -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="bar-chart" class="w-4 h-4 text-indigo-600"></i>
+                        월별 운동 빈도 (종목별)
+                    </h3>
+                    <div class="h-64 relative">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2. Running & Walking Mileage -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-orange-500"></i>
+                        런닝 / 걷기 거리 추이 (km)
+                    </h3>
+                    <div class="h-64 relative">
+                        <canvas id="mileageChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 3. Hiking Elevation Gain -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="mountain" class="w-4 h-4 text-emerald-600"></i>
+                        등산 / 트레일런닝 누적 상승고도 (+m)
+                    </h3>
+                    <div class="h-64 relative">
+                        <canvas id="elevationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 4. Freediving Depth Progress -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="waves" class="w-4 h-4 text-sky-600"></i>
+                        프리다이빙 최대 수심 기록 (m)
+                    </h3>
+                    <div class="h-64 relative">
+                        <canvas id="freedivingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 5: DATA MANAGEMENT ================= -->
+        <section id="view-data-manage" class="view-section hidden max-w-xl mx-auto space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
+                    <div class="p-2.5 rounded-xl bg-slate-100 text-slate-700">
+                        <i data-lucide="database" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">데이터 백업 및 복원</h2>
+                        <p class="text-xs text-slate-500">운동 일지 데이터를 JSON 파일로 내보내거나 가져옵니다.</p>
+                    </div>
+                </div>
+
+                <!-- Export -->
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">데이터 백업 (JSON 내보내기)</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">모든 운동 기록을 내 컴퓨터에 파일로 저장합니다.</p>
+                    </div>
+                    <button id="exportBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        백업 파일 다운로드
+                    </button>
+                </div>
+
+                <!-- Import -->
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800">데이터 복원 (JSON 가져오기)</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">이전에 백업해둔 JSON 파일을 불러와 데이터베이스에 추가합니다.</p>
+                    </div>
+                    <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition">
+                        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                        <span>JSON 파일 선택하기</span>
+                        <input id="importFile" type="file" accept=".json" class="hidden">
+                    </label>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+        <p>My Workout Log • Running, Hiking, Trail Running, Freediving, Walking (Port: 8623)</p>
+    </footer>
+
+    <!-- Toast Notification Box -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg transition duration-300 transform translate-y-10 opacity-0 pointer-events-none">
+        <i id="toastIcon" data-lucide="info" class="w-5 h-5"></i>
+        <span id="toastMessage" class="text-sm font-medium"></span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/api.js"></script>
+    <script src="/js/charts.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
