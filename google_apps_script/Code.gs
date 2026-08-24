@@ -6,8 +6,8 @@
 // 🔔 스마트폰 ntfy 앱에서 설정하신 토픽 이름을 적어주세요!
 var NTFY_TOPIC = "my-workout-log-7788"; 
 
-// 🔑 Gemini API Key를 여기에 직접 적어두셔도 됩니다 (선택 사항)
-var DEFAULT_GEMINI_API_KEY = ""; 
+// 🔑 Google Gemini AI API Key (등록 완료)
+var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6I72Dj0lVu4k9TVb2j-24rQVj5I2VAvPovlf7CntVEXlA"; 
 
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('index');
@@ -516,7 +516,7 @@ function generateGeminiWorkoutSummary(item) {
         success: true,
         summary: generateSmartCoachTemplate(item),
         hasApiKey: false,
-        notice: "Gemini API 키가 등록되지 않아 기본 템플릿이 적용되었습니다. 상단 [⚙️ AI설정]에서 키를 입력하시면 딥러닝 AI 코칭이 작동합니다!"
+        notice: "Gemini API 키가 등록되지 않아 기본 템플릿이 적용되었습니다."
       };
     }
 
@@ -542,14 +542,14 @@ function generateGeminiWorkoutSummary(item) {
     var weather = item.weather || '';
 
     var prompt = "너는 엘리트 마라토너이자 산악 트레일런, 프리다이빙 전문 수석 코치야.\n" +
-      "사용자가 Amazfit T-Rex 3 스포츠워치로 측정한 다음 운동 데이터를 철저하게 분석해서, 감탄과 전문성이 느껴지는 고품질 훈련 분석 및 코칭 요약문을 작성해줘.\n\n" +
-      "【운동 데이터】\n" +
+      "사용자가 Amazfit T-Rex 3 스마트워치로 측정한 다음 운동 데이터를 바탕으로, 운동 일지 '메모/후기'란에 바로 넣을 수 있는 감탄과 전문성이 느껴지는 코칭 분석 요약글을 작성해줘.\n\n" +
+      "【운동 측정 데이터】\n" +
       "- 종목: " + sport + "\n" +
       "- 날짜: " + date + "\n" +
       (dur ? "- 운동시간: " + dur + "분\n" : "") +
-      (dist ? "- 거리: " + dist + "km\n" : "") +
+      (dist ? "- 이동거리: " + dist + "km\n" : "") +
       (pace ? "- 평균페이스: " + pace + "/km\n" : "") +
-      (avgHr ? "- 평균심박수: " + avgHr + " bpm" + (maxHr ? " (최대심박: " + maxHr + " bpm)" : "") + "\n" : "") +
+      (avgHr ? "- 평균심박수: " + avgHr + " bpm" + (maxHr ? " (최고 " + maxHr + " bpm)" : "") + "\n" : "") +
       (cal ? "- 소모칼로리: " + cal + " kcal\n" : "") +
       (cad ? "- 평균케이던스: " + cad + " spm\n" : "") +
       (elevGain ? "- 누적상승: +" + elevGain + "m" + (elevLoss ? ", 누적하강: -" + elevLoss + "m" : "") + (maxAlt ? ", 최고고도: " + maxAlt + "m" : "") + "\n" : "") +
@@ -558,13 +558,14 @@ function generateGeminiWorkoutSummary(item) {
       (loc ? "- 장소: " + loc + "\n" : "") +
       (weather ? "- 날씨: " + weather + "\n" : "") +
       "\n" +
-      "【작성 지침】\n" +
-      "1. 단순 요약이 아닌, 데이터(페이스, 심박존, 케이던스 180spm 효율성, 고도 부하 등)의 의미를 짚어줄 것.\n" +
-      "2. [📊 데이터 심층 분석]과 [💡 코치 처방 & 다음 훈련 가이드] 2개 소제목과 적절한 이모지로 구성할 것.\n" +
-      "3. 3~5문장으로 읽기 좋고 전문성 넘치게 작성할 것.\n" +
-      "4. 열정적이고 긍정적인 한국어 어조(~하셨습니다, ~권장합니다)로 작성할 것.";
+      "【작성 규칙】\n" +
+      "1. 3~4문장 내외로 군더더기 없이 임팩트 있고 전문적으로 작성할 것.\n" +
+      "2. [📊 데이터 심층 분석]과 [💡 코치 처방 & 회복 가이드] 2개 소제목과 이모지로 구성할 것.\n" +
+      "3. 심박 존(유산소 Zone 2~3), 케이던스(180spm 부상 방지 및 주법 효율), 페이스, 상승/하강 고도 등의 수치를 자연스럽게 인용해 칭찬과 실질적 피드백을 제공할 것.\n" +
+      "4. 친절하고 활기찬 한국어 말투(~하셨습니다, ~추천합니다)로 작성할 것.";
 
-    var modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+    // 최신 지원 모델 엔드포인트 목록
+    var modelsToTry = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3-flash-preview", "gemini-2.5-pro"];
     var lastError = "";
 
     for (var i = 0; i < modelsToTry.length; i++) {
@@ -606,7 +607,7 @@ function generateGeminiWorkoutSummary(item) {
     // 모든 모델 실패 시 상세 에러 반환
     return {
       success: false,
-      error: "Gemini API 호출 실패 (" + lastError + ")",
+      error: "Gemini API 호출 실패: " + lastError,
       summary: generateSmartCoachTemplate(item),
       hasApiKey: true
     };
@@ -621,7 +622,7 @@ function generateGeminiWorkoutSummary(item) {
   }
 }
 
-// 💡 스마트 스포츠 코치 템플릿 엔진 (다양한 수치 기반 심층 분석)
+// 💡 스마트 스포츠 코치 템플릿 엔진 (오프라인 비상용)
 function generateSmartCoachTemplate(item) {
   var sport = item.sport || '운동';
   var dist = item.distance_km || 0;
