@@ -982,7 +982,7 @@
         <!-- Lifetime Progress Gauge -->
         <div class="string-progress-wrapper">
           <div class="string-progress-info">
-            <span>텐션 유지력 / 권장 수명 (기준 20시간)</span>
+            <span>동호인 권장 스트링 수명 (약 2~3개월 기준)</span>
             <span id="strHeroPercent">0%</span>
           </div>
           <div class="string-progress-bg">
@@ -1248,8 +1248,14 @@
       document.getElementById('strHeroHours').textContent = stats.totalHours + ' 시간';
       document.getElementById('strHeroSessions').textContent = stats.sessionCount + ' 회';
 
-      // 20 hours poly lifetime threshold
-      const benchmarkHours = active.string_type === '인조쉽' ? 30 : (active.string_type === '천연쉽' ? 40 : 20);
+      // 🎾 여성/일반 테니스 동호인 맞춤 수명 벤치마크 (2~3개월 / 40~50시간 기준)
+      // 인조쉽: 50시간 (약 3~4개월), 폴리: 40시간 (약 2~3개월), 천연쉽/하이브리드: 60시간
+      let benchmarkHours = 40;
+      if (active.string_type === '인조쉽') benchmarkHours = 50;
+      else if (active.string_type === '천연쉽') benchmarkHours = 60;
+      else if (active.string_type === '하이브리드') benchmarkHours = 50;
+      else benchmarkHours = 40; // 폴리/일반
+
       const percent = Math.min(Math.round((stats.totalHours / benchmarkHours) * 100), 100);
       document.getElementById('strHeroPercent').textContent = percent + '% (' + stats.totalHours + 'h / ' + benchmarkHours + 'h)';
 
