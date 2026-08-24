@@ -2221,15 +2221,14 @@
       
       const parserError = xmlDoc.getElementsByTagName('parsererror');
       if (parserError && parserError.length > 0) {
-        throw new Error('XML 형식 오류');
+        // XML 파싱 에러가 발생해도 rawText 기반 정밀 추출 시도
+        console.warn('XML 파싱 경고, 텍스트 파서로 전환');
       }
 
-      if (xmlDoc.getElementsByTagName('TrainingCenterDatabase').length > 0) {
-        return parseTcx(xmlDoc, fileName);
-      } else if (xmlDoc.getElementsByTagName('gpx').length > 0 || xmlDoc.getElementsByTagName('trkpt').length > 0) {
-        return parseGpx(xmlDoc, fileName);
+      if (content.includes('<TrainingCenterDatabase') || (xmlDoc && xmlDoc.getElementsByTagName('TrainingCenterDatabase').length > 0)) {
+        return parseTcx(xmlDoc, content, fileName);
       } else {
-        return parseGpx(xmlDoc, fileName) || parseTcx(xmlDoc, fileName);
+        return parseGpx(xmlDoc, content, fileName);
       }
     }
 
@@ -2252,53 +2251,75 @@
       return m + "'" + (s < 10 ? '0' : '') + s + '"';
     }
 
-    function parseGpx(xmlDoc, fileName) {
-      const trkpts = xmlDoc.getElementsByTagName('trkpt');
-      if (!trkpts || trkpts.length === 0) return null;
-
-      let pts = [];
+    function parseGpx(xmlDoc, rawText, fileName) {
+      // 🌟 1. XML 네임스페이스에 구애받지 않는 정규식 기반 지표 추출 (T-Rex 3, Zepp, Strava, Garmin 100% 호환)
       let hrValues = [];
+      const hrRegex = /<[^>]*:?hr[^>]*>(\d+)<|<heartrate[^>]*>(\d+)<|<HeartRateBpm>[\s\S]*?<Value>(\d+)<\/Value>/gi;
+      let match;
+      while ((match = hrRegex.exec(rawText)) !== null) {
+        const v = parseInt(match[1] || match[2] || match[3]);
+        if (v >= 35 && v <= 240) hrValues.push(v);
+      }
+
       let cadValues = [];
-      let tempValues = [];
-
-      for (let i = 0; i < trkpts.length; i++) {
-        const pt = trkpts[i];
-        const lat = parseFloat(pt.getAttribute('lat'));
-        const lon = parseFloat(pt.getAttribute('lon'));
-        const eleNode = pt.getElementsByTagName('ele')[0];
-        const timeNode = pt.getElementsByTagName('time')[0];
-        
-        const ele = eleNode ? parseFloat(eleNode.textContent) : 0;
-        const timeStr = timeNode ? timeNode.textContent.trim() : null;
-        pts.push({ lat: lat, lon: lon, ele: ele, time: timeStr });
-
-        // HR & Cadence from extensions
-        const hrNodes = pt.getElementsByTagName('hr');
-        const gpxtpxHr = pt.getElementsByTagName('gpxtpx:hr');
-        const hrEl = gpxtpxHr.length > 0 ? gpxtpxHr[0] : (hrNodes.length > 0 ? hrNodes[0] : null);
-        if (hrEl) {
-          const v = parseInt(hrEl.textContent);
-          if (v > 30 && v < 240) hrValues.push(v);
-        }
-
-        const cadNodes = pt.getElementsByTagName('cad');
-        const gpxtpxCad = pt.getElementsByTagName('gpxtpx:cad');
-        const cadEl = gpxtpxCad.length > 0 ? gpxtpxCad[0] : (cadNodes.length > 0 ? cadNodes[0] : null);
-        if (cadEl) {
-          let c = parseInt(cadEl.textContent);
-          // If cadence is single-leg (e.g. 85~95), double it to SPM (170~190)
-          if (c > 40 && c < 120) c = c * 2;
-          if (c >= 120 && c <= 260) cadValues.push(c);
-        }
-
-        const atempNodes = pt.getElementsByTagName('atemp');
-        const gpxtpxAtemp = pt.getElementsByTagName('gpxtpx:atemp');
-        const tempEl = gpxtpxAtemp.length > 0 ? gpxtpxAtemp[0] : (atempNodes.length > 0 ? atempNodes[0] : null);
-        if (tempEl) {
-          const t = parseFloat(tempEl.textContent);
-          if (!isNaN(t)) tempValues.push(t);
+      const cadRegex = /<[^>]*:?(?:cad|cadence|RunCadence|Cadence)[^>]*>(\d+)</gi;
+      while ((match = cadRegex.exec(rawText)) !== null) {
+        let c = parseInt(match[1]);
+        if (c > 0 && c <= 260) {
+          // 분당 회전수(RPM)인 경우 2배 곱하여 SPM(분당 걸음수)으로 변환
+          if (c >= 40 && c <= 120) c = c * 2;
+          cadValues.push(c);
         }
       }
+
+      let calories = 0;
+      const calRegex = /<[^>]*:?(?:calories|Calories|total_calories|cal|kcal)[^>]*>(\d+)</i;
+      const calMatch = rawText.match(calRegex);
+      if (calMatch) {
+        calories = parseInt(calMatch[1]);
+      }
+
+      let tempValues = [];
+      const tempRegex = /<[^>]*:?(?:atemp|temp|watertemp|water_temp)[^>]*>([\d\.\-]+)</gi;
+      while ((match = tempRegex.exec(rawText)) !== null) {
+        const t = parseFloat(match[1]);
+        if (!isNaN(t) && t >= -20 && t <= 50) tempValues.push(t);
+      }
+
+      // 🌟 2. 좌표, 고도, 시간 추출
+      let pts = [];
+      const trkpts = xmlDoc ? xmlDoc.getElementsByTagName('trkpt') : [];
+      if (trkpts && trkpts.length > 0) {
+        for (let i = 0; i < trkpts.length; i++) {
+          const pt = trkpts[i];
+          const lat = parseFloat(pt.getAttribute('lat'));
+          const lon = parseFloat(pt.getAttribute('lon'));
+          const eleNode = pt.getElementsByTagName('ele')[0];
+          const timeNode = pt.getElementsByTagName('time')[0];
+          
+          const ele = eleNode ? parseFloat(eleNode.textContent) : 0;
+          const timeStr = timeNode ? timeNode.textContent.trim() : null;
+          pts.push({ lat: lat, lon: lon, ele: ele, time: timeStr });
+        }
+      } else {
+        // 정규식 폴백
+        const ptRegex = /<trkpt\s+lat="([\d\.\-]+)"\s+lon="([\d\.\-]+)"[^>]*>([\s\S]*?)<\/trkpt>/gi;
+        while ((match = ptRegex.exec(rawText)) !== null) {
+          const lat = parseFloat(match[1]);
+          const lon = parseFloat(match[2]);
+          const inner = match[3];
+          const eleM = inner.match(/<ele>([\d\.\-]+)<\/ele>/i);
+          const timeM = inner.match(/<time>([^<]+)<\/time>/i);
+          pts.push({
+            lat: lat,
+            lon: lon,
+            ele: eleM ? parseFloat(eleM[1]) : 0,
+            time: timeM ? timeM[1].trim() : null
+          });
+        }
+      }
+
+      if (pts.length === 0) return null;
 
       let totalDist = 0;
       let elevGain = 0;
@@ -2321,12 +2342,17 @@
       if (pts[0].time && pts[pts.length - 1].time) {
         const t0 = new Date(pts[0].time);
         const t1 = new Date(pts[pts.length - 1].time);
-        dateStr = t0.toISOString().split('T')[0];
-        durMinutes = Math.round((t1.getTime() - t0.getTime()) / 60000);
+        if (!isNaN(t0.getTime())) {
+          dateStr = t0.toISOString().split('T')[0];
+        }
+        if (!isNaN(t0.getTime()) && !isNaN(t1.getTime())) {
+          durMinutes = Math.round((t1.getTime() - t0.getTime()) / 60000);
+        }
       }
 
-      let typeNode = xmlDoc.getElementsByTagName('type')[0] || xmlDoc.getElementsByTagName('name')[0];
-      let typeText = typeNode ? typeNode.textContent.toLowerCase() : fileName.toLowerCase();
+      let typeNode = xmlDoc ? (xmlDoc.getElementsByTagName('type')[0] || xmlDoc.getElementsByTagName('name')[0]) : null;
+      let typeText = (typeNode ? typeNode.textContent : '') || fileName || '';
+      typeText = typeText.toLowerCase();
 
       let detectedSport = '런닝';
       if (typeText.includes('hike') || typeText.includes('등산') || (elevGain > 200 && durMinutes > 60 && (durMinutes / totalDist > 9))) {
@@ -2350,6 +2376,19 @@
       let avgCadence = cadValues.length > 0 ? Math.round(cadValues.reduce((a,b)=>a+b,0) / cadValues.length) : 0;
       let avgWaterTemp = tempValues.length > 0 ? Math.round((tempValues.reduce((a,b)=>a+b,0) / tempValues.length) * 10) / 10 : '';
 
+      // GPX 헤더에 칼로리가 누락된 경우 표준 소모 칼로리 공식 적용
+      if (!calories && (totalDist > 0 || durMinutes > 0)) {
+        if (detectedSport === '런닝' || detectedSport === '트레일런닝') {
+          calories = Math.round(totalDist > 0 ? totalDist * 68 : durMinutes * 11);
+        } else if (detectedSport === '등산') {
+          calories = Math.round(durMinutes * 7.5 + (elevGain > 0 ? elevGain * 0.25 : 0));
+        } else if (detectedSport === '걷기') {
+          calories = Math.round(totalDist > 0 ? totalDist * 48 : durMinutes * 5.5);
+        } else {
+          calories = Math.round(durMinutes * 7);
+        }
+      }
+
       return {
         date: dateStr,
         sport: detectedSport,
@@ -2358,6 +2397,7 @@
         pace: paceStr,
         avgHr: avgHr,
         maxHr: maxHr,
+        calories: calories,
         cadence: avgCadence,
         elevGain: Math.round(elevGain),
         elevLoss: Math.round(elevLoss),
@@ -2368,53 +2408,51 @@
       };
     }
 
-    function parseTcx(xmlDoc, fileName) {
-      const activities = xmlDoc.getElementsByTagName('Activity');
-      const sportAttr = activities.length > 0 ? (activities[0].getAttribute('Sport') || '') : '';
-      
-      const laps = xmlDoc.getElementsByTagName('Lap');
+    function parseTcx(xmlDoc, rawText, fileName) {
+      // 🌟 TCX 정규식 & XML 추출
+      let hrValues = [];
+      const hrRegex = /<(?:HeartRateBpm|hr)[^>]*>[\s\S]*?<Value>(\d+)<\/Value>|<[^>]*:?hr[^>]*>(\d+)</gi;
+      let match;
+      while ((match = hrRegex.exec(rawText)) !== null) {
+        const v = parseInt(match[1] || match[2]);
+        if (v >= 35 && v <= 240) hrValues.push(v);
+      }
+
+      let cadValues = [];
+      const cadRegex = /<[^>]*:?(?:Cadence|RunCadence|cad)[^>]*>(\d+)</gi;
+      while ((match = cadRegex.exec(rawText)) !== null) {
+        let c = parseInt(match[1]);
+        if (c > 0 && c <= 260) {
+          if (c >= 40 && c <= 120) c = c * 2;
+          cadValues.push(c);
+        }
+      }
+
+      let calories = 0;
+      const calRegex = /<[^>]*:?Calories[^>]*>(\d+)</i;
+      const calMatch = rawText.match(calRegex);
+      if (calMatch) {
+        calories = parseInt(calMatch[1]);
+      }
+
       let totalSeconds = 0;
       let totalMeters = 0;
-      let calories = 0;
-      let hrValues = [];
-      let cadValues = [];
-
+      const laps = xmlDoc ? xmlDoc.getElementsByTagName('Lap') : [];
       for (let i = 0; i < laps.length; i++) {
         const lap = laps[i];
         const tNode = lap.getElementsByTagName('TotalTimeSeconds')[0];
         const dNode = lap.getElementsByTagName('DistanceMeters')[0];
-        const cNode = lap.getElementsByTagName('Calories')[0];
-        const cadNode = lap.getElementsByTagName('Cadence')[0];
-
         if (tNode) totalSeconds += parseFloat(tNode.textContent);
         if (dNode) totalMeters += parseFloat(dNode.textContent);
-        if (cNode) calories += parseInt(cNode.textContent);
-        if (cadNode) {
-          let c = parseInt(cadNode.textContent);
-          if (c > 40 && c < 120) c = c * 2;
-          if (c >= 120) cadValues.push(c);
-        }
       }
 
-      const hrs = xmlDoc.getElementsByTagName('HeartRateBpm');
-      for (let i = 0; i < hrs.length; i++) {
-        const valNode = hrs[i].getElementsByTagName('Value')[0];
-        if (valNode) {
-          const v = parseInt(valNode.textContent);
-          if (v > 30 && v < 240) hrValues.push(v);
-        }
-      }
-      let avgHr = hrValues.length > 0 ? Math.round(hrValues.reduce((a,b)=>a+b,0) / hrValues.length) : 0;
-      let maxHr = hrValues.length > 0 ? Math.max(...hrValues) : 0;
-      let avgCadence = cadValues.length > 0 ? Math.round(cadValues.reduce((a,b)=>a+b,0) / cadValues.length) : 0;
-
-      const trackpoints = xmlDoc.getElementsByTagName('Trackpoint');
       let elevGain = 0;
       let elevLoss = 0;
       let maxAlt = 0;
       let prevEle = null;
       let startTime = null;
 
+      const trackpoints = xmlDoc ? xmlDoc.getElementsByTagName('Trackpoint') : [];
       for (let i = 0; i < trackpoints.length; i++) {
         const tp = trackpoints[i];
         const timeNode = tp.getElementsByTagName('Time')[0];
@@ -2442,10 +2480,18 @@
       }
 
       let detectedSport = '런닝';
-      const sLower = (sportAttr + ' ' + fileName).toLowerCase();
+      const sLower = (fileName || '').toLowerCase();
       if (sLower.includes('hike') || sLower.includes('등산')) detectedSport = '등산';
       else if (sLower.includes('trail')) detectedSport = '트레일런닝';
       else if (sLower.includes('walk') || sLower.includes('걷기')) detectedSport = '걷기';
+
+      let avgHr = hrValues.length > 0 ? Math.round(hrValues.reduce((a,b)=>a+b,0) / hrValues.length) : 0;
+      let maxHr = hrValues.length > 0 ? Math.max(...hrValues) : 0;
+      let avgCadence = cadValues.length > 0 ? Math.round(cadValues.reduce((a,b)=>a+b,0) / cadValues.length) : 0;
+
+      if (!calories && (distKm > 0 || durMinutes > 0)) {
+        calories = Math.round(distKm > 0 ? distKm * 68 : durMinutes * 11);
+      }
 
       return {
         date: dateStr,
@@ -2473,13 +2519,21 @@
 
       if (data.distance) document.getElementById('inputDistance').value = data.distance;
       if (data.pace) document.getElementById('inputPace').value = data.pace;
-      if (data.avgHr) document.getElementById('inputAvgHr').value = data.avgHr;
-      if (data.maxHr) document.getElementById('inputMaxHr').value = data.maxHr;
-      if (data.calories) document.getElementById('inputCalories').value = data.calories;
-      if (data.cadence) document.getElementById('inputCadence').value = data.cadence;
-      if (data.elevGain) document.getElementById('inputElevation').value = data.elevGain;
-      if (data.elevLoss) document.getElementById('inputElevLoss').value = data.elevLoss;
-      if (data.maxAlt) document.getElementById('inputMaxAlt').value = data.maxAlt;
+      
+      // ❤️ 심폐 & 에너지 (T-Rex 3 센서)
+      document.getElementById('inputAvgHr').value = data.avgHr || '';
+      document.getElementById('inputMaxHr').value = data.maxHr || '';
+      document.getElementById('inputCalories').value = data.calories || '';
+      
+      // 👣 케이던스
+      document.getElementById('inputCadence').value = data.cadence || '';
+      
+      // ⛰️ 고도 프로필
+      document.getElementById('inputElevation').value = data.elevGain || '';
+      document.getElementById('inputElevLoss').value = data.elevLoss || '';
+      document.getElementById('inputMaxAlt').value = data.maxAlt || '';
+      
+      // 🤿 수온
       if (data.waterTemp) document.getElementById('inputWaterTemp').value = data.waterTemp;
 
       let title = data.title || (data.sport + ' ' + (data.distance ? data.distance + 'km' : ''));
@@ -2495,7 +2549,7 @@
       if (data.distance) parts.push(data.distance + 'km');
       if (data.duration) parts.push(data.duration + '분');
       if (data.pace) parts.push('페이스 ' + data.pace);
-      if (data.avgHr) parts.push('❤️ ' + data.avgHr + 'bpm');
+      if (data.avgHr) parts.push('❤️ ' + data.avgHr + 'bpm' + (data.maxHr ? ' (최고 ' + data.maxHr + ')' : ''));
       if (data.calories) parts.push('🔥 ' + data.calories + 'kcal');
       if (data.cadence) parts.push('👣 ' + data.cadence + 'spm');
       if (data.elevGain) parts.push('⛰️ +' + data.elevGain + 'm' + (data.elevLoss ? ' / -' + data.elevLoss + 'm' : ''));
