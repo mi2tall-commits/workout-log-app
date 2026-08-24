@@ -616,7 +616,7 @@ function analyzeTennisStringAI(item) {
       "3. [🎾 스트링 건강도 & 잔여 수명 점수 (0~100%)], [📊 누적 타구 & 텐션 로스 분석], [⚠️ 타구감 & 엘보 부상 위험 진단], [💡 맞춤 교체 권장 시점 & 세팅 팁] 4개 섹션으로 구성할 것.\n" +
       "4. 구체적인 교체 권장일/플레이 잔여 시간을 명시하고, 신뢰감 있고 친절하며 따뜻한 전문 코치 어조로 작성할 것.";
 
-    var modelsToTry = ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest", "gemini-3-flash-preview"];
+    var modelsToTry = ["gemini-3-flash-preview", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest"];
     var lastError = "";
 
     for (var i = 0; i < modelsToTry.length; i++) {
@@ -625,7 +625,7 @@ function analyzeTennisStringAI(item) {
       
       var payload = {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1800 }
+        generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
       };
 
       var options = {
@@ -698,28 +698,34 @@ function generateGeminiTennisSummary(item) {
       "\n" +
       "규칙: 3문장 내외로 [🎾 오늘의 핵심 코칭 포인트]와 [💡 다음 세션 추천 팁] 2개 소제목으로 활기차게 작성할 것.";
 
-    var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=" + apiKey;
-    var payload = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 1000 }
-    };
-    var options = {
-      method: "post",
-      contentType: "application/json",
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    };
-    var response = UrlFetchApp.fetch(url, options);
-    if (response.getResponseCode() === 200) {
-      var json = JSON.parse(response.getContentText());
-      if (json.candidates && json.candidates.length > 0 && json.candidates[0].content && json.candidates[0].content.parts.length > 0) {
-        var parts = json.candidates[0].content.parts;
-        var txt = "";
-        for (var p = 0; p < parts.length; p++) {
-          if (!parts[p].thought && parts[p].text) txt += parts[p].text;
+    var modelsToTry = ["gemini-3-flash-preview", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest"];
+    for (var i = 0; i < modelsToTry.length; i++) {
+      var modelName = modelsToTry[i];
+      var url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
+      var payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+      };
+      var options = {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
+      var response = UrlFetchApp.fetch(url, options);
+      if (response.getResponseCode() === 200) {
+        var json = JSON.parse(response.getContentText());
+        if (json.candidates && json.candidates.length > 0 && json.candidates[0].content && json.candidates[0].content.parts.length > 0) {
+          var parts = json.candidates[0].content.parts;
+          var txt = "";
+          for (var p = 0; p < parts.length; p++) {
+            if (!parts[p].thought && parts[p].text) txt += parts[p].text;
+          }
+          if (!txt.trim()) txt = parts[parts.length - 1].text || "";
+          if (txt.trim()) {
+            return { success: true, summary: txt.trim(), isAi: true };
+          }
         }
-        if (!txt.trim()) txt = parts[parts.length - 1].text || "";
-        return { success: true, summary: txt.trim(), isAi: true };
       }
     }
 
