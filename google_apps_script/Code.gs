@@ -564,8 +564,8 @@ function generateGeminiWorkoutSummary(item) {
       "3. 심박 존(유산소 Zone 2~3), 케이던스(180spm 부상 방지 및 주법 효율), 페이스, 상승/하강 고도 등의 수치를 자연스럽게 인용해 칭찬과 실질적 피드백을 제공할 것.\n" +
       "4. 친절하고 활기찬 한국어 말투(~하셨습니다, ~추천합니다)로 작성할 것.";
 
-    // 최신 지원 모델 엔드포인트 목록
-    var modelsToTry = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3-flash-preview", "gemini-2.5-pro"];
+    // 최신 지원 모델 엔드포인트 목록 (gemini-3.6-flash 최우선)
+    var modelsToTry = ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest", "gemini-3-flash-preview"];
     var lastError = "";
 
     for (var i = 0; i < modelsToTry.length; i++) {
@@ -574,7 +574,7 @@ function generateGeminiWorkoutSummary(item) {
       
       var payload = {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1500 }
       };
 
       var options = {
@@ -591,12 +591,25 @@ function generateGeminiWorkoutSummary(item) {
       if (resCode === 200) {
         var json = JSON.parse(resText);
         if (json.candidates && json.candidates.length > 0 && json.candidates[0].content && json.candidates[0].content.parts.length > 0) {
-          return {
-            success: true,
-            summary: json.candidates[0].content.parts[0].text.trim(),
-            hasApiKey: true,
-            isAi: true
-          };
+          var parts = json.candidates[0].content.parts;
+          var fullText = "";
+          for (var p = 0; p < parts.length; p++) {
+            if (!parts[p].thought && parts[p].text) {
+              fullText += parts[p].text;
+            }
+          }
+          if (!fullText.trim()) {
+            fullText = parts[parts.length - 1].text || "";
+          }
+
+          if (fullText.trim()) {
+            return {
+              success: true,
+              summary: fullText.trim(),
+              hasApiKey: true,
+              isAi: true
+            };
+          }
         }
       } else {
         lastError = "Model " + modelName + " Error (" + resCode + "): " + resText;
