@@ -751,7 +751,7 @@
       </div>
       <div class="header-actions">
         <button class="btn-header" onclick="openApiKeyModal()">⚙️ AI설정</button>
-        <button class="btn-header" onclick="testNtfy()">🔔 알림테스트</button>
+        <button class="btn-header" onclick="testTelegram()">🔔 텔레그램테스트</button>
         <button class="btn-header" onclick="loadData()">🔄 새로고침</button>
       </div>
     </div>
@@ -1697,13 +1697,16 @@
         .deleteTennisLog(rowIndex);
     }
 
-    function testNtfy() {
-      showToast('알림 발송 중...');
+    function testTelegram() {
+      showToast('텔레그램 알림 발송 중...');
       google.script.run
         .withSuccessHandler(function() {
-          showToast('ntfy 알림 발송 완료! 스마트폰을 확인하세요 🔔');
+          showToast('텔레그램 알림 발송 완료! 스마트폰을 확인하세요 🔔');
         })
-        .testTennisNtfyAlert();
+        .withFailureHandler(function(err) {
+          alert('텔레그램 알림 발송 실패: ' + err.message);
+        })
+        .testTennisTelegramAlert();
     }
 
     function renderAllCharts() {

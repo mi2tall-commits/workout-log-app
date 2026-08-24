@@ -1,10 +1,11 @@
 /**
  * Google Apps Script - 나의 테니스 일지 백엔드 (Code.gs)
- * 다중 사진 업로드 + 댓글 + ntfy 푸시 알림 + 스트링 교체 관리 + Gemini 3.6 Flash AI 스트링 교체 수명 진단
+ * 다중 사진 업로드 + 댓글 + 텔레그램(Telegram) 봇 푸시 알림 + 스트링 교체 관리 + Gemini 3.6 Flash AI 스트링 교체 수명 진단
  */
 
-// 🔔 스마트폰 ntfy 앱에서 설정하신 토픽 이름을 적어주세요!
-var NTFY_TOPIC = "my-tennis-log-7788"; 
+// 🔔 텔레그램 봇 알림 설정 (마라톤 트레이닝과 동일 설정)
+var TELEGRAM_BOT_TOKEN = "8954888605:AAEkNvwrNAVUSbTnKeE7mw2hmfeHx19xkVY";
+var TELEGRAM_CHAT_ID = "8667003350";
 
 // 🔑 Google Gemini AI API Key (등록 완료)
 var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6I72Dj0lVu4k9TVb2j-24rQVj5I2VAvPovlf7CntVEXlA"; 
@@ -258,7 +259,7 @@ function saveTennisLog(item) {
       focusSkill, notes, photoIdsStr, "[]"
     ]);
 
-    sendNtfyTennisNotification(item);
+    sendTennisLogTelegramNotification(item);
     return { success: true };
   } catch (e) {
     Logger.log("saveTennisLog error: " + e.message);
@@ -364,7 +365,7 @@ function addTennisComment(rowIndex, commentData) {
     var rowData = sheet.getRange(rowIndex, 1, 1, 3).getValues()[0];
     var logDate = normalizeDateString(rowData[0]);
     var logTitle = rowData[2] || rowData[1] || '테니스 일지';
-    sendNtfyTennisCommentNotification(logDate, logTitle, newComment);
+    sendTennisCommentTelegramNotification(logDate, logTitle, newComment);
 
     return { success: true, comments: comments };
   } catch(e) {
@@ -558,7 +559,7 @@ function saveStringRecord(item) {
     ]);
 
     try {
-      sendNtfyMessage(NTFY_TOPIC, "🎾 [스트링 교체 등록]", (item.date || '') + " " + (item.racket || '') + "에 " + (item.string_name || '') + " (" + (item.tension || '') + " lbs) 새 스트링 장착!", ["tennis", "wrench"]);
+      sendTennisStringTelegramNotification(item);
     } catch(err) {}
 
     return { success: true };
@@ -749,47 +750,71 @@ function generateGeminiTennisSummary(item) {
 }
 
 // -------------------------------------------------------------
-// [7. 기타 유틸리티 & ntfy 알림]
+// [7. 기타 유틸리티 & 텔레그램 알림]
 // -------------------------------------------------------------
-function sendNtfyMessage(topic, title, message, tags) {
-  if (!topic) return;
+function sendTelegramMessage(text) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
   try {
+    var url = "https://api.telegram.org/bot" + TELEGRAM_BOT_TOKEN + "/sendMessage";
     var payload = {
-      topic: topic,
-      title: title,
-      message: message,
-      tags: tags || ["tennis"]
+      chat_id: TELEGRAM_CHAT_ID,
+      text: text,
+      parse_mode: "HTML"
     };
     var options = {
       method: "post",
-      contentType: "application/json; charset=utf-8",
+      contentType: "application/json",
       payload: JSON.stringify(payload),
       muteHttpExceptions: true
     };
-    UrlFetchApp.fetch("https://ntfy.sh", options);
+    UrlFetchApp.fetch(url, options);
   } catch(e) {
-    Logger.log("ntfy 푸시 전송 실패: " + e.message);
+    Logger.log("Telegram 알림 발송 실패: " + e.message);
   }
 }
 
-function sendNtfyTennisNotification(item) {
-  var details = [];
-  details.push("⏱️ " + item.duration_minutes + "분 (RPE " + item.intensity + ")");
-  if (item.location) details.push("🏟️ " + item.location);
-  if (item.court_type) details.push("(" + item.court_type + ")");
-  if (item.category === '클럽게임' && item.score) details.push("🎾 " + (item.result || '') + " (" + item.score + ")");
-  if (item.focus_skill) details.push("🎯 " + item.focus_skill);
-  if (item.notes) details.push("\n💬 " + item.notes);
-
-  var message = details.join(" | ");
-  var title = "🎾 [테니스 " + item.category + "] " + (item.title || '테니스 활동');
-  sendNtfyMessage(NTFY_TOPIC, title, message, ["tennis", "trophy"]);
+function sendTennisLogTelegramNotification(item) {
+  var title = "🎾 <b>[테니스 " + (item.category || '활동') + "]</b> " + (item.title || '테니스 일지');
+  var lines = [title];
+  lines.push("📅 <b>일자:</b> " + (item.date || ''));
+  lines.push("⏱️ <b>시간/강도:</b> " + (item.duration_minutes || 0) + "분 (RPE " + (item.intensity || 5) + "/10)");
+  if (item.location || item.court_type) {
+    lines.push("🏟️ <b>구장:</b> " + (item.location || '') + " (" + (item.court_type || '인조잔디') + ")");
+  }
+  if (item.category === '클럽게임') {
+    if (item.result) lines.push("🏆 <b>경기결과:</b> " + item.result + (item.score ? " (" + item.score + ")" : ""));
+    if (item.players) lines.push("👥 <b>상대/파트너:</b> " + item.players);
+  } else if (item.focus_skill) {
+    lines.push("🎯 <b>집중기술:</b> " + item.focus_skill);
+  }
+  if (item.notes) {
+    lines.push("\n📝 <b>훈련/타구 메모:</b>\n" + item.notes);
+  }
+  sendTelegramMessage(lines.join("\n"));
 }
 
-function sendNtfyTennisCommentNotification(logDate, logTitle, comment) {
-  var title = "💬 [테니스 일지 새 피드백 - " + comment.author + "님]";
-  var message = "📌 " + logDate + " " + logTitle + "\n\n\"" + comment.text + "\"";
-  sendNtfyMessage(NTFY_TOPIC, title, message, ["speech_balloon"]);
+function sendTennisCommentTelegramNotification(logDate, logTitle, comment) {
+  var lines = [
+    "💬 <b>[테니스 일지 새 댓글]</b>",
+    "📌 <b>대상 일지:</b> " + logDate + " " + logTitle,
+    "👤 <b>작성자:</b> " + comment.author,
+    "💬 <b>내용:</b>\n" + comment.text
+  ];
+  sendTelegramMessage(lines.join("\n"));
+}
+
+function sendTennisStringTelegramNotification(item) {
+  var lines = [
+    "🎾 <b>[새 스트링 교체 등록]</b>",
+    "📅 <b>교체일자:</b> " + (item.date || ''),
+    "🏸 <b>라켓:</b> " + (item.racket || ''),
+    "🧵 <b>스트링:</b> " + (item.string_name || '') + " (" + (item.string_type || '폴리') + ")",
+    "⚡ <b>텐션:</b> " + (item.tension || '') + " lbs",
+    (item.cost ? "💰 <b>비용:</b> " + Number(item.cost).toLocaleString() + "원" : ""),
+    (item.shop_name ? "🏪 <b>매장:</b> " + item.shop_name : ""),
+    (item.notes ? "💬 <b>메모:</b> " + item.notes : "")
+  ].filter(Boolean);
+  sendTelegramMessage(lines.join("\n"));
 }
 
 function getEmptyOverview() {
@@ -805,9 +830,9 @@ function getEmptyOverview() {
   };
 }
 
-function testTennisNtfyAlert() {
-  var title = "🎾 [테니스일지 알림 테스트] 성공!";
-  var message = "스마트폰으로 테니스 일지 알림이 정상적으로 수신됩니다! 🏆";
-  sendNtfyMessage(NTFY_TOPIC, title, message, ["tennis", "tada"]);
-  Logger.log("테니스일지 테스트 알림 발송 완료!");
+function testTennisTelegramAlert() {
+  var text = "🎾 <b>[테니스 일지 텔레그램 알림 테스트]</b>\n텔레그램 봇 알림이 정상적으로 연동되었습니다! 🏆🔥";
+  sendTelegramMessage(text);
+  Logger.log("테니스일지 텔레그램 테스트 알림 발송 완료!");
+  return { success: true };
 }
