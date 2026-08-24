@@ -876,22 +876,23 @@
           <div>
             <label class="form-label">코트 종류</label>
             <select id="inputCourtType" class="form-select">
-              <option value="하드코트">하드코트 🟦</option>
               <option value="인조잔디">인조잔디(카펫) 🟩</option>
-              <option value="클레이코트">클레이코트 🟧</option>
+              <option value="하드코트">하드코트 🟦</option>
               <option value="실내코트">실내코트 🏠</option>
+              <option value="클레이코트">클레이코트 🟧</option>
             </select>
           </div>
           <div>
             <label class="form-label">테니스 구장</label>
             <select id="selectLocation" class="form-select" onchange="handleLocationSelectChange(this.value)">
-              <option value="문수">문수 🏟️</option>
               <option value="중구">중구 🏟️</option>
-              <option value="두왕">두왕 🏟️</option>
+              <option value="남산">남산 🏟️</option>
+              <option value="문수">문수 🏟️</option>
               <option value="야음">야음 🏟️</option>
+              <option value="두왕">두왕 🏟️</option>
               <option value="동서">동서 🏟️</option>
               <option value="공단">공단 🏟️</option>
-              <option value="custom">✍️ 직접 입력 (타지역 구장)</option>
+              <option value="custom">✍️ 기타 (수기입력)</option>
             </select>
             <input id="inputLocationCustom" type="text" placeholder="구장명 직접 입력 (예: 울산대, 양산 등)" class="form-input hidden" style="margin-top:6px;">
           </div>
@@ -1535,7 +1536,8 @@
         .withSuccessHandler(function() {
           showToast('테니스 일지가 저장되었습니다! 🎾');
           document.getElementById('tennisForm').reset();
-          document.getElementById('selectLocation').value = '문수';
+          document.getElementById('selectLocation').value = '중구';
+          document.getElementById('inputCourtType').value = '인조잔디';
           document.getElementById('inputLocationCustom').classList.add('hidden');
           document.getElementById('inputLocationCustom').value = '';
           selectedPhotos = [];
