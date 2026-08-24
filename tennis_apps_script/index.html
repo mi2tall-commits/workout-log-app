@@ -445,6 +445,38 @@
       white-space: pre-wrap;
     }
 
+    .log-photos-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .log-photo-item {
+      aspect-ratio: 1 / 1;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+      cursor: pointer;
+      background: #0f172a;
+    }
+    .log-photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.2s;
+    }
+    .log-photo-item:hover img {
+      transform: scale(1.05);
+    }
+    .photo-modal-img {
+      max-width: 100%;
+      max-height: 80vh;
+      border-radius: 12px;
+      display: block;
+      margin: 0 auto;
+    }
+
     /* Comments Section */
     .comments-wrapper {
       margin-top: 12px;
@@ -849,20 +881,18 @@
         <!-- GAME SPECIFIC: RESULT & SCORE & PLAYERS -->
         <div id="box-game" class="dynamic-box blue hidden">
           <label class="form-label">경기 결과</label>
-          <div class="grid-3" style="margin-bottom:8px;">
+          <div class="grid-3" style="margin-bottom:10px;">
             <button type="button" id="btnResWin" class="result-btn active-win" onclick="setGameResult('승')">승리 🥇</button>
             <button type="button" id="btnResLoss" class="result-btn" onclick="setGameResult('패')">패배 🥈</button>
             <button type="button" id="btnResDraw" class="result-btn" onclick="setGameResult('무')">무승부 🤝</button>
           </div>
-          <div class="grid-2">
-            <div>
-              <label class="form-label">세부 스코어</label>
-              <input id="inputScore" type="text" placeholder="예: 6-4, 7-5" class="form-input">
-            </div>
-            <div>
-              <label class="form-label">함께한 사람 (파트너/상대)</label>
-              <input id="inputPlayers" type="text" placeholder="예: 김코치, 이회원" class="form-input">
-            </div>
+          <div class="form-group" style="margin-top:0; margin-bottom:10px;">
+            <label class="form-label">세부 스코어 (세트 결과)</label>
+            <input id="inputScore" type="text" placeholder="예: 6-4, 7-5" class="form-input">
+          </div>
+          <div class="form-group" style="margin-top:0; margin-bottom:2px;">
+            <label class="form-label">👥 함께한 동반자 (파트너 / 상대 선수)</label>
+            <input id="inputPlayers" type="text" placeholder="예: 파트너: 김회원 / 상대: 이회원, 박회원" class="form-input">
           </div>
         </div>
 
@@ -1134,6 +1164,16 @@
           <button type="submit" id="btnSaveApiKey" class="submit-btn" style="flex:2; margin-top:0;">저장하기</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 🔍 PHOTO ZOOM MODAL -->
+  <div id="photoZoomModal" class="modal-overlay hidden" onclick="closePhotoZoom()">
+    <div class="modal-content" style="max-width: 600px; padding: 12px; background: #0f172a; text-align: center;" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+        <button type="button" class="modal-close-btn" style="color: #ffffff;" onclick="closePhotoZoom()">✕</button>
+      </div>
+      <img id="photoZoomImg" src="" alt="확대 사진" class="photo-modal-img">
     </div>
   </div>
 
@@ -1499,15 +1539,65 @@
     function handlePhotosSelect(e) {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
-      files.slice(0, 5).forEach(function(file) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          selectedPhotos.push(evt.target.result);
-          renderPhotosPreview();
-        };
-        reader.readAsDataURL(file);
+      showToast('사진 압축 최적화 중...');
+      let processed = 0;
+      const targetFiles = files.slice(0, 5 - selectedPhotos.length);
+      if (targetFiles.length === 0) {
+        alert('사진은 최대 5장까지 첨부할 수 있습니다.');
+        return;
+      }
+      targetFiles.forEach(function(file) {
+        compressImage(file, function(compressedBase64) {
+          selectedPhotos.push(compressedBase64);
+          processed++;
+          if (processed === targetFiles.length) {
+            renderPhotosPreview();
+            showToast('사진 ' + selectedPhotos.length + '장 추가 완료! 📸');
+          }
+        });
       });
       e.target.value = '';
+    }
+
+    function compressImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1200;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.8);
+          callback(compressed);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function openPhotoZoom(id) {
+      const modal = document.getElementById('photoZoomModal');
+      const img = document.getElementById('photoZoomImg');
+      img.src = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1200';
+      modal.classList.remove('hidden');
+    }
+
+    function closePhotoZoom() {
+      document.getElementById('photoZoomModal').classList.add('hidden');
     }
 
     function renderPhotosPreview() {
@@ -1545,7 +1635,7 @@
         intensity: parseInt(document.getElementById('inputIntensity').value) || 6,
         result: curCategory === '클럽게임' ? curGameResult : '',
         score: curCategory === '클럽게임' ? document.getElementById('inputScore').value.trim() : '',
-        players: curCategory === '클럽게임' ? document.getElementById('inputPlayers').value.trim() : '',
+        players: document.getElementById('inputPlayers') ? document.getElementById('inputPlayers').value.trim() : '',
         court_type: document.getElementById('inputCourtType').value,
         location: getSelectedLocationValue(),
         focus_skill: curCategory === '클럽게임' ? '' : document.getElementById('inputFocusSkill').value.trim(),
@@ -1560,6 +1650,8 @@
           document.getElementById('tennisForm').reset();
           document.getElementById('inputNotes').value = '';
           document.getElementById('inputAiSummary').value = '';
+          if (document.getElementById('inputPlayers')) document.getElementById('inputPlayers').value = '';
+          if (document.getElementById('inputScore')) document.getElementById('inputScore').value = '';
           document.getElementById('selectLocation').value = '중구';
           document.getElementById('inputCourtType').value = '인조잔디';
           document.getElementById('inputLocationCustom').classList.add('hidden');
@@ -1605,6 +1697,22 @@
         let resultBadge = '';
         if (log.category === '클럽게임' && log.result) {
           resultBadge = '<span class="' + (log.result === '승' || log.result === '승리' ? 'badge-win' : 'badge-loss') + '">' + escapeHtml(log.result) + '</span>';
+        }
+
+        let playersHtml = '';
+        if (log.players) {
+          playersHtml = '<div style="font-size:12px; color:#475569; margin-bottom:6px;">👥 <b>동반자/상대:</b> ' + escapeHtml(log.players) + '</div>';
+        }
+
+        let photosHtml = '';
+        if (log.photo_ids && log.photo_ids.length > 0) {
+          photosHtml = '<div class="log-photos-gallery">' +
+            log.photo_ids.map(function(id) {
+              return '<div class="log-photo-item" onclick="openPhotoZoom(\'' + id + '\')">' +
+                '<img src="https://drive.google.com/thumbnail?id=' + id + '&sz=w800" alt="사진" loading="lazy" onerror="this.src=\'https://lh3.googleusercontent.com/d/' + id + '\'">' +
+              '</div>';
+            }).join('') +
+          '</div>';
         }
 
         const comments = log.comments || [];
@@ -1657,6 +1765,9 @@
             (log.location || log.court_type ? '<span style="color:#64748b; font-size:12px;">🏟️ ' + escapeHtml(log.location || '') + ' (' + escapeHtml(log.court_type || '') + ')</span>' : '') +
             '<span style="background:#eef2ff; color:#4338ca; font-size:11px; padding:1px 6px; border-radius:4px;">RPE ' + log.intensity + '</span>' +
           '</div>' +
+
+          playersHtml +
+          photosHtml +
 
           (log.notes ? '<div class="log-notes"><div style="font-weight:700; color:#2563eb; margin-bottom:2px; font-size:11px;">📝 나의 수기 메모</div>' + escapeHtml(log.notes) + '</div>' : '') +
           (log.ai_summary ? '<div class="log-ai-summary"><div style="font-weight:700; color:#065f46; margin-bottom:2px; font-size:11px;">🤖 Gemini AI 코칭 피드백</div>' + escapeHtml(log.ai_summary) + '</div>' : '') +

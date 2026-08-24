@@ -79,14 +79,21 @@ function normalizeDateString(dateVal) {
 }
 
 function getOrCreatePhotoFolder() {
-  var folderName = "테니스일지_사진";
+  var folderName = "Tennis_Log_Photos";
   var folders = DriveApp.getFoldersByName(folderName);
-  if (folders.hasNext()) {
-    return folders.next();
+  if (!folders.hasNext()) {
+    folders = DriveApp.getFoldersByName("테니스일지_사진");
   }
-  var f = DriveApp.createFolder(folderName);
-  f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return f;
+  var folder;
+  if (folders.hasNext()) {
+    folder = folders.next();
+  } else {
+    folder = DriveApp.createFolder(folderName);
+  }
+  try {
+    folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch(e) {}
+  return folder;
 }
 
 // -------------------------------------------------------------
@@ -250,7 +257,9 @@ function saveTennisLog(item) {
             var fileName = 'tennis_' + dateStr + '_' + (p + 1) + '_' + (new Date().getTime()) + '.jpg';
             var blob = Utilities.newBlob(bytes, contentType, fileName);
             var file = folder.createFile(blob);
-            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            try {
+              file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            } catch(eShare) {}
             photoIds.push(file.getId());
           }
         }
@@ -307,7 +316,9 @@ function updateTennisLog(item) {
             var fileName = 'tennis_' + dateStr + '_' + (p + 1) + '_' + (new Date().getTime()) + '.jpg';
             var blob = Utilities.newBlob(bytes, contentType, fileName);
             var file = folder.createFile(blob);
-            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            try {
+              file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            } catch(eShare) {}
             photoIds.push(file.getId());
           }
         }
