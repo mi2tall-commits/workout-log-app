@@ -29,11 +29,16 @@ function getSheet() {
     var headers = [
       "일자", "구분", "운동제목", "시간(분)", "강도(RPE)", 
       "경기결과", "스코어", "함께한사람", "코트종류", "장소", 
-      "집중기술", "컨디션/메모", "사진ID목록", "댓글"
+      "집중기술", "컨디션/수기메모", "사진ID목록", "댓글", "AI코칭분석"
     ];
     sheet.appendRow(headers);
     sheet.getRange(1, 1, 1, headers.length).setBackground('#16a34a').setFontColor('#ffffff').setFontWeight('bold');
     sheet.setFrozenRows(1);
+  } else {
+    // 기존 시트에 15열(AI코칭분석) 헤더가 없으면 자동 추가
+    if (sheet.getLastColumn() < 15 || !sheet.getRange(1, 15).getValue()) {
+      sheet.getRange(1, 15).setValue('AI코칭분석').setBackground('#16a34a').setFontColor('#ffffff').setFontWeight('bold');
+    }
   }
   return sheet;
 }
@@ -122,6 +127,7 @@ function getTennisData() {
       var notes = String(row[11] || '').trim();
       var photoIdsStr = String(row[12] || '').trim();
       var commentsRaw = row[13] || '';
+      var aiSummary = String(row[14] || '').trim();
 
       totalHours += dur / 60;
 
@@ -171,7 +177,8 @@ function getTennisData() {
         focus_skill: focusSkill,
         notes: notes,
         photo_ids: photoIds,
-        comments: comments
+        comments: comments,
+        ai_summary: aiSummary
       });
     }
 
@@ -228,6 +235,7 @@ function saveTennisLog(item) {
     var loc = item.location || '';
     var focusSkill = item.focus_skill || '';
     var notes = item.notes || '';
+    var aiSummary = item.ai_summary || '';
     var photoIds = [];
 
     if (item.photos && item.photos.length > 0) {
@@ -256,7 +264,7 @@ function saveTennisLog(item) {
     sheet.appendRow([
       dateStr, category, title, dur, rpe,
       result, score, players, courtType, loc,
-      focusSkill, notes, photoIdsStr, "[]"
+      focusSkill, notes, photoIdsStr, "[]", aiSummary
     ]);
 
     sendTennisLogTelegramNotification(item);
@@ -284,6 +292,7 @@ function updateTennisLog(item) {
     var loc = item.location || '';
     var focusSkill = item.focus_skill || '';
     var notes = item.notes || '';
+    var aiSummary = item.ai_summary || '';
     var photoIds = item.existingPhotoIds || [];
 
     if (item.photos && item.photos.length > 0) {
@@ -314,6 +323,7 @@ function updateTennisLog(item) {
       result, score, players, courtType, loc,
       focusSkill, notes, photoIdsStr
     ]]);
+    sheet.getRange(rowIndex, 15).setValue(aiSummary);
 
     return { success: true };
   } catch (e) {
@@ -695,16 +705,20 @@ function generateGeminiTennisSummary(item) {
     var skill = item.focus_skill || '';
     var loc = item.location || '';
     var court = item.court_type || '';
+    var userNotes = item.user_notes || '';
 
-    var prompt = "너는 엘리트 테니스 프로 코치야.\n" +
-      "사용자가 작성한 다음 테니스 세션 데이터를 바탕으로, 일지 '메모/후기'란에 바로 넣을 수 있는 칭찬과 전문 피드백이 담긴 코칭 요약글을 작성해줘.\n\n" +
+    var prompt = "당신은 열정적인 엘리트 테니스 프로 코치입니다.\n" +
+      "플레이어가 작성한 테니스 세션 데이터와 [수기 작성 메모/소감]을 바탕으로, 전문적이고 따뜻한 코칭 피드백 리포트를 작성해주세요.\n\n" +
       "- 활동 구분: " + cat + "\n" +
-      "- 시간: " + dur + "분 (강도 RPE " + rpe + "/10)\n" +
+      "- 운동 시간: " + dur + "분 (강도 RPE " + rpe + "/10)\n" +
       (score ? "- 경기 결과: " + result + " (" + score + ")\n" : "") +
       (skill ? "- 집중 훈련 기술: " + skill + "\n" : "") +
       (loc ? "- 장소/코트: " + loc + " (" + court + ")\n" : "") +
+      (userNotes ? "- 📝 플레이어의 수기 메모/타구감: \"" + userNotes + "\"\n" : "") +
       "\n" +
-      "규칙: 3문장 내외로 [🎾 오늘의 핵심 코칭 포인트]와 [💡 다음 세션 추천 팁] 2개 소제목으로 활기차게 작성할 것.";
+      "[작성 가이드]:\n" +
+      "1. 플레이어가 적은 수기 메모 내용(타구감, 잘된 점, 실수, 관절 부담 등)을 직접 언급하며 전문 코칭 조언을 제공할 것.\n" +
+      "2. [🎾 코칭 총평 & 칭찬], [💡 폼/기술 보완 포인트], [🔥 다음 세션 연습 팁] 3개 소제목으로 가독성 좋게 작성할 것.";
 
     var modelsToTry = ["gemini-3-flash-preview", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest"];
     for (var i = 0; i < modelsToTry.length; i++) {
@@ -739,7 +753,7 @@ function generateGeminiTennisSummary(item) {
 
     return {
       success: true,
-      summary: "[🎾 오늘의 핵심 코칭 포인트]\n" + cat + " " + dur + "분 동안 강도 RPE " + rpe + "로 훌륭하게 세션을 마쳤습니다!\n\n[💡 다음 세션 추천 팁]\n타구 시 팔로우스루와 풋워크 밸런스를 계속 유지해보세요! 🔥"
+      summary: "[🎾 코칭 총평]\n" + cat + " " + dur + "분 동안 강도 RPE " + rpe + "로 훌륭하게 세션을 마쳤습니다!\n\n[💡 폼/기술 보완 포인트]\n타구 시 팔로우스루와 풋워크 밸런스를 계속 유지해보세요!\n\n[🔥 다음 세션 팁]\n안정적인 임팩트 타이밍에 집중해보세요! 🔥"
     };
   } catch(e) {
     return {
@@ -788,7 +802,10 @@ function sendTennisLogTelegramNotification(item) {
     lines.push("🎯 <b>집중기술:</b> " + item.focus_skill);
   }
   if (item.notes) {
-    lines.push("\n📝 <b>훈련/타구 메모:</b>\n" + item.notes);
+    lines.push("\n📝 <b>수기 메모:</b>\n" + item.notes);
+  }
+  if (item.ai_summary) {
+    lines.push("\n🤖 <b>AI 코칭 피드백:</b>\n" + item.ai_summary);
   }
   sendTelegramMessage(lines.join("\n"));
 }

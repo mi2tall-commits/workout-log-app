@@ -430,6 +430,17 @@
       padding: 10px;
       border-radius: 8px;
       margin-top: 6px;
+      border-left: 3px solid #3b82f6;
+      white-space: pre-wrap;
+    }
+    .log-ai-summary {
+      font-size: 12px;
+      color: #065f46;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 6px;
       border-left: 3px solid #16a34a;
       white-space: pre-wrap;
     }
@@ -898,15 +909,21 @@
           </div>
         </div>
 
-        <!-- 🤖 GEMINI AI COACH BAR -->
+        <!-- 📝 1. 수기 작성 메모 (플레이어 직접 작성 - AI 생성 시에도 유지됨) -->
+        <div class="form-group">
+          <label class="form-label">📝 나의 운동 메모 / 타구 소감 (수기 작성)</label>
+          <textarea id="inputNotes" rows="3" placeholder="오늘 경기 소감, 라켓 타구감, 잘된 점이나 보완할 점을 자유롭게 적어보세요. (수기로 적은 내용은 지워지지 않고 안전하게 저장됩니다)" class="form-textarea"></textarea>
+        </div>
+
+        <!-- 🤖 2. GEMINI AI 코칭 분석 전용 창 -->
         <div class="form-group">
           <div class="ai-coach-bar">
-            <span style="font-size:12px; font-weight:700; color:#065f46;">🤖 Gemini AI 코치</span>
+            <span style="font-size:12px; font-weight:700; color:#065f46;">🤖 Gemini AI 코칭 분석 (별도 생성)</span>
             <button type="button" id="btnAiCoach" class="ai-coach-btn" onclick="generateTennisAiSummary()">
               <span>✨ AI 훈련 분석 & 코칭 생성</span>
             </button>
           </div>
-          <textarea id="inputNotes" rows="4" placeholder="오늘의 피드백, 타구감, 깨달은 점을 적거나 위 'AI 코칭 생성' 버튼을 눌러보세요!" class="form-textarea"></textarea>
+          <textarea id="inputAiSummary" rows="4" placeholder="위 'AI 코칭 생성' 버튼을 누르면 오늘의 훈련 데이터와 위 수기 메모를 정밀 분석하여 맞춤형 코칭 피드백이 여기에 자동 작성됩니다!" class="form-textarea" style="background:#f0fdf4; border-color:#a7f3d0;"></textarea>
         </div>
 
         <!-- Multi Photo Upload -->
@@ -1363,7 +1380,8 @@
     // 🤖 GENERATE DAILY TENNIS AI COACH SUMMARY
     function generateTennisAiSummary() {
       const btn = document.getElementById('btnAiCoach');
-      const notesEl = document.getElementById('inputNotes');
+      const aiNotesEl = document.getElementById('inputAiSummary');
+      const userNotes = document.getElementById('inputNotes').value.trim();
       const cat = curCategory;
       const dur = parseInt(document.getElementById('inputDuration').value) || 60;
       const rpe = parseInt(document.getElementById('inputIntensity').value) || 6;
@@ -1374,14 +1392,14 @@
 
       btn.disabled = true;
       btn.innerHTML = '<span>⏳ AI 코칭 분석 중...</span>';
-      showToast('Gemini AI가 테니스 세션을 분석 중입니다... 🎾✨');
+      showToast('Gemini AI가 훈련 데이터와 수기 메모를 정밀 분석 중입니다... 🎾✨');
 
       google.script.run
         .withSuccessHandler(function(res) {
           btn.disabled = false;
           btn.innerHTML = '<span>✨ AI 훈련 분석 & 코칭 생성</span>';
           if (res && res.summary) {
-            notesEl.value = res.summary;
+            aiNotesEl.value = res.summary;
             showToast('AI 테니스 코칭 작성 완료! ✨');
           }
         })
@@ -1399,6 +1417,7 @@
           focus_skill: skill,
           location: loc,
           court_type: court,
+          user_notes: userNotes,
           geminiApiKey: localStorage.getItem('gemini_api_key') || ''
         });
     }
@@ -1531,6 +1550,7 @@
         location: getSelectedLocationValue(),
         focus_skill: curCategory === '클럽게임' ? '' : document.getElementById('inputFocusSkill').value.trim(),
         notes: document.getElementById('inputNotes').value.trim(),
+        ai_summary: document.getElementById('inputAiSummary').value.trim(),
         photos: selectedPhotos
       };
 
@@ -1538,6 +1558,8 @@
         .withSuccessHandler(function() {
           showToast('테니스 일지가 저장되었습니다! 🎾');
           document.getElementById('tennisForm').reset();
+          document.getElementById('inputNotes').value = '';
+          document.getElementById('inputAiSummary').value = '';
           document.getElementById('selectLocation').value = '중구';
           document.getElementById('inputCourtType').value = '인조잔디';
           document.getElementById('inputLocationCustom').classList.add('hidden');
@@ -1636,7 +1658,8 @@
             '<span style="background:#eef2ff; color:#4338ca; font-size:11px; padding:1px 6px; border-radius:4px;">RPE ' + log.intensity + '</span>' +
           '</div>' +
 
-          (log.notes ? '<div class="log-notes">' + escapeHtml(log.notes) + '</div>' : '') +
+          (log.notes ? '<div class="log-notes"><div style="font-weight:700; color:#2563eb; margin-bottom:2px; font-size:11px;">📝 나의 수기 메모</div>' + escapeHtml(log.notes) + '</div>' : '') +
+          (log.ai_summary ? '<div class="log-ai-summary"><div style="font-weight:700; color:#065f46; margin-bottom:2px; font-size:11px;">🤖 Gemini AI 코칭 피드백</div>' + escapeHtml(log.ai_summary) + '</div>' : '') +
           commentsSectionHtml +
         '</div>';
       }).join('');
