@@ -855,8 +855,8 @@
           </div>
         </div>
 
-        <!-- LESSON / PRACTICE: FOCUS SKILL CHIPS -->
-        <div class="form-group">
+        <!-- LESSON / PRACTICE: FOCUS SKILL CHIPS (클럽게임 시 숨김) -->
+        <div id="box-skills" class="form-group">
           <label class="form-label">집중 훈련 기술 (다중 선택)</label>
           <div class="skill-chips-grid">
             <div class="skill-chip" onclick="toggleSkill(this, '포핸드 스트로크')">🎾 포핸드</div>
@@ -871,12 +871,12 @@
           <input type="hidden" id="inputFocusSkill">
         </div>
 
-        <!-- Court & Location -->
+        <!-- Court & Location (인조/하드/실내/클레이 & 중구/남산/문수/야음/두왕/동서/공단/기타) -->
         <div class="grid-2 form-group">
           <div>
             <label class="form-label">코트 종류</label>
             <select id="inputCourtType" class="form-select">
-              <option value="인조잔디">인조잔디(카펫) 🟩</option>
+              <option value="인조잔디">인조잔디 🟩</option>
               <option value="하드코트">하드코트 🟦</option>
               <option value="실내코트">실내코트 🏠</option>
               <option value="클레이코트">클레이코트 🟧</option>
@@ -1152,6 +1152,8 @@
         b.classList.toggle('active', b.getAttribute('data-cat') === cat);
       });
       document.getElementById('box-game').classList.toggle('hidden', cat !== '클럽게임');
+      const skillBox = document.getElementById('box-skills');
+      if (skillBox) skillBox.classList.toggle('hidden', cat === '클럽게임');
     }
 
     function setGameResult(res) {
@@ -1366,7 +1368,7 @@
       const dur = parseInt(document.getElementById('inputDuration').value) || 60;
       const rpe = parseInt(document.getElementById('inputIntensity').value) || 6;
       const score = document.getElementById('inputScore').value.trim();
-      const skill = document.getElementById('inputFocusSkill').value.trim();
+      const skill = cat === '클럽게임' ? '' : document.getElementById('inputFocusSkill').value.trim();
       const loc = getSelectedLocationValue();
       const court = document.getElementById('inputCourtType').value;
 
@@ -1527,7 +1529,7 @@
         players: curCategory === '클럽게임' ? document.getElementById('inputPlayers').value.trim() : '',
         court_type: document.getElementById('inputCourtType').value,
         location: getSelectedLocationValue(),
-        focus_skill: document.getElementById('inputFocusSkill').value.trim(),
+        focus_skill: curCategory === '클럽게임' ? '' : document.getElementById('inputFocusSkill').value.trim(),
         notes: document.getElementById('inputNotes').value.trim(),
         photos: selectedPhotos
       };
@@ -1601,14 +1603,14 @@
                 '<div class="comment-text">' + escapeHtml(c.text || '') + '</div>' +
               '</div>';
             }).join('')
-          : '<div style="text-align:center; color:#94a3b8; font-size:11px; padding:4px;">아직 댓글이 없습니다. 첫 피드백을 남겨보세요! ✨</div>';
+          : '<div style="text-align:center; color:#94a3b8; font-size:11px; padding:4px;">아직 댓글이 없습니다. 첫 댓글을 남겨보세요! ✨</div>';
 
         const commentsSectionHtml = '<div class="comments-wrapper">' +
-          '<div class="comments-header"><span>💬 코치/동호인 피드백 (' + comments.length + ')</span></div>' +
+          '<div class="comments-header"><span>💬 댓글 (' + comments.length + ')</span></div>' +
           '<div class="comment-list">' + commentItemsHtml + '</div>' +
           '<form class="comment-form" onsubmit="submitComment(event, ' + log.rowIndex + ')">' +
             '<input type="text" id="comment-author-' + log.rowIndex + '" class="comment-input-author" placeholder="작성자" value="' + escapeHtml(savedAuthor) + '" required>' +
-            '<input type="text" id="comment-text-' + log.rowIndex + '" class="comment-input-text" placeholder="피드백 작성..." required>' +
+            '<input type="text" id="comment-text-' + log.rowIndex + '" class="comment-input-text" placeholder="댓글 작성..." required>' +
             '<button type="submit" class="comment-submit-btn">등록</button>' +
           '</form>' +
         '</div>';
@@ -1649,10 +1651,10 @@
       if (!text) return;
 
       localStorage.setItem('tennis_author_name', author);
-      showToast('피드백 등록 중...');
+      showToast('댓글 등록 중...');
       google.script.run
         .withSuccessHandler(function() {
-          showToast('피드백이 등록되었습니다! 💬');
+          showToast('댓글이 등록되었습니다! 💬');
           loadData();
         })
         .withFailureHandler(function(err) {
@@ -1675,7 +1677,7 @@
     }
 
     function deleteComment(rowIndex, commentId) {
-      if (!confirm('피드백을 삭제하시겠습니까?')) return;
+      if (!confirm('댓글을 삭제하시겠습니까?')) return;
       google.script.run
         .withSuccessHandler(function() {
           showToast('삭제되었습니다.');
