@@ -247,7 +247,15 @@ function saveWorkout(item) {
       try {
         var folderName = "운동일지_사진";
         var folders = DriveApp.getFoldersByName(folderName);
-        var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+        var folder;
+        if (folders.hasNext()) {
+          folder = folders.next();
+        } else {
+          folder = DriveApp.createFolder(folderName);
+        }
+        try {
+          folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        } catch(eShare) {}
         
         for (var p = 0; p < item.photos.length; p++) {
           var base64Data = item.photos[p];
@@ -258,7 +266,9 @@ function saveWorkout(item) {
             var fileName = 'workout_' + dateStr + '_' + (p + 1) + '_' + (new Date().getTime()) + '.jpg';
             var blob = Utilities.newBlob(bytes, contentType, fileName);
             var file = folder.createFile(blob);
-            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            try {
+              file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            } catch(eFileShare) {}
             photoIds.push(file.getId());
           }
         }
@@ -326,7 +336,15 @@ function updateWorkout(item) {
       try {
         var folderName = "운동일지_사진";
         var folders = DriveApp.getFoldersByName(folderName);
-        var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+        var folder;
+        if (folders.hasNext()) {
+          folder = folders.next();
+        } else {
+          folder = DriveApp.createFolder(folderName);
+        }
+        try {
+          folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        } catch(eShare) {}
         
         for (var p = 0; p < item.photos.length; p++) {
           var base64Data = item.photos[p];
@@ -337,7 +355,9 @@ function updateWorkout(item) {
             var fileName = 'workout_' + dateStr + '_' + (p + 1) + '_' + (new Date().getTime()) + '.jpg';
             var blob = Utilities.newBlob(bytes, contentType, fileName);
             var file = folder.createFile(blob);
-            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            try {
+              file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            } catch(eFileShare) {}
             photoIds.push(file.getId());
           }
         }
@@ -770,4 +790,32 @@ function getEmptyOverview() {
     total_calories: 0,
     sport_counts: {}
   };
+}
+
+// 🔧 기존 업로드된 모든 사진의 공개 보기 권한 일괄 복구 함수
+function fixAllPhotoPermissions() {
+  try {
+    var folderNames = ["운동일지_사진", "Tennis_Log_Photos", "테니스일지_사진"];
+    var count = 0;
+    for (var f = 0; f < folderNames.length; f++) {
+      var folders = DriveApp.getFoldersByName(folderNames[f]);
+      while (folders.hasNext()) {
+        var folder = folders.next();
+        try {
+          folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        } catch(e) {}
+        var files = folder.getFiles();
+        while (files.hasNext()) {
+          var file = files.next();
+          try {
+            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            count++;
+          } catch(e) {}
+        }
+      }
+    }
+    return { success: true, count: count };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
 }

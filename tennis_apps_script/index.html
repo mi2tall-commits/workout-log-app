@@ -1686,12 +1686,17 @@
 
     function updatePhotoModalView() {
       if (!curModalPhotos.length) return;
-      const photoId = curModalPhotos[curModalPhotoIdx];
-      const imgUrl = 'https://drive.google.com/thumbnail?id=' + photoId + '&sz=w1200';
       const imgEl = document.getElementById('photoModalImg');
-      imgEl.src = imgUrl;
+      imgEl.setAttribute('referrerpolicy', 'no-referrer');
+      imgEl.src = 'https://lh3.googleusercontent.com/d/' + photoId;
       imgEl.onerror = function() {
-        this.src = 'https://lh3.googleusercontent.com/d/' + photoId;
+        if (!this.dataset.fb) {
+          this.dataset.fb = 1;
+          this.src = 'https://drive.google.com/thumbnail?id=' + photoId + '&sz=w1200';
+        } else if (this.dataset.fb == 1) {
+          this.dataset.fb = 2;
+          this.src = 'https://drive.google.com/uc?export=view&id=' + photoId;
+        }
       };
 
       const prevBtn = document.getElementById('btnPhotoPrev');
@@ -1871,7 +1876,7 @@
           photosHtml = '<div class="log-photos-gallery">' +
             log.photo_ids.map(function(id, pIdx) {
               return '<div class="log-photo-item" onclick="openPhotoGallery(' + photoIdsJson + ', ' + pIdx + ')">' +
-                '<img src="https://drive.google.com/thumbnail?id=' + id + '&sz=w800" alt="사진" loading="lazy" onerror="this.src=\'https://lh3.googleusercontent.com/d/' + id + '\'">' +
+                '<img src="https://lh3.googleusercontent.com/d/' + id + '" referrerpolicy="no-referrer" alt="사진" loading="lazy" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'https://drive.google.com/thumbnail?id=' + id + '&sz=w800\';}else if(this.dataset.fb==1){this.dataset.fb=2;this.src=\'https://drive.google.com/uc?export=view&id=' + id + '\';}">' +
               '</div>';
             }).join('') +
           '</div>';

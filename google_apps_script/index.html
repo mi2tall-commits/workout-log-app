@@ -1898,10 +1898,10 @@
         if (ids.length > 0) {
           const isSingle = ids.length === 1;
           const itemsHtml = ids.map(function(id) {
-            const thumbUrl = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w800';
+            const thumbUrl = 'https://lh3.googleusercontent.com/d/' + id;
             const fullUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s1600';
             return '<div class="log-photo-item ' + (isSingle ? 'single' : '') + '" onclick="openPhotoModal(\'' + fullUrl + '\')">' +
-              '<img src="' + thumbUrl + '" loading="lazy" alt="운동 사진">' +
+              '<img src="' + thumbUrl + '" referrerpolicy="no-referrer" loading="lazy" alt="운동 사진" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'https://drive.google.com/thumbnail?id=' + id + '&sz=w800\';}else if(this.dataset.fb==1){this.dataset.fb=2;this.src=\'https://drive.google.com/uc?export=view&id=' + id + '\';}">' +
             '</div>';
           }).join('');
 
