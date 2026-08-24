@@ -293,11 +293,32 @@
       margin-top: 1px;
       line-height: 1.3;
     }
+    .strava-sync-btn {
+      background: #fc5200;
+      color: #ffffff;
+      border: none;
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 1px 3px rgba(252, 82, 0, 0.3);
+    }
+    .strava-sync-btn:hover { background: #e04800; }
+    .strava-sync-btn:active { transform: scale(0.96); }
+    .strava-sync-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
     .gpx-upload-btn {
       background: #4f46e5;
       color: #ffffff;
       border: none;
-      padding: 7px 12px;
+      padding: 7px 11px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 700;
@@ -721,22 +742,27 @@
     <section id="view-new" class="card">
       <form id="workoutForm" onsubmit="handleSubmit(event)">
         
-        <!-- ⌚ T-REX / ZEPP GPX & TCX IMPORT BOX -->
+        <!-- ⌚ T-REX / ZEPP & STRAVA AUTO IMPORT BOX -->
         <div class="gpx-import-box" id="gpxDropZone">
           <div class="gpx-import-inner">
             <div class="gpx-icon">⌚</div>
             <div class="gpx-text">
-              <strong>T-Rex 3 / Zepp 운동 파일 자동 불러오기</strong>
-              <p>Zepp에서 내보낸 <b>GPX</b> 또는 <b>TCX</b> 파일을 선택하면 거리·시간·페이스·고도가 자동 입력됩니다.</p>
+              <strong>T-Rex 3 / Strava 최신 운동 불러오기</strong>
+              <p>Zepp ➔ Strava로 연동된 최신 운동을 버튼 1번으로 자동 입력합니다.</p>
             </div>
-            <label for="inputGpxFile" class="gpx-upload-btn">
-              <span>📂 GPX/TCX 선택</span>
-            </label>
-            <input type="file" id="inputGpxFile" accept=".gpx,.tcx,.xml" style="display:none;" onchange="handleGpxFileSelect(event)">
+            <div style="display:flex; gap:6px; flex-shrink:0;">
+              <button type="button" id="btnStravaSync" class="strava-sync-btn" onclick="fetchLatestStravaWorkout()">
+                <span>⚡ Strava 최신운동</span>
+              </button>
+              <label for="inputGpxFile" class="gpx-upload-btn" title="GPX 또는 TCX 파일 직접 선택">
+                <span>📂 GPX 파일</span>
+              </label>
+              <input type="file" id="inputGpxFile" accept=".gpx,.tcx,.xml" style="display:none;" onchange="handleGpxFileSelect(event)">
+            </div>
           </div>
           <div id="gpxResultBanner" class="gpx-result-banner hidden">
             <div class="gpx-result-content">
-              <span class="gpx-badge">✅ Zepp 분석 완료</span>
+              <span class="gpx-badge" id="gpxBadgeText">✅ Strava 동기화 완료</span>
               <span id="gpxSummaryText" class="gpx-summary-text"></span>
             </div>
             <button type="button" class="gpx-clear-btn" onclick="clearGpxData()" title="초기화">✕</button>
@@ -1074,6 +1100,37 @@
         <div style="display:flex; gap:8px; margin-top:16px;">
           <button type="button" class="btn-header" style="flex:1; justify-content:center; padding:12px;" onclick="closeEditModal()">취소</button>
           <button type="submit" id="btnEditSubmit" class="submit-btn" style="flex:2; margin-top:0;">💾 수정 내용 저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 🟧 STRAVA SETTINGS MODAL -->
+  <div id="stravaModal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:460px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color:#fc5200;">🟧 Strava API 연동 설정</div>
+        <button type="button" class="modal-close-btn" onclick="closeStravaModal()">✕</button>
+      </div>
+      <p style="font-size:12px; color:#64748b; line-height:1.4; margin-bottom:12px;">
+        Zepp ➔ Strava로 전송된 운동을 원클릭으로 가져오기 위해 Strava API 정보가 필요합니다. (<a href="https://www.strava.com/settings/api" target="_blank" style="color:#fc5200; font-weight:700;">strava.com/settings/api</a>에서 생성)
+      </p>
+      <form id="stravaSettingsForm" onsubmit="handleSaveStravaSettings(event)">
+        <div class="form-group">
+          <label class="form-label">Client ID</label>
+          <input id="stravaClientId" type="text" placeholder="예: 123456" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client Secret</label>
+          <input id="stravaClientSecret" type="text" placeholder="예: a1b2c3d4e5f6..." class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Refresh Token</label>
+          <input id="stravaRefreshToken" type="text" placeholder="예: 987654321fedcba..." class="form-input" required>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <button type="button" class="btn-header" style="flex:1; justify-content:center; padding:10px;" onclick="closeStravaModal()">닫기</button>
+          <button type="submit" id="btnSaveStrava" class="submit-btn" style="flex:2; margin-top:0; background:#fc5200;">저장 및 연동하기</button>
         </div>
       </form>
     </div>
@@ -1993,7 +2050,7 @@
       };
     }
 
-    function applyParsedWorkoutData(data) {
+    function applyParsedWorkoutData(data, source) {
       if (!data) return;
 
       if (data.date) document.getElementById('inputDate').value = data.date;
@@ -2005,18 +2062,19 @@
       if (data.elevGain) document.getElementById('inputElevation').value = data.elevGain;
       if (data.maxAlt) document.getElementById('inputMaxAlt').value = data.maxAlt;
 
-      let title = data.title || (data.sport + ' ' + (data.distance ? data.distance + 'km' : ''));
-      if (data.distance && data.pace) {
+      let title = data.name || data.title || (data.sport + ' ' + (data.distance ? data.distance + 'km' : ''));
+      if (data.distance && data.pace && !data.name) {
         title = data.distance + 'km ' + data.sport + ' (' + data.pace + '/km)';
-      } else if (data.sport === '등산' && data.elevGain) {
+      } else if (data.sport === '등산' && data.elevGain && !data.name) {
         title = '등산 (획득고도 +' + data.elevGain + 'm)';
       }
       document.getElementById('inputTitle').value = title;
 
-      if (data.avgHr || data.calories) {
+      if (data.avgHr || data.calories || data.notes) {
         let noteExtra = [];
         if (data.avgHr) noteExtra.push('❤️ 평균심박: ' + data.avgHr + 'bpm');
         if (data.calories) noteExtra.push('🔥 소모열량: ' + data.calories + 'kcal');
+        if (data.notes && !data.notes.includes('심박')) noteExtra.push(data.notes);
         const notesArea = document.getElementById('inputNotes');
         if (!notesArea.value) {
           notesArea.value = noteExtra.join(' | ');
@@ -2032,8 +2090,10 @@
       if (data.avgHr) parts.push('❤️ ' + data.avgHr + 'bpm');
 
       const banner = document.getElementById('gpxResultBanner');
+      const badge = document.getElementById('gpxBadgeText');
       const text = document.getElementById('gpxSummaryText');
       if (banner && text) {
+        if (badge) badge.textContent = source === 'Strava' ? '✅ Strava 동기화 완료' : '✅ Zepp 분석 완료';
         text.textContent = parts.join(' · ');
         banner.classList.remove('hidden');
       }
@@ -2043,6 +2103,72 @@
       document.getElementById('gpxResultBanner').classList.add('hidden');
       document.getElementById('gpxSummaryText').textContent = '';
       showToast('가져온 운동 데이터 표시가 초기화되었습니다.');
+    }
+
+    // 🟧 STRAVA API JS HANDLERS
+    function fetchLatestStravaWorkout() {
+      const btn = document.getElementById('btnStravaSync');
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ 연동 중...</span>';
+      showToast('Strava에서 최신 운동을 가져오는 중... 🏃‍♂️');
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>⚡ Strava 최신운동</span>';
+
+          if (res && res.notConfigured) {
+            openStravaModal();
+            return;
+          }
+
+          if (res && res.success && res.activity) {
+            applyParsedWorkoutData(res.activity, 'Strava');
+            showToast('Strava 최신 운동 데이터가 입력되었습니다! 🎉');
+          } else {
+            alert(res && res.message ? res.message : 'Strava 운동 데이터를 가져오지 못했습니다: ' + (res && res.error));
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>⚡ Strava 최신운동</span>';
+          alert('Strava 연동 오류: ' + err.message);
+        })
+        .getLatestStravaActivity();
+    }
+
+    function openStravaModal() {
+      document.getElementById('stravaModal').classList.remove('hidden');
+    }
+
+    function closeStravaModal() {
+      document.getElementById('stravaModal').classList.add('hidden');
+    }
+
+    function handleSaveStravaSettings(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSaveStrava');
+      btn.disabled = true;
+      btn.textContent = '저장 중...';
+
+      const cid = document.getElementById('stravaClientId').value.trim();
+      const secret = document.getElementById('stravaClientSecret').value.trim();
+      const token = document.getElementById('stravaRefreshToken').value.trim();
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false;
+          btn.textContent = '저장 및 연동하기';
+          closeStravaModal();
+          showToast('Strava API 정보가 저장되었습니다! 🚀');
+          fetchLatestStravaWorkout();
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = '저장 및 연동하기';
+          alert('설정 저장 실패: ' + err.message);
+        })
+        .saveStravaSettings(cid, secret, token);
     }
 
     function showToast(msg) {

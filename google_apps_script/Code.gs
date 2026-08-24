@@ -6,6 +6,11 @@
 // 🔔 스마트폰 ntfy 앱에서 설정하신 토픽 이름을 적어주세요!
 var NTFY_TOPIC = "my-workout-log-7788"; 
 
+// 🟧 Strava API 설정 (https://www.strava.com/settings/api 에서 확인)
+var STRAVA_CLIENT_ID = "";
+var STRAVA_CLIENT_SECRET = "";
+var STRAVA_REFRESH_TOKEN = ""; 
+
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('index');
   return template.evaluate()
@@ -490,4 +495,136 @@ function testWorkoutNtfyAlert() {
   var message = "스마트폰으로 종합 운동일지 알림이 정상적으로 수신됩니다! 🎉";
   sendNtfyMessage(NTFY_TOPIC, title, message, ["runner", "tada"]);
   Logger.log("운동일지 테스트 알림 발송 완료!");
+}
+
+// ==========================================
+// 🟧 STRAVA API 연동 (Zepp / T-Rex 3 자동 동기화)
+// ==========================================
+
+function getStravaAccessToken() {
+  var props = PropertiesService.getScriptProperties();
+  var clientId = STRAVA_CLIENT_ID || props.getProperty("STRAVA_CLIENT_ID");
+  var clientSecret = STRAVA_CLIENT_SECRET || props.getProperty("STRAVA_CLIENT_SECRET");
+  var refreshToken = STRAVA_REFRESH_TOKEN || props.getProperty("STRAVA_REFRESH_TOKEN");
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error("STRAVA_NOT_CONFIGURED");
+  }
+
+  var url = "https://www.strava.com/oauth/token";
+  var payload = {
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
+    grant_type: "refresh_token"
+  };
+  var options = {
+    method: "post",
+    payload: payload,
+    muteHttpExceptions: true
+  };
+  var res = UrlFetchApp.fetch(url, options);
+  var json = JSON.parse(res.getContentText());
+  if (json.access_token) {
+    return json.access_token;
+  } else {
+    throw new Error("Strava 토큰 갱신 실패: " + (json.message || res.getContentText()));
+  }
+}
+
+function getLatestStravaActivity() {
+  try {
+    var token;
+    try {
+      token = getStravaAccessToken();
+    } catch(err) {
+      if (err.message === "STRAVA_NOT_CONFIGURED") {
+        return { success: false, notConfigured: true, message: "Strava API 키 설정이 필요합니다." };
+      }
+      throw err;
+    }
+
+    var url = "https://www.strava.com/api/v3/athlete/activities?per_page=1";
+    var options = {
+      method: "get",
+      headers: { "Authorization": "Bearer " + token },
+      muteHttpExceptions: true
+    };
+    var res = UrlFetchApp.fetch(url, options);
+    var activities = JSON.parse(res.getContentText());
+    if (!Array.isArray(activities) || activities.length === 0) {
+      return { success: false, message: "Strava에 등록된 최근 운동이 없습니다." };
+    }
+    var act = activities[0];
+    
+    var rawDate = act.start_date_local || act.start_date || "";
+    var dateStr = rawDate ? rawDate.substring(0, 10) : Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+    var durMin = Math.round((act.moving_time || act.elapsed_time || 0) / 60);
+    var distKm = Math.round(((act.distance || 0) / 1000) * 100) / 100;
+    var elevGain = Math.round(act.total_elevation_gain || 0);
+    var maxAlt = Math.round(act.elev_high || 0);
+    
+    var sportType = act.sport_type || act.type || "Run";
+    var mappedSport = "런닝";
+    if (sportType === "Hike" || sportType === "Walk") {
+      mappedSport = (sportType === "Hike" || elevGain > 200) ? "등산" : "걷기";
+    } else if (sportType === "TrailRun") {
+      mappedSport = "트레일런닝";
+    } else if (sportType === "Swim") {
+      mappedSport = "프리다이빙";
+    } else if (sportType !== "Run") {
+      mappedSport = "기타";
+    }
+
+    var paceStr = "";
+    if (distKm > 0.1 && durMin > 0) {
+      var p = durMin / distKm;
+      var m = Math.floor(p);
+      var s = Math.round((p - m) * 60);
+      if (s === 60) { m += 1; s = 0; }
+      paceStr = m + "'" + (s < 10 ? "0" : "") + s + '"';
+    }
+
+    var notesArr = [];
+    if (act.average_heartrate) notesArr.push("❤️ 평균심박: " + Math.round(act.average_heartrate) + "bpm");
+    if (act.max_heartrate) notesArr.push("최대심박: " + Math.round(act.max_heartrate) + "bpm");
+    if (act.calories) notesArr.push("🔥 소모열량: " + Math.round(act.calories) + "kcal");
+    if (act.description) notesArr.push("📝 " + act.description);
+
+    var title = act.name || (distKm > 0 ? (distKm + "km " + mappedSport) : (mappedSport + " 운동"));
+    if (distKm > 0 && paceStr) {
+      title = distKm + "km " + mappedSport + " (" + paceStr + "/km)";
+    } else if (mappedSport === "등산" && elevGain > 0) {
+      title = (act.name && act.name !== "Hike" && act.name !== "등산") ? act.name : ("등산 (획득고도 +" + elevGain + "m)");
+    }
+
+    return {
+      success: true,
+      activity: {
+        id: act.id,
+        name: title,
+        date: dateStr,
+        sport: mappedSport,
+        duration: durMin,
+        distance: distKm,
+        pace: paceStr,
+        elevGain: elevGain,
+        maxAlt: maxAlt,
+        avgHr: act.average_heartrate ? Math.round(act.average_heartrate) : null,
+        calories: act.calories || null,
+        notes: notesArr.join(" | ")
+      }
+    };
+  } catch(e) {
+    Logger.log("getLatestStravaActivity error: " + e.message);
+    return { success: false, error: e.message };
+  }
+}
+
+function saveStravaSettings(clientId, clientSecret, refreshToken) {
+  var props = PropertiesService.getScriptProperties();
+  if (clientId) props.setProperty("STRAVA_CLIENT_ID", String(clientId).trim());
+  if (clientSecret) props.setProperty("STRAVA_CLIENT_SECRET", String(clientSecret).trim());
+  if (refreshToken) props.setProperty("STRAVA_REFRESH_TOKEN", String(refreshToken).trim());
+  return { success: true };
 }
