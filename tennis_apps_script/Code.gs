@@ -706,19 +706,26 @@ function generateGeminiTennisSummary(item) {
     var loc = item.location || '';
     var court = item.court_type || '';
     var userNotes = item.user_notes || '';
-
     var prompt = "당신은 열정적인 엘리트 테니스 프로 코치입니다.\n" +
-      "플레이어가 작성한 테니스 세션 데이터와 [수기 작성 메모/소감]을 바탕으로, 전문적이고 따뜻한 코칭 피드백 리포트를 작성해주세요.\n\n" +
-      "- 활동 구분: " + cat + "\n" +
-      "- 운동 시간: " + dur + "분 (강도 RPE " + rpe + "/10)\n" +
+      "아래 테니스 세션 데이터와 플레이어의 수기 메모를 바탕으로, [총 5~8줄 내외의 알차고 전문적인 원포인트 코칭 피드백]을 작성해주세요.\n\n" +
+      "━━━━━━━━━━━━━━━━━━━\n" +
+      "- 활동 구분: " + cat + " (" + dur + "분 / 강도 RPE " + rpe + ")\n" +
       (score ? "- 경기 결과: " + result + " (" + score + ")\n" : "") +
       (skill ? "- 집중 훈련 기술: " + skill + "\n" : "") +
       (loc ? "- 장소/코트: " + loc + " (" + court + ")\n" : "") +
-      (userNotes ? "- 📝 플레이어의 수기 메모/타구감: \"" + userNotes + "\"\n" : "") +
-      "\n" +
-      "[작성 가이드]:\n" +
-      "1. 플레이어가 적은 수기 메모 내용(타구감, 잘된 점, 실수, 관절 부담 등)을 직접 언급하며 전문 코칭 조언을 제공할 것.\n" +
-      "2. [🎾 코칭 총평 & 칭찬], [💡 폼/기술 보완 포인트], [🔥 다음 세션 연습 팁] 3개 소제목으로 가독성 좋게 작성할 것.";
+      (userNotes ? "- 📝 플레이어 수기 메모: \"" + userNotes + "\"\n" : "") +
+      "━━━━━━━━━━━━━━━━━━━\n\n" +
+      "[작성 필수 규칙]:\n" +
+      "1. 불필요하게 장황한 서론이나 맺음말(격언 등)은 생략하고, 바로 아래 3개 섹션으로 명확하게 작성할 것.\n" +
+      "2. 플레이어가 적은 수기 메모 내용(타구감, 실수, 코트 느낌 등)을 구체적으로 짚어줄 것.\n" +
+      "3. 전체 분량은 반드시 5줄~8줄 사이로 읽기 편하게 맞출 것.\n\n" +
+      "[출력 포맷]:\n" +
+      "🎾 [코칭 총평]\n" +
+      "• (오늘 세션 결과, 강도, 수기 메모에 대한 칭찬 및 평가 2줄)\n\n" +
+      "💡 [원포인트 기술 피드백]\n" +
+      "• (수기 메모 및 코트/기술에 대한 원인 분석과 폼 교정 조언 2~3줄)\n\n" +
+      "🔥 [다음 세션 실천 팁]\n" +
+      "• (다음 경기/레슨에서 바로 적용할 구체적인 핵심 포인트 1~2줄)";
 
     var modelsToTry = ["gemini-3-flash-preview", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest"];
     for (var i = 0; i < modelsToTry.length; i++) {
@@ -726,7 +733,7 @@ function generateGeminiTennisSummary(item) {
       var url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
       var payload = {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+        generationConfig: { temperature: 0.6, maxOutputTokens: 1200 }
       };
       var options = {
         method: "post",
@@ -753,7 +760,7 @@ function generateGeminiTennisSummary(item) {
 
     return {
       success: true,
-      summary: "[🎾 코칭 총평]\n" + cat + " " + dur + "분 동안 강도 RPE " + rpe + "로 훌륭하게 세션을 마쳤습니다!\n\n[💡 폼/기술 보완 포인트]\n타구 시 팔로우스루와 풋워크 밸런스를 계속 유지해보세요!\n\n[🔥 다음 세션 팁]\n안정적인 임팩트 타이밍에 집중해보세요! 🔥"
+      summary: "🎾 [총평] " + cat + " " + dur + "분 동안 강도 RPE " + rpe + "로 훌륭하게 세션을 마쳤습니다!\n💡 [원포인트 팁] 타구 시 안정적인 임팩트 타이밍과 풋워크 밸런스를 유지해보세요.\n🔥 [다음 세션] 다음 경기에서도 구체적인 타구감을 메모에 남겨보세요! 🔥"
     };
   } catch(e) {
     return {
