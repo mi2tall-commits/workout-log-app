@@ -748,6 +748,7 @@
       cursor: pointer;
     }
 
+    /* Fullscreen Photo Lightbox Modal (좌우 스와이프 & 이전/다음 지원) */
     #photoModal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -757,13 +758,84 @@
       align-items: center;
       justify-content: center;
       padding: 16px;
-      cursor: pointer;
     }
-    #photoModalImg {
-      max-width: 100%;
+    .photo-modal-content {
+      position: relative;
+      max-width: 90vw;
       max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .photo-modal-img-wrap {
+      max-width: 100%;
+      max-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      touch-action: pan-y;
+    }
+    .photo-modal-img {
+      max-width: 100%;
+      max-height: 80vh;
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      object-fit: contain;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .photo-modal-close {
+      position: absolute;
+      top: -38px;
+      right: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: #ffffff;
+      font-size: 24px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      z-index: 10;
+    }
+    .photo-modal-close:hover { background: rgba(255, 255, 255, 0.4); }
+    .photo-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.5);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 28px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      z-index: 10;
+    }
+    .photo-nav-btn:hover { background: rgba(0, 0, 0, 0.8); }
+    .photo-nav-btn.prev { left: -50px; }
+    .photo-nav-btn.next { right: -50px; }
+    @media (max-width: 600px) {
+      .photo-nav-btn.prev { left: 8px; }
+      .photo-nav-btn.next { right: 8px; }
+    }
+    .photo-modal-counter {
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 3px 12px;
+      border-radius: 12px;
     }
 
     #toast {
@@ -1318,9 +1390,24 @@
     </div>
   </div>
 
-  <!-- Fullscreen Photo Modal -->
+  <!-- 🔍 FULLSCREEN PHOTO GALLERY LIGHTBOX (좌우 슬라이드 & 이전/다음 지원) -->
   <div id="photoModal" class="hidden" onclick="closePhotoModal()">
-    <img id="photoModalImg" src="" alt="확대 사진" referrerpolicy="no-referrer">
+    <div class="photo-modal-content" onclick="event.stopPropagation()">
+      <button type="button" class="photo-modal-close" onclick="closePhotoModal()">✕</button>
+      
+      <!-- Prev Button -->
+      <button type="button" id="btnPhotoPrev" class="photo-nav-btn prev" onclick="prevModalPhoto()">‹</button>
+      
+      <div class="photo-modal-img-wrap" id="photoModalWrap">
+        <img id="photoModalImg" src="" alt="확대 사진" class="photo-modal-img" referrerpolicy="no-referrer">
+      </div>
+      
+      <!-- Next Button -->
+      <button type="button" id="btnPhotoNext" class="photo-nav-btn next" onclick="nextModalPhoto()">›</button>
+      
+      <!-- Counter (e.g. 1 / 3) -->
+      <div id="photoModalCounter" class="photo-modal-counter">1 / 1</div>
+    </div>
   </div>
 
   <div id="toast">알림</div>
@@ -1343,6 +1430,7 @@
       initPaceAutoCalc();
       initGpxDropZone();
       loadData();
+      initPhotoSwipeListeners();
     });
 
     // 🔄 입력 모드 전환 (수기 vs GPX)
@@ -1611,9 +1699,9 @@
         return;
       }
       grid.innerHTML = editExistingPhotoIds.map(function(id, idx) {
-        const thumbUrl = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w400';
+        const thumbUrl = 'https://lh3.googleusercontent.com/d/' + id;
         return '<div class="photo-preview-item">' +
-          '<img src="' + thumbUrl + '" alt="기존 사진">' +
+          '<img src="' + thumbUrl + '" referrerpolicy="no-referrer" alt="기존 사진" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'https://drive.google.com/thumbnail?id=' + id + '&sz=w400\';}else if(this.dataset.fb==1){this.dataset.fb=2;this.src=\'https://drive.google.com/uc?export=view&id=' + id + '\';}">' +
           '<button type="button" class="photo-delete-btn" onclick="removeExistingPhotoAt(' + idx + ')" title="삭제">✕</button>' +
         '</div>';
       }).join('');
@@ -1629,13 +1717,99 @@
       }
     }
 
-    function openPhotoModal(imgUrl) {
-      document.getElementById('photoModalImg').src = imgUrl;
+    // 📸 Fullscreen Photo Lightbox with Prev/Next & Mobile Touch Swipe
+    let curModalPhotos = [];
+    let curModalPhotoIdx = 0;
+
+    function openPhotoGallery(photos, idx) {
+      if (!photos || photos.length === 0) return;
+      curModalPhotos = Array.isArray(photos) ? photos : [photos];
+      curModalPhotoIdx = idx || 0;
+      updatePhotoModalView();
       document.getElementById('photoModal').classList.remove('hidden');
+    }
+
+    function updatePhotoModalView() {
+      if (!curModalPhotos.length) return;
+      const photoId = curModalPhotos[curModalPhotoIdx];
+      const imgEl = document.getElementById('photoModalImg');
+      imgEl.setAttribute('referrerpolicy', 'no-referrer');
+      imgEl.src = 'https://lh3.googleusercontent.com/d/' + photoId;
+      imgEl.onerror = function() {
+        if (!this.dataset.fb) {
+          this.dataset.fb = 1;
+          this.src = 'https://drive.google.com/thumbnail?id=' + photoId + '&sz=w1200';
+        } else if (this.dataset.fb == 1) {
+          this.dataset.fb = 2;
+          this.src = 'https://drive.google.com/uc?export=view&id=' + photoId;
+        }
+      };
+
+      const prevBtn = document.getElementById('btnPhotoPrev');
+      const nextBtn = document.getElementById('btnPhotoNext');
+      const counter = document.getElementById('photoModalCounter');
+
+      if (curModalPhotos.length > 1) {
+        prevBtn.style.display = 'flex';
+        nextBtn.style.display = 'flex';
+        counter.style.display = 'block';
+        counter.textContent = (curModalPhotoIdx + 1) + ' / ' + curModalPhotos.length;
+      } else {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        counter.style.display = 'none';
+      }
+    }
+
+    function prevModalPhoto() {
+      if (!curModalPhotos.length) return;
+      curModalPhotoIdx = (curModalPhotoIdx - 1 + curModalPhotos.length) % curModalPhotos.length;
+      updatePhotoModalView();
+    }
+
+    function nextModalPhoto() {
+      if (!curModalPhotos.length) return;
+      curModalPhotoIdx = (curModalPhotoIdx + 1) % curModalPhotos.length;
+      updatePhotoModalView();
     }
 
     function closePhotoModal() {
       document.getElementById('photoModal').classList.add('hidden');
+      curModalPhotos = [];
+      curModalPhotoIdx = 0;
+    }
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    function initPhotoSwipeListeners() {
+      const wrap = document.getElementById('photoModalWrap');
+      if (wrap) {
+        wrap.addEventListener('touchstart', function(e) {
+          if (e.touches && e.touches.length > 0) {
+            touchStartX = e.touches[0].clientX;
+          }
+        }, { passive: true });
+        wrap.addEventListener('touchend', function(e) {
+          if (e.changedTouches && e.changedTouches.length > 0) {
+            touchEndX = e.changedTouches[0].clientX;
+            const diff = touchEndX - touchStartX;
+            if (Math.abs(diff) > 40) {
+              if (diff > 0) prevModalPhoto();
+              else nextModalPhoto();
+            }
+          }
+        }, { passive: true });
+      }
+
+      document.addEventListener('keydown', function(e) {
+        const modal = document.getElementById('photoModal');
+        if (modal && !modal.classList.contains('hidden')) {
+          if (e.key === 'ArrowLeft') prevModalPhoto();
+          else if (e.key === 'ArrowRight') nextModalPhoto();
+          else if (e.key === 'Escape') closePhotoModal();
+        }
+      });
     }
 
     function initPaceAutoCalc() {
@@ -1897,16 +2071,16 @@
         let ids = Array.isArray(log.photo_ids) ? log.photo_ids : [];
         if (ids.length > 0) {
           const isSingle = ids.length === 1;
-          const itemsHtml = ids.map(function(id) {
+          const photoIdsJson = JSON.stringify(ids).replace(/"/g, '&quot;');
+          const itemsHtml = ids.map(function(id, pIdx) {
             const thumbUrl = 'https://lh3.googleusercontent.com/d/' + id;
-            const fullUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s1600';
-            return '<div class="log-photo-item ' + (isSingle ? 'single' : '') + '" onclick="openPhotoModal(\'' + fullUrl + '\')">' +
+            return '<div class="log-photo-item ' + (isSingle ? 'single' : '') + '" onclick="openPhotoGallery(' + photoIdsJson + ', ' + pIdx + ')">' +
               '<img src="' + thumbUrl + '" referrerpolicy="no-referrer" loading="lazy" alt="운동 사진" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\'https://drive.google.com/thumbnail?id=' + id + '&sz=w800\';}else if(this.dataset.fb==1){this.dataset.fb=2;this.src=\'https://drive.google.com/uc?export=view&id=' + id + '\';}">' +
             '</div>';
           }).join('');
 
           photosHtml = '<div style="margin-top:8px;">' +
-            (!isSingle ? '<div style="font-size:11px; font-weight:700; color:#64748b; margin-bottom:4px;">📸 사진 ' + ids.length + '장 (좌우 스크롤)</div>' : '') +
+            (!isSingle ? '<div style="font-size:11px; font-weight:700; color:#64748b; margin-bottom:4px;">📸 사진 ' + ids.length + '장 (클릭 시 확대 및 좌우 넘김)</div>' : '') +
             '<div class="log-photos-gallery">' + itemsHtml + '</div>' +
           '</div>';
         }
