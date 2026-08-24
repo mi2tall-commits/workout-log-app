@@ -6,6 +6,9 @@
 // 🔔 스마트폰 ntfy 앱에서 설정하신 토픽 이름을 적어주세요!
 var NTFY_TOPIC = "my-workout-log-7788"; 
 
+// 🔑 Gemini API Key를 여기에 직접 적어두셔도 됩니다 (선택 사항)
+var DEFAULT_GEMINI_API_KEY = ""; 
+
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('index');
   return template.evaluate()
@@ -505,16 +508,19 @@ function deleteWorkoutComment(rowIndex, commentId) {
 function generateGeminiWorkoutSummary(item) {
   try {
     var props = PropertiesService.getScriptProperties();
-    var apiKey = props.getProperty("GEMINI_API_KEY");
+    var apiKey = (item && item.geminiApiKey) || DEFAULT_GEMINI_API_KEY || props.getProperty("GEMINI_API_KEY");
 
-    // API Key가 미설정된 경우, 지능형 스포츠 코치 템플릿으로 생성
-    if (!apiKey) {
+    // API Key가 전혀 없는 경우
+    if (!apiKey || !apiKey.trim()) {
       return {
         success: true,
         summary: generateSmartCoachTemplate(item),
-        hasApiKey: false
+        hasApiKey: false,
+        notice: "Gemini API 키가 등록되지 않아 기본 템플릿이 적용되었습니다. 상단 [⚙️ AI설정]에서 키를 입력하시면 딥러닝 AI 코칭이 작동합니다!"
       };
     }
+
+    apiKey = apiKey.trim();
 
     var sport = item.sport || '운동';
     var date = item.date || '';
@@ -535,15 +541,15 @@ function generateGeminiWorkoutSummary(item) {
     var loc = item.location_course || item.location || '';
     var weather = item.weather || '';
 
-    var prompt = "너는 친절하고 전문적인 스포츠 코치이자 러닝/등산/프리다이빙 전문가야.\n" +
-      "사용자가 Amazfit T-Rex 3 스마트워치로 측정한 다음 운동 데이터를 바탕으로, 운동 일지 '메모/후기'란에 바로 넣을 수 있는 핵심 코칭 분석 요약글을 작성해줘.\n\n" +
-      "【운동 측정 데이터】\n" +
+    var prompt = "너는 엘리트 마라토너이자 산악 트레일런, 프리다이빙 전문 수석 코치야.\n" +
+      "사용자가 Amazfit T-Rex 3 스포츠워치로 측정한 다음 운동 데이터를 철저하게 분석해서, 감탄과 전문성이 느껴지는 고품질 훈련 분석 및 코칭 요약문을 작성해줘.\n\n" +
+      "【운동 데이터】\n" +
       "- 종목: " + sport + "\n" +
       "- 날짜: " + date + "\n" +
       (dur ? "- 운동시간: " + dur + "분\n" : "") +
-      (dist ? "- 이동거리: " + dist + "km\n" : "") +
+      (dist ? "- 거리: " + dist + "km\n" : "") +
       (pace ? "- 평균페이스: " + pace + "/km\n" : "") +
-      (avgHr ? "- 평균심박수: " + avgHr + " bpm" + (maxHr ? " (최고 " + maxHr + " bpm)" : "") + "\n" : "") +
+      (avgHr ? "- 평균심박수: " + avgHr + " bpm" + (maxHr ? " (최대심박: " + maxHr + " bpm)" : "") + "\n" : "") +
       (cal ? "- 소모칼로리: " + cal + " kcal\n" : "") +
       (cad ? "- 평균케이던스: " + cad + " spm\n" : "") +
       (elevGain ? "- 누적상승: +" + elevGain + "m" + (elevLoss ? ", 누적하강: -" + elevLoss + "m" : "") + (maxAlt ? ", 최고고도: " + maxAlt + "m" : "") + "\n" : "") +
@@ -552,64 +558,77 @@ function generateGeminiWorkoutSummary(item) {
       (loc ? "- 장소: " + loc + "\n" : "") +
       (weather ? "- 날씨: " + weather + "\n" : "") +
       "\n" +
-      "【작성 규칙】\n" +
-      "1. 3~4문장 내외로 군더더기 없이 임팩트 있게 작성할 것.\n" +
-      "2. [📊 훈련 성과 분석]과 [💡 코치 팁 & 회복 가이드] 2개 소제목과 이모지로 구성할 것.\n" +
-      "3. 심박 존(유산소/무산소), 케이던스(180spm 부상 방지), 상승/하강 고도, 수심 등의 수치를 자연스럽게 인용해 칭찬과 실질적 피드백을 제공할 것.\n" +
-      "4. 친절하고 활기찬 한국어 말투(~했습니다, ~추천합니다)로 작성할 것.";
+      "【작성 지침】\n" +
+      "1. 단순 요약이 아닌, 데이터(페이스, 심박존, 케이던스 180spm 효율성, 고도 부하 등)의 의미를 짚어줄 것.\n" +
+      "2. [📊 데이터 심층 분석]과 [💡 코치 처방 & 다음 훈련 가이드] 2개 소제목과 적절한 이모지로 구성할 것.\n" +
+      "3. 3~5문장으로 읽기 좋고 전문성 넘치게 작성할 것.\n" +
+      "4. 열정적이고 긍정적인 한국어 어조(~하셨습니다, ~권장합니다)로 작성할 것.";
 
-    var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
-    var payload = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
-    };
+    var modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+    var lastError = "";
 
-    var options = {
-      method: "post",
-      contentType: "application/json",
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    };
+    for (var i = 0; i < modelsToTry.length; i++) {
+      var modelName = modelsToTry[i];
+      var url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
+      
+      var payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+      };
 
-    var response = UrlFetchApp.fetch(url, options);
-    var resCode = response.getResponseCode();
-    var resText = response.getContentText();
+      var options = {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
 
-    if (resCode === 200) {
-      var json = JSON.parse(resText);
-      if (json.candidates && json.candidates.length > 0 && json.candidates[0].content && json.candidates[0].content.parts.length > 0) {
-        return {
-          success: true,
-          summary: json.candidates[0].content.parts[0].text.trim(),
-          hasApiKey: true
-        };
+      var response = UrlFetchApp.fetch(url, options);
+      var resCode = response.getResponseCode();
+      var resText = response.getContentText();
+
+      if (resCode === 200) {
+        var json = JSON.parse(resText);
+        if (json.candidates && json.candidates.length > 0 && json.candidates[0].content && json.candidates[0].content.parts.length > 0) {
+          return {
+            success: true,
+            summary: json.candidates[0].content.parts[0].text.trim(),
+            hasApiKey: true,
+            isAi: true
+          };
+        }
+      } else {
+        lastError = "Model " + modelName + " Error (" + resCode + "): " + resText;
+        Logger.log(lastError);
       }
     }
 
-    Logger.log("Gemini API Error (" + resCode + "): " + resText);
+    // 모든 모델 실패 시 상세 에러 반환
     return {
-      success: true,
+      success: false,
+      error: "Gemini API 호출 실패 (" + lastError + ")",
       summary: generateSmartCoachTemplate(item),
-      hasApiKey: true,
-      notice: "API 연결 지연으로 기본 스마트 템플릿으로 생성되었습니다."
+      hasApiKey: true
     };
   } catch(e) {
     Logger.log("generateGeminiWorkoutSummary error: " + e.message);
     return {
-      success: true,
+      success: false,
+      error: e.message,
       summary: generateSmartCoachTemplate(item),
       hasApiKey: false
     };
   }
 }
 
-// 💡 API Key 미등록 또는 오프라인 시 동작하는 스마트 스포츠 코치 템플릿 엔진
+// 💡 스마트 스포츠 코치 템플릿 엔진 (다양한 수치 기반 심층 분석)
 function generateSmartCoachTemplate(item) {
   var sport = item.sport || '운동';
   var dist = item.distance_km || 0;
   var dur = item.duration_minutes || 0;
   var pace = item.pace || '';
   var avgHr = item.avg_hr || 0;
+  var maxHr = item.max_hr || 0;
   var cal = item.calories || 0;
   var cad = item.cadence || 0;
   var elevGain = item.elevation_gain || 0;
@@ -618,34 +637,36 @@ function generateSmartCoachTemplate(item) {
   var diveTime = item.dive_time || '';
 
   if (sport === '런닝' || sport === '트레일런닝') {
-    var p1 = "[📊 훈련 성과 분석]\n" +
-      (dist ? dist + "km를 " : "") + (dur ? dur + "분 동안 " : "") + (pace ? "평균 " + pace + " 페이스로 " : "") + "성공적으로 완주했습니다. " +
-      (avgHr ? "평균 심박수 " + avgHr + " bpm으로 " + (avgHr < 150 ? "안정적인 유산소 Zone 2~3 지구력" : "효과적인 템포/유산소") + " 구간을 잘 유지했습니다. " : "") +
-      (cad ? "평균 케이던스 " + cad + " spm으로 " + (cad >= 175 ? "무릎 충격을 줄인 효율적인 주법이 돋보였습니다." : "양호한 리듬을 유지했습니다.") : "");
+    var zoneText = avgHr >= 165 ? "고강도 무산소/젖산역치 Zone 4~5" : (avgHr >= 145 ? "효과적인 유산소 템포 Zone 3" : "안정적인 지방연소 및 심폐지구력 Zone 2");
+    var cadenceFeedback = cad >= 175 ? "평균 케이던스 " + cad + " spm으로 보폭 과부하를 줄이고 피치를 극대화한 모범적인 주법이었습니다." : (cad > 0 ? "평균 케이던스 " + cad + " spm을 기록했습니다. (175~180 spm 목표 시 부상 방지 효과 UP)" : "");
 
-    var p2 = "\n[💡 코치 팁 & 회복]\n" +
-      (cal ? "총 " + cal + " kcal를 소모하셨습니다! " : "") +
-      "훈련 후 종아리와 햄스트링 스트레칭을 잊지 마시고, 충분한 수분과 단백질을 보충하여 회복하시길 권장합니다. 수고 많으셨습니다! 🏃‍♂️🔥";
+    var p1 = "[📊 러닝 데이터 심층 분석]\n" +
+      (dist ? dist + "km 거리를 " : "") + (dur ? dur + "분 동안 " : "") + (pace ? "평균 " + pace + "/km 페이스로 " : "") + "질주하셨습니다. " +
+      (avgHr ? "평균 심박수 " + avgHr + " bpm" + (maxHr ? "(최대 " + maxHr + " bpm)" : "") + "으로 " + zoneText + " 영역을 훌륭하게 소화했습니다. " : "") +
+      cadenceFeedback;
+
+    var p2 = "\n\n[💡 코치 처방 & 다음 훈련 가이드]\n" +
+      (cal ? "총 " + cal + " kcal를 소모하며 " : "") + "높은 운동 효율을 보였습니다. 훈련 후 아킬레스건과 햄스트링 롤링 스트레칭을 권장하며, 다음 세션에서는 가벼운 빌드업 러닝을 추천합니다! 🏃‍♂️🔥";
 
     return p1 + p2;
   } else if (sport === '등산') {
-    var p1 = "[⛰️ 산행 분석]\n" +
-      (dur ? "총 " + dur + "분 동안 " : "") + "누적 상승 +" + elevGain + "m" + (elevLoss ? ", 누적 하강 -" + elevLoss + "m" : "") + " 산행을 훌륭하게 완주했습니다. " +
-      (avgHr ? "평균 심박 " + avgHr + " bpm으로 " : "") + "오르막과 능선 구간에서 전신 지구력을 훌륭히 발휘했습니다.";
+    var p1 = "[⛰️ 산행 고도 & 심폐 분석]\n" +
+      (dur ? "총 " + dur + "분 동안 " : "") + "누적 상승 +" + elevGain + "m" + (elevLoss ? ", 누적 하강 -" + elevLoss + "m" : "") + " 산행 코스를 성공적으로 정복했습니다. " +
+      (avgHr ? "평균 심박수 " + avgHr + " bpm으로 " : "") + "오르막 심폐 부하와 하산 지구력을 고르게 단련한 고효율 훈련이었습니다.";
 
-    var p2 = "\n[💡 산행 회복 가이드]\n" +
-      "하산 시 무릎과 대퇴사두근 피로도가 높을 수 있으니 폼롤러 마사지와 족욕을 추천합니다. " + (cal ? "총 " + cal + " kcal 소모 완료! 🏔️✨" : "");
+    var p2 = "\n\n[💡 산행 회복 & 코칭 팁]\n" +
+      "내리막 하강 구간의 충격으로 무릎과 대퇴사두근 피로가 높을 수 있으니 족욕 및 폼롤러 마사지를 추천합니다. " + (cal ? "총 " + cal + " kcal 소모 완료! 🏔️✨" : "");
 
     return p1 + p2;
   } else if (sport === '프리다이빙') {
     return "[🤿 다이브 로그 분석]\n" +
-      "최대 수심 " + depth + "m" + (diveTime ? ", 잠수 시간 " + diveTime : "") + " 다이빙을 안전하게 마쳤습니다. " +
-      "차분한 릴랙스와 정확한 이퀄라이징이 돋보이는 훌륭한 세션이었습니다.\n" +
-      "[💡 다이빙 팁] 세션 후 체온 회복과 수분 보충을 충분히 해주세요! 🌊🤿";
+      "최대 수심 " + depth + "m" + (diveTime ? ", 잠수 시간 " + diveTime : "") + (item.water_temp ? ", 수온 " + item.water_temp + "℃" : "") + " 다이빙을 안전하게 마쳤습니다. " +
+      "침착한 마인드 컨트롤과 정확한 압력 평형(이퀄라이징)이 돋보였습니다.\n\n" +
+      "[💡 다이빙 리커버리] 체온 회복과 전해질 수분 보충을 충분히 해주세요! 🌊🤿";
   } else {
     return "[🏅 운동 분석 요약]\n" +
       sport + " 세션을 " + (dur ? dur + "분 동안 " : "") + "성공적으로 완수했습니다. " +
-      (avgHr ? "평균 심박수 " + avgHr + " bpm, " : "") + (cal ? "소모 열량 " + cal + " kcal를 " : "") + "기록하며 높은 운동 효율을 달성했습니다.\n" +
+      (avgHr ? "평균 심박수 " + avgHr + " bpm, " : "") + (cal ? "소모 열량 " + cal + " kcal를 " : "") + "기록하며 높은 훈련 효율을 달성했습니다.\n\n" +
       "[💡 코칭 팁] 훈련 후 가벼운 리커버리 스트레칭으로 근육 피로를 풀어주세요! 👍✨";
   }
 }

@@ -1043,7 +1043,7 @@
               <span>✨ AI 훈련 분석 & 후기 생성</span>
             </button>
           </div>
-          <textarea id="inputNotes" rows="3" placeholder="컨디션 및 메모를 입력하거나, 위 'AI 후기 생성' 버튼을 눌러보세요!" class="form-textarea"></textarea>
+          <textarea id="inputNotes" rows="4" placeholder="컨디션 및 메모를 입력하거나, 위 'AI 후기 생성' 버튼을 눌러보세요!" class="form-textarea"></textarea>
         </div>
 
         <!-- MULTI PHOTO UPLOAD (최대 5장) -->
@@ -1270,7 +1270,7 @@
               <span>✨ AI 후기 다시 작성</span>
             </button>
           </div>
-          <textarea id="editNotes" rows="3" class="form-textarea"></textarea>
+          <textarea id="editNotes" rows="4" class="form-textarea"></textarea>
         </div>
 
         <!-- Existing Photos & Add Photos -->
@@ -1303,7 +1303,7 @@
         <button type="button" class="modal-close-btn" onclick="closeApiKeyModal()">✕</button>
       </div>
       <div style="font-size:13px; color:#475569; line-height:1.5; margin-bottom:12px;">
-        Google AI Studio에서 발급받은 무료 <b>Gemini API Key</b>를 입력하시면 더욱 풍부한 맞춤형 AI 코칭 분석을 받아보실 수 있습니다. (키가 없어도 기본 스마트 분석이 작동합니다!)
+        Google AI Studio에서 발급받은 무료 <b>Gemini API Key</b>를 입력하시면 심박수, 케이던스, 페이스를 심층 분석하는 고품질 AI 코칭 요약을 생성해 드립니다!
       </div>
       <form onsubmit="handleSaveApiKey(event)">
         <div class="form-group">
@@ -1412,7 +1412,8 @@
         dive_time: document.getElementById(isEdit ? 'editDiveTime' : 'inputDiveTime').value.trim(),
         water_temp: document.getElementById(isEdit ? 'editWaterTemp' : 'inputWaterTemp').value.trim(),
         location_course: document.getElementById(isEdit ? 'editLocation' : 'inputLocation').value.trim(),
-        weather: document.getElementById(isEdit ? 'editWeather' : 'inputWeather').value
+        weather: document.getElementById(isEdit ? 'editWeather' : 'inputWeather').value,
+        geminiApiKey: localStorage.getItem('gemini_api_key') || ''
       };
 
       btn.disabled = true;
@@ -1422,8 +1423,8 @@
       if (typeof google === 'undefined' || !google.script || !google.script.run) {
         setTimeout(function() {
           btn.disabled = false;
-          btn.innerHTML = '<span>✨ AI 훈련 분석 & 후기 생성</span>';
-          notesEl.value = "[📊 AI 훈련 성과 분석]\n" + (data.distance_km ? data.distance_km + "km " : "") + data.sport + " 훈련을 성공적으로 마쳤습니다. 심박수와 케이던스를 안정적으로 유지하여 부상 없이 높은 효율을 기록했습니다!\n\n[💡 코치 팁 & 회복]\n충분한 스트레칭과 수분 섭취로 근육 피로를 풀어주세요. 수고하셨습니다! 🔥";
+          btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
+          notesEl.value = "[📊 러닝 데이터 심층 분석]\n" + (data.distance_km ? data.distance_km + "km " : "") + data.sport + " 훈련을 성공적으로 마쳤습니다. 심박수와 케이던스를 안정적으로 유지하여 부상 없이 높은 효율을 기록했습니다!\n\n[💡 코치 처방 & 다음 훈련 가이드]\n충분한 스트레칭과 수분 섭취로 근육 피로를 풀어주세요. 수고하셨습니다! 🔥";
           showToast('AI 코칭 후기 생성 완료! ✨');
         }, 1000);
         return;
@@ -1435,7 +1436,13 @@
           btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
           if (res && res.summary) {
             notesEl.value = res.summary;
-            showToast('AI 코칭 후기가 입력되었습니다! 🎯');
+            if (res.error) {
+              alert(res.error);
+            } else if (res.isAi) {
+              showToast('Gemini 딥러닝 AI 코칭 분석 완료! 🤖✨');
+            } else {
+              showToast(res.notice || 'AI 코칭 후기 생성 완료!');
+            }
           }
         })
         .withFailureHandler(function(err) {
@@ -1447,6 +1454,8 @@
     }
 
     function openApiKeyModal() {
+      const currentKey = localStorage.getItem('gemini_api_key') || '';
+      document.getElementById('inputGeminiApiKey').value = currentKey;
       document.getElementById('apiKeyModal').classList.remove('hidden');
     }
 
@@ -1458,6 +1467,8 @@
       e.preventDefault();
       const key = document.getElementById('inputGeminiApiKey').value.trim();
       if (!key) return;
+
+      localStorage.setItem('gemini_api_key', key);
 
       const btn = document.getElementById('btnSaveApiKey');
       btn.disabled = true;
@@ -1473,7 +1484,8 @@
         .withFailureHandler(function(err) {
           btn.disabled = false;
           btn.textContent = '저장하기';
-          alert('저장 실패: ' + err.message);
+          closeApiKeyModal();
+          showToast('브라우저에 API Key가 저장되었습니다! 🤖✨');
         })
         .saveGeminiApiKey(key);
     }
@@ -2495,7 +2507,7 @@
         banner.classList.remove('hidden');
       }
 
-      // 파일 업로드 시 AI 코치 요약 자동 생성 제안/트리거
+      // 파일 업로드 시 AI 코치 요약 자동 생성 트리거
       generateAiSummary('new');
     }
 
