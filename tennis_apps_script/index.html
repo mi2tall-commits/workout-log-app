@@ -883,8 +883,17 @@
             </select>
           </div>
           <div>
-            <label class="form-label">장소 / 클럽명</label>
-            <input id="inputLocation" type="text" placeholder="예: 문수 테니스장" class="form-input">
+            <label class="form-label">테니스 구장</label>
+            <select id="selectLocation" class="form-select" onchange="handleLocationSelectChange(this.value)">
+              <option value="문수">문수 🏟️</option>
+              <option value="중구">중구 🏟️</option>
+              <option value="두왕">두왕 🏟️</option>
+              <option value="야음">야음 🏟️</option>
+              <option value="동서">동서 🏟️</option>
+              <option value="공단">공단 🏟️</option>
+              <option value="custom">✍️ 직접 입력 (타지역 구장)</option>
+            </select>
+            <input id="inputLocationCustom" type="text" placeholder="구장명 직접 입력 (예: 울산대, 양산 등)" class="form-input hidden" style="margin-top:6px;">
           </div>
         </div>
 
@@ -1328,6 +1337,26 @@
         });
     }
 
+    // 🏟️ 구장 선택 및 직접 입력 핸들러
+    function handleLocationSelectChange(val) {
+      const customInput = document.getElementById('inputLocationCustom');
+      if (val === 'custom') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+      } else {
+        customInput.classList.add('hidden');
+        customInput.value = '';
+      }
+    }
+
+    function getSelectedLocationValue() {
+      const sel = document.getElementById('selectLocation').value;
+      if (sel === 'custom') {
+        return document.getElementById('inputLocationCustom').value.trim() || '기타 구장';
+      }
+      return sel;
+    }
+
     // 🤖 GENERATE DAILY TENNIS AI COACH SUMMARY
     function generateTennisAiSummary() {
       const btn = document.getElementById('btnAiCoach');
@@ -1337,7 +1366,7 @@
       const rpe = parseInt(document.getElementById('inputIntensity').value) || 6;
       const score = document.getElementById('inputScore').value.trim();
       const skill = document.getElementById('inputFocusSkill').value.trim();
-      const loc = document.getElementById('inputLocation').value.trim();
+      const loc = getSelectedLocationValue();
       const court = document.getElementById('inputCourtType').value;
 
       btn.disabled = true;
@@ -1496,7 +1525,7 @@
         score: curCategory === '클럽게임' ? document.getElementById('inputScore').value.trim() : '',
         players: curCategory === '클럽게임' ? document.getElementById('inputPlayers').value.trim() : '',
         court_type: document.getElementById('inputCourtType').value,
-        location: document.getElementById('inputLocation').value.trim(),
+        location: getSelectedLocationValue(),
         focus_skill: document.getElementById('inputFocusSkill').value.trim(),
         notes: document.getElementById('inputNotes').value.trim(),
         photos: selectedPhotos
@@ -1506,6 +1535,9 @@
         .withSuccessHandler(function() {
           showToast('테니스 일지가 저장되었습니다! 🎾');
           document.getElementById('tennisForm').reset();
+          document.getElementById('selectLocation').value = '문수';
+          document.getElementById('inputLocationCustom').classList.add('hidden');
+          document.getElementById('inputLocationCustom').value = '';
           selectedPhotos = [];
           selectedSkills = [];
           document.querySelectorAll('.skill-chip').forEach(function(c) { c.classList.remove('active'); });
