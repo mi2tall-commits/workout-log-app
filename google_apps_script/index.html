@@ -88,7 +88,7 @@
     .stat-val.emerald { color: #16a34a; }
     .stat-val.indigo { color: #4f46e5; }
 
-    /* Nav Tabs (3 Tabs) */
+    /* Nav Tabs (3 Main Tabs) */
     .nav-tabs {
       display: flex;
       background: #e2e8f0;
@@ -101,7 +101,7 @@
       flex: 1;
       border: none;
       background: transparent;
-      padding: 9px 4px;
+      padding: 10px 4px;
       border-radius: 9px;
       font-size: 13px;
       font-weight: 600;
@@ -124,6 +124,152 @@
       border: 1px solid #e2e8f0;
       padding: 16px;
       margin-top: 14px;
+    }
+
+    /* Input Mode Toggle (수기 입력 vs GPX 파일 입력) */
+    .input-mode-toggle {
+      display: flex;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      border: 1px solid #e2e8f0;
+      gap: 4px;
+    }
+    .mode-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 8px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .mode-btn.active {
+      background: #ffffff;
+      color: #4f46e5;
+      font-weight: 700;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    /* ⌚ Zepp / T-Rex GPX & TCX Importer Box */
+    .gpx-import-box {
+      background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%);
+      border: 1.5px dashed #93c5fd;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 14px;
+      transition: all 0.2s ease;
+    }
+    .gpx-import-box.dragover {
+      border-color: #4f46e5;
+      background: #eef2ff;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+    .gpx-import-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .gpx-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      background: #ffffff;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #dbeafe;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .gpx-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .gpx-text strong {
+      display: block;
+      font-size: 13px;
+      color: #0f172a;
+      font-weight: 700;
+    }
+    .gpx-text p {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+    .gpx-upload-btn {
+      background: #4f46e5;
+      color: #ffffff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 2px 5px rgba(79, 70, 229, 0.25);
+    }
+    .gpx-upload-btn:hover { background: #4338ca; }
+    
+    .gpx-result-banner {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed #bfdbfe;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .gpx-result-content {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    .gpx-badge {
+      background: #dcfce7;
+      color: #15803d;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      border: 1px solid #bbf7d0;
+    }
+    .gpx-summary-text {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 12px;
+    }
+    .gpx-clear-btn {
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #b91c1c;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Sport Selector Buttons */
@@ -244,139 +390,6 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
 
-    /* ⌚ Zepp / T-Rex GPX & TCX Importer Box */
-    .gpx-import-box {
-      background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%);
-      border: 1.5px dashed #93c5fd;
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 14px;
-      transition: all 0.2s ease;
-    }
-    .gpx-import-box.dragover {
-      border-color: #4f46e5;
-      background: #eef2ff;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-    }
-    .gpx-import-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .gpx-icon {
-      font-size: 22px;
-      flex-shrink: 0;
-      width: 38px;
-      height: 38px;
-      background: #ffffff;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid #dbeafe;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    .gpx-text {
-      flex: 1;
-      min-width: 0;
-    }
-    .gpx-text strong {
-      display: block;
-      font-size: 13px;
-      color: #0f172a;
-      font-weight: 700;
-    }
-    .gpx-text p {
-      font-size: 11px;
-      color: #64748b;
-      margin-top: 1px;
-      line-height: 1.3;
-    }
-    .strava-sync-btn {
-      background: #fc5200;
-      color: #ffffff;
-      border: none;
-      padding: 7px 11px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: all 0.15s;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      box-shadow: 0 1px 3px rgba(252, 82, 0, 0.3);
-    }
-    .strava-sync-btn:hover { background: #e04800; }
-    .strava-sync-btn:active { transform: scale(0.96); }
-    .strava-sync-btn:disabled { background: #94a3b8; cursor: not-allowed; }
-
-    .gpx-upload-btn {
-      background: #4f46e5;
-      color: #ffffff;
-      border: none;
-      padding: 7px 11px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: all 0.15s;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      box-shadow: 0 1px 3px rgba(79, 70, 229, 0.25);
-    }
-    .gpx-upload-btn:hover { background: #4338ca; }
-    .gpx-result-banner {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px dashed #bfdbfe;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 12px;
-    }
-    .gpx-result-content {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-    }
-    .gpx-badge {
-      background: #dcfce7;
-      color: #15803d;
-      font-weight: 800;
-      font-size: 11px;
-      padding: 2px 7px;
-      border-radius: 6px;
-      border: 1px solid #bbf7d0;
-    }
-    .gpx-summary-text {
-      font-weight: 600;
-      color: #1e293b;
-      font-size: 12px;
-    }
-    .gpx-clear-btn {
-      background: #fee2e2;
-      border: 1px solid #fca5a5;
-      color: #b91c1c;
-      width: 22px;
-      height: 22px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
     /* Submit Button */
     .submit-btn {
       width: 100%;
@@ -419,7 +432,7 @@
       border-color: #4f46e5;
     }
 
-    /* Log Item Cards */
+    /* Log Items */
     .log-item {
       background: #ffffff;
       border: 1px solid #e2e8f0;
@@ -433,54 +446,69 @@
       align-items: center;
       margin-bottom: 6px;
     }
-    .log-header-left { display: flex; align-items: center; gap: 6px; }
     .sport-tag {
       font-size: 11px;
       font-weight: 700;
       padding: 2px 8px;
       border-radius: 6px;
-      background: #eef2ff;
-      color: #4338ca;
-    }
-    .log-date { font-size: 12px; color: #94a3b8; font-weight: 500; }
-    
-    .log-actions { display: flex; align-items: center; gap: 4px; }
-    .btn-log-action {
       background: #f1f5f9;
+      color: #475569;
+    }
+    .sport-tag.running { background: #ffedd5; color: #c2410c; }
+    .sport-tag.hiking { background: #dcfce7; color: #15803d; }
+    .sport-tag.trail { background: #ccfbf1; color: #0f766e; }
+    .sport-tag.diving { background: #e0f2fe; color: #0369a1; }
+    .sport-tag.walking { background: #f3e8ff; color: #7e22ce; }
+
+    .log-date { font-size: 12px; color: #94a3b8; font-weight: 500; }
+    .log-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    
+    .log-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-action {
       border: 1px solid #e2e8f0;
+      background: #f8fafc;
       padding: 3px 7px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 600;
-      color: #64748b;
+      color: #475569;
       cursor: pointer;
+      transition: all 0.15s;
     }
-    .btn-log-action:hover { background: #e2e8f0; color: #0f172a; }
-    .btn-log-action.delete:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+    .btn-action.edit:hover { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+    .btn-action.del:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
 
-    .log-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
     .log-metrics {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       font-size: 13px;
       font-weight: 600;
-      color: #475569;
       margin-bottom: 6px;
     }
-    .metric-dist { color: #ea580c; }
-    .metric-elev { color: #16a34a; }
-    .metric-depth { color: #0284c7; }
+    .metric-val { color: #4f46e5; font-weight: 700; }
+    .metric-rpe {
+      background: #eef2ff;
+      color: #4338ca;
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
     .log-notes {
       font-size: 12px;
-      color: #64748b;
+      color: #475569;
       background: #f8fafc;
       padding: 8px 10px;
       border-radius: 8px;
       margin-top: 6px;
     }
 
-    /* Log Photo Gallery */
+    /* Log Multi-Photo Gallery Horizontal Scroll */
     .log-photos-gallery {
       display: flex;
       gap: 8px;
@@ -510,11 +538,11 @@
     }
     .log-photo-item:hover img { transform: scale(1.03); }
 
-    /* 💬 Always Expanded Comments Section */
-    .comments-box {
+    /* 💬 ALWAYS EXPANDED COMMENTS SECTION */
+    .comments-wrapper {
       margin-top: 12px;
-      padding-top: 10px;
       border-top: 1px dashed #e2e8f0;
+      padding-top: 10px;
     }
     .comments-header {
       display: flex;
@@ -525,7 +553,12 @@
       color: #475569;
       margin-bottom: 6px;
     }
-    .comments-list { display: flex; flex-direction: column; gap: 6px; }
+    .comment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
     .comment-item {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -533,14 +566,25 @@
       padding: 8px 10px;
       font-size: 12px;
     }
-    .comment-meta {
+    .comment-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 3px;
     }
-    .comment-author { font-weight: 700; color: #4f46e5; font-size: 12px; }
-    .comment-meta-right { display: flex; align-items: center; gap: 6px; }
+    .comment-author {
+      font-weight: 700;
+      color: #4f46e5;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+    }
+    .comment-meta-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
     .comment-time { font-size: 10px; color: #94a3b8; }
     
     .comment-action-btn {
@@ -555,8 +599,8 @@
     .comment-action-btn:hover { color: #4f46e5; background: #eef2ff; }
     .comment-action-btn.delete:hover { color: #ef4444; background: #fee2e2; }
 
-    .comment-text { color: #334155; line-height: 1.4; word-break: break-word; font-size: 12px; }
-    
+    .comment-text { color: #1e293b; line-height: 1.4; word-break: break-word; font-size: 12px; }
+
     /* Compact Comment Form */
     .comment-form {
       display: flex;
@@ -572,6 +616,7 @@
       border-radius: 8px;
       font-size: 12px;
       outline: none;
+      background: #ffffff;
       text-align: center;
       font-family: inherit;
     }
@@ -583,6 +628,7 @@
       border-radius: 8px;
       font-size: 12px;
       outline: none;
+      background: #ffffff;
       font-family: inherit;
     }
     .comment-input-author:focus, .comment-input-text:focus {
@@ -731,7 +777,7 @@
       </div>
     </div>
 
-    <!-- Navigation Tabs (3 Tabs) -->
+    <!-- Navigation Tabs (3 Main Tabs) -->
     <div class="nav-tabs">
       <button id="tab-new" class="nav-tab active" onclick="switchTab('new')">✍️ 운동 기록</button>
       <button id="tab-list" class="nav-tab" onclick="switchTab('list')">📋 일지 목록</button>
@@ -740,35 +786,41 @@
 
     <!-- VIEW 1: FORM -->
     <section id="view-new" class="card">
+      
+      <!-- 🔄 입력 모드 선택 (수기 입력 vs GPX 파일 자동완성) -->
+      <div class="input-mode-toggle">
+        <button type="button" id="mode-btn-manual" class="mode-btn active" onclick="setInputMode('manual')">
+          ✍️ 직접 수기 입력
+        </button>
+        <button type="button" id="mode-btn-gpx" class="mode-btn" onclick="setInputMode('gpx')">
+          ⌚ Zepp / GPX 파일 자동완성
+        </button>
+      </div>
+
+      <!-- ⌚ T-REX 3 / ZEPP GPX & TCX IMPORT BOX (선택 시에만 노출) -->
+      <div class="gpx-import-box hidden" id="gpxDropZone">
+        <div class="gpx-import-inner">
+          <div class="gpx-icon">⌚</div>
+          <div class="gpx-text">
+            <strong>T-Rex 3 / Zepp 운동 파일 불러오기</strong>
+            <p>Zepp 앱에서 내보낸 <b>GPX</b> 또는 <b>TCX</b> 파일을 선택하면 폼이 자동 완성됩니다.</p>
+          </div>
+          <label for="inputGpxFile" class="gpx-upload-btn">
+            <span>📂 파일 선택</span>
+          </label>
+          <input type="file" id="inputGpxFile" accept=".gpx,.tcx,.xml" style="display:none;" onchange="handleGpxFileSelect(event)">
+        </div>
+        <div id="gpxResultBanner" class="gpx-result-banner hidden">
+          <div class="gpx-result-content">
+            <span class="gpx-badge">✅ Zepp 분석 완료</span>
+            <span id="gpxSummaryText" class="gpx-summary-text"></span>
+          </div>
+          <button type="button" class="gpx-clear-btn" onclick="clearGpxData()" title="초기화">✕</button>
+        </div>
+      </div>
+
       <form id="workoutForm" onsubmit="handleSubmit(event)">
         
-        <!-- ⌚ T-REX / ZEPP & STRAVA AUTO IMPORT BOX -->
-        <div class="gpx-import-box" id="gpxDropZone">
-          <div class="gpx-import-inner">
-            <div class="gpx-icon">⌚</div>
-            <div class="gpx-text">
-              <strong>T-Rex 3 / Strava 최신 운동 불러오기</strong>
-              <p>Zepp ➔ Strava로 연동된 최신 운동을 버튼 1번으로 자동 입력합니다.</p>
-            </div>
-            <div style="display:flex; gap:6px; flex-shrink:0;">
-              <button type="button" id="btnStravaSync" class="strava-sync-btn" onclick="fetchLatestStravaWorkout()">
-                <span>⚡ Strava 최신운동</span>
-              </button>
-              <label for="inputGpxFile" class="gpx-upload-btn" title="GPX 또는 TCX 파일 직접 선택">
-                <span>📂 GPX 파일</span>
-              </label>
-              <input type="file" id="inputGpxFile" accept=".gpx,.tcx,.xml" style="display:none;" onchange="handleGpxFileSelect(event)">
-            </div>
-          </div>
-          <div id="gpxResultBanner" class="gpx-result-banner hidden">
-            <div class="gpx-result-content">
-              <span class="gpx-badge" id="gpxBadgeText">✅ Strava 동기화 완료</span>
-              <span id="gpxSummaryText" class="gpx-summary-text"></span>
-            </div>
-            <button type="button" class="gpx-clear-btn" onclick="clearGpxData()" title="초기화">✕</button>
-          </div>
-        </div>
-
         <!-- Sport Selector -->
         <div>
           <label class="form-label">운동 종목</label>
@@ -919,14 +971,14 @@
 
         <!-- Submit Button -->
         <button id="submitBtn" type="submit" class="submit-btn">
-          💾 구글 드라이브에 저장하기
+          ✨ 운동 일지 저장하기
         </button>
       </form>
     </section>
 
     <!-- VIEW 2: LIST -->
     <section id="view-list" class="hidden">
-      <!-- Filter Pills -->
+      <!-- Filter Scroll -->
       <div class="filter-scroll">
         <button class="filter-pill active" onclick="filterLogs('all')">전체</button>
         <button class="filter-pill" onclick="filterLogs('런닝')">🏃 런닝</button>
@@ -937,7 +989,7 @@
         <button class="filter-pill" onclick="filterLogs('기타')">🏅 기타</button>
       </div>
 
-      <!-- Logs Container -->
+      <!-- Workout Log List Items -->
       <div id="logsContainer" style="margin-top: 10px;">
         <div style="text-align:center; padding:30px; color:#94a3b8; font-size:14px;">데이터를 불러오는 중입니다...</div>
       </div>
@@ -953,7 +1005,7 @@
       </div>
 
       <div class="chart-box">
-        <div class="chart-title">📈 러닝 / 걷기 거리 추세 (km)</div>
+        <div class="chart-title">🏃 러닝 / 걷기 거리 추세 (km)</div>
         <div class="chart-container">
           <canvas id="chartMileage"></canvas>
         </div>
@@ -1105,37 +1157,6 @@
     </div>
   </div>
 
-  <!-- 🟧 STRAVA SETTINGS MODAL -->
-  <div id="stravaModal" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width:460px;">
-      <div class="modal-header">
-        <div class="modal-title" style="color:#fc5200;">🟧 Strava API 연동 설정</div>
-        <button type="button" class="modal-close-btn" onclick="closeStravaModal()">✕</button>
-      </div>
-      <p style="font-size:12px; color:#64748b; line-height:1.4; margin-bottom:12px;">
-        Zepp ➔ Strava로 전송된 운동을 원클릭으로 가져오기 위해 Strava API 정보가 필요합니다. (<a href="https://www.strava.com/settings/api" target="_blank" style="color:#fc5200; font-weight:700;">strava.com/settings/api</a>에서 생성)
-      </p>
-      <form id="stravaSettingsForm" onsubmit="handleSaveStravaSettings(event)">
-        <div class="form-group">
-          <label class="form-label">Client ID</label>
-          <input id="stravaClientId" type="text" placeholder="예: 123456" class="form-input" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Client Secret</label>
-          <input id="stravaClientSecret" type="text" placeholder="예: a1b2c3d4e5f6..." class="form-input" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Refresh Token</label>
-          <input id="stravaRefreshToken" type="text" placeholder="예: 987654321fedcba..." class="form-input" required>
-        </div>
-        <div style="display:flex; gap:8px; margin-top:16px;">
-          <button type="button" class="btn-header" style="flex:1; justify-content:center; padding:10px;" onclick="closeStravaModal()">닫기</button>
-          <button type="submit" id="btnSaveStrava" class="submit-btn" style="flex:2; margin-top:0; background:#fc5200;">저장 및 연동하기</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- Fullscreen Photo Modal -->
   <div id="photoModal" class="hidden" onclick="closePhotoModal()">
     <img id="photoModalImg" src="" alt="확대 사진" referrerpolicy="no-referrer">
@@ -1154,11 +1175,31 @@
     let editExistingPhotoIds = [];
 
     document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      const dateEl = document.getElementById('inputDate');
+      if (dateEl) dateEl.value = today;
+
       initPaceAutoCalc();
       initGpxDropZone();
       loadData();
     });
+
+    // 🔄 입력 모드 전환 (수기 vs GPX)
+    function setInputMode(mode) {
+      const btnManual = document.getElementById('mode-btn-manual');
+      const btnGpx = document.getElementById('mode-btn-gpx');
+      const gpxBox = document.getElementById('gpxDropZone');
+
+      if (mode === 'manual') {
+        btnManual.classList.add('active');
+        btnGpx.classList.remove('active');
+        gpxBox.classList.add('hidden');
+      } else {
+        btnManual.classList.remove('active');
+        btnGpx.classList.add('active');
+        gpxBox.classList.remove('hidden');
+      }
+    }
 
     function selectSport(sport) {
       curSport = sport;
@@ -1294,6 +1335,26 @@
       }
     }
 
+    function removeExistingPhotoAt(idx) {
+      editExistingPhotoIds.splice(idx, 1);
+      renderEditExistingPhotos();
+    }
+
+    function renderEditExistingPhotos() {
+      const grid = document.getElementById('editExistingPhotos');
+      if (editExistingPhotoIds.length === 0) {
+        grid.innerHTML = '<span style="font-size:12px; color:#94a3b8;">등록된 기존 사진이 없습니다.</span>';
+        return;
+      }
+      grid.innerHTML = editExistingPhotoIds.map(function(id, idx) {
+        const thumbUrl = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w400';
+        return '<div class="photo-preview-item">' +
+          '<img src="' + thumbUrl + '" alt="기존 사진">' +
+          '<button type="button" class="photo-delete-btn" onclick="removeExistingPhotoAt(' + idx + ')" title="삭제">✕</button>' +
+        '</div>';
+      }).join('');
+    }
+
     function removeAllPhotos(mode) {
       if (mode === 'edit') {
         editSelectedPhotos = [];
@@ -1302,26 +1363,6 @@
         selectedPhotos = [];
         renderPhotoPreviews();
       }
-    }
-
-    function removeExistingPhoto(idx) {
-      editExistingPhotoIds.splice(idx, 1);
-      renderExistingEditPhotos();
-    }
-
-    function renderExistingEditPhotos() {
-      const container = document.getElementById('editExistingPhotos');
-      if (editExistingPhotoIds.length === 0) {
-        container.innerHTML = '<div style="font-size:12px; color:#94a3b8;">등록된 기존 사진이 없습니다.</div>';
-        return;
-      }
-      container.innerHTML = editExistingPhotoIds.map(function(id, idx) {
-        const cdnUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s400';
-        return '<div class="photo-preview-item">' +
-          '<img src="' + cdnUrl + '" alt="기존 사진">' +
-          '<button type="button" class="photo-delete-btn" onclick="removeExistingPhoto(' + idx + ')" title="삭제">✕</button>' +
-        '</div>';
-      }).join('');
     }
 
     function openPhotoModal(imgUrl) {
@@ -1334,27 +1375,31 @@
     }
 
     function initPaceAutoCalc() {
-      const dist = document.getElementById('inputDistance');
-      const dur = document.getElementById('inputDuration');
-      const pace = document.getElementById('inputPace');
+      const durInput = document.getElementById('inputDuration');
+      const distInput = document.getElementById('inputDistance');
+      const paceInput = document.getElementById('inputPace');
 
       function calc() {
-        if (!dist || !dur || !pace) return;
-        const d = parseFloat(dist.value);
-        const t = parseFloat(dur.value);
-        if (d > 0 && t > 0) {
-          const paceDec = t / d;
-          const m = Math.floor(paceDec);
-          const s = Math.round((paceDec - m) * 60);
-          pace.value = m + "'" + (s < 10 ? '0' : '') + s + '"';
+        const dur = parseFloat(durInput.value);
+        const dist = parseFloat(distInput.value);
+        if (dur > 0 && dist > 0 && ['런닝', '걷기', '트레일런닝'].includes(curSport)) {
+          const paceDecimal = dur / dist;
+          const min = Math.floor(paceDecimal);
+          const sec = Math.round((paceDecimal - min) * 60);
+          paceInput.value = min + "'" + (sec < 10 ? '0' : '') + sec + '"';
         }
       }
-      dist.addEventListener('input', calc);
-      dur.addEventListener('input', calc);
+
+      durInput.addEventListener('input', calc);
+      distInput.addEventListener('input', calc);
     }
 
     function loadData() {
-      showToast('구글 드라이브 동기화 중...');
+      showToast('구글 시트 동기화 중...');
+      if (typeof google === 'undefined' || !google.script || !google.script.run) {
+        console.warn('Google Apps Script API 미연결 (로컬 테스트 환경)');
+        return;
+      }
       google.script.run
         .withSuccessHandler(function(res) {
           allLogs = (res && res.logs) || [];
@@ -1372,16 +1417,16 @@
     function updateStats(overview) {
       if (!overview) return;
       document.getElementById('stat-total-workouts').textContent = (overview.total_workouts || 0) + ' 회';
-      document.getElementById('stat-total-hours').textContent = (overview.total_duration_hours || 0) + ' 시간';
-      document.getElementById('stat-running-km').textContent = (overview.running_total_km || 0) + ' km';
-      document.getElementById('stat-elevation-m').textContent = '+' + (overview.total_elevation_gain || 0).toLocaleString() + ' m';
+      document.getElementById('stat-total-hours').textContent = (overview.total_hours || 0) + ' 시간';
+      document.getElementById('stat-running-km').textContent = (overview.total_running_km || 0) + ' km';
+      document.getElementById('stat-elevation-m').textContent = '+' + (overview.total_elevation_m || 0) + ' m';
     }
 
     function handleSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
-      btn.textContent = selectedPhotos.length > 0 ? ('사진 ' + selectedPhotos.length + '장 및 일지 저장 중...') : '저장 중...';
+      btn.textContent = '운동 일지 저장 중...';
 
       const data = {
         date: document.getElementById('inputDate').value,
@@ -1389,35 +1434,143 @@
         title: document.getElementById('inputTitle').value.trim(),
         duration_minutes: parseInt(document.getElementById('inputDuration').value) || 0,
         intensity: parseInt(document.getElementById('inputIntensity').value) || 5,
-        distance_km: parseFloat(document.getElementById('inputDistance').value) || '',
+        distance_km: parseFloat(document.getElementById('inputDistance').value) || 0,
         pace: document.getElementById('inputPace').value.trim(),
-        elevation_gain: parseInt(document.getElementById('inputElevation').value) || '',
-        max_altitude: parseInt(document.getElementById('inputMaxAlt').value) || '',
-        freedive_depth: parseFloat(document.getElementById('inputDepth').value) || '',
-        discipline: (curSport === '기타' ? document.getElementById('inputCustomSport').value.trim() : (document.getElementById('inputDiscipline') ? document.getElementById('inputDiscipline').value.trim() : '')),
-        location_course: document.getElementById('inputLocation').value.trim(),
+        elevation_gain_m: parseInt(document.getElementById('inputElevation').value) || 0,
+        max_altitude_m: parseInt(document.getElementById('inputMaxAlt').value) || 0,
+        depth_m: parseFloat(document.getElementById('inputDepth').value) || 0,
+        custom_sport: document.getElementById('inputCustomSport').value.trim() || document.getElementById('inputDiscipline').value.trim(),
+        location: document.getElementById('inputLocation').value.trim(),
         weather: document.getElementById('inputWeather').value,
         notes: document.getElementById('inputNotes').value.trim(),
         photos: selectedPhotos
       };
 
       google.script.run
-        .withSuccessHandler(function() {
-          showToast('구글 드라이브에 저장 완료! 📸');
+        .withSuccessHandler(function(res) {
+          showToast('운동 일지가 저장되었습니다! 🎉');
           document.getElementById('workoutForm').reset();
           document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
           removeAllPhotos('new');
+          clearGpxData();
+          selectSport('런닝');
+          setInputMode('manual');
           btn.disabled = false;
-          btn.textContent = '💾 구글 드라이브에 저장하기';
+          btn.textContent = '✨ 운동 일지 저장하기';
           loadData();
           switchTab('list');
         })
         .withFailureHandler(function(err) {
           alert('저장 실패: ' + err.message);
           btn.disabled = false;
-          btn.textContent = '다시 시도';
+          btn.textContent = '✨ 운동 일지 저장하기';
         })
-        .saveWorkout(data);
+        .saveWorkoutLog(data);
+    }
+
+    function openEditModal(rowIndex) {
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+      if (!log) return;
+
+      document.getElementById('editRowIndex').value = log.rowIndex;
+      document.getElementById('editSport').value = log.sport || '런닝';
+      handleEditSportChange(log.sport || '런닝');
+
+      document.getElementById('editDate').value = log.date;
+      document.getElementById('editDuration').value = log.duration_minutes || 0;
+      document.getElementById('editTitle').value = log.title || '';
+      document.getElementById('editIntensity').value = log.intensity || 5;
+      document.getElementById('editRpeText').textContent = (log.intensity || 5) + ' / 10';
+
+      document.getElementById('editDistance').value = log.distance_km || '';
+      document.getElementById('editPace').value = log.pace || '';
+      document.getElementById('editElevation').value = log.elevation_gain || '';
+      document.getElementById('editMaxAlt').value = log.max_altitude || '';
+      document.getElementById('editDepth').value = log.depth || '';
+      document.getElementById('editDiscipline').value = log.custom_sport || '';
+      document.getElementById('editCustomSport').value = log.custom_sport || '';
+
+      document.getElementById('editLocation').value = log.location || '';
+      document.getElementById('editWeather').value = log.weather || '맑음';
+      document.getElementById('editNotes').value = log.notes || '';
+
+      editExistingPhotoIds = Array.isArray(log.photo_ids) ? [...log.photo_ids] : [];
+      editSelectedPhotos = [];
+      renderEditExistingPhotos();
+      renderEditPhotoPreviews();
+
+      document.getElementById('editModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.add('hidden');
+      editSelectedPhotos = [];
+      editExistingPhotoIds = [];
+    }
+
+    function handleEditSportChange(sport) {
+      document.getElementById('edit-box-running').classList.toggle('hidden', !['런닝', '걷기', '트레일런닝'].includes(sport));
+      document.getElementById('edit-box-hiking').classList.toggle('hidden', !['등산', '트레일런닝'].includes(sport));
+      document.getElementById('edit-box-freedive').classList.toggle('hidden', sport !== '프리다이빙');
+      document.getElementById('edit-box-other').classList.toggle('hidden', sport !== '기타');
+    }
+
+    function handleEditSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnEditSubmit');
+      btn.disabled = true;
+      btn.textContent = '수정 내용 저장 중...';
+
+      const sport = document.getElementById('editSport').value;
+      const data = {
+        rowIndex: parseInt(document.getElementById('editRowIndex').value),
+        date: document.getElementById('editDate').value,
+        sport: sport,
+        title: document.getElementById('editTitle').value.trim(),
+        duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
+        intensity: parseInt(document.getElementById('editIntensity').value) || 5,
+        distance_km: parseFloat(document.getElementById('editDistance').value) || 0,
+        pace: document.getElementById('editPace').value.trim(),
+        elevation_gain_m: parseInt(document.getElementById('editElevation').value) || 0,
+        max_altitude_m: parseInt(document.getElementById('editMaxAlt').value) || 0,
+        depth_m: parseFloat(document.getElementById('editDepth').value) || 0,
+        custom_sport: document.getElementById('editCustomSport').value.trim() || document.getElementById('editDiscipline').value.trim(),
+        location: document.getElementById('editLocation').value.trim(),
+        weather: document.getElementById('editWeather').value,
+        notes: document.getElementById('editNotes').value.trim(),
+        photos: editSelectedPhotos,
+        existingPhotoIds: editExistingPhotoIds
+      };
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          showToast('운동 일지가 수정되었습니다! ✏️');
+          btn.disabled = false;
+          btn.textContent = '💾 수정 내용 저장';
+          closeEditModal();
+          loadData();
+        })
+        .withFailureHandler(function(err) {
+          alert('수정 실패: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = '💾 수정 내용 저장';
+        })
+        .updateWorkoutLog(data);
+    }
+
+    function deleteLog(rowIndex) {
+      if (!confirm('정말 이 운동 일지를 삭제하시겠습니까?\n(삭제 후 복구할 수 없습니다)')) return;
+
+      showToast('일지 삭제 중...');
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('일지가 삭제되었습니다. 🗑️');
+          loadData();
+        })
+        .withFailureHandler(function(err) {
+          alert('삭제 실패: ' + err.message);
+        })
+        .deleteWorkoutLog(rowIndex);
     }
 
     function filterLogs(sport) {
@@ -1433,246 +1586,152 @@
       const filtered = allLogs.filter(function(l) { return curFilter === 'all' || l.sport === curFilter; });
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8; font-size:13px;">기록이 없습니다.</div>';
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8; font-size:13px;">작성된 운동일지가 없습니다.</div>';
         return;
       }
 
       container.innerHTML = filtered.map(function(log) {
-        let photosHtml = '';
-        let ids = [];
-        if (Array.isArray(log.photo_ids)) {
-          ids = log.photo_ids;
-        } else if (typeof log.photo_ids === 'string' && log.photo_ids) {
-          ids = log.photo_ids.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-        }
+        let metricsHtml = '';
+        if (log.duration_minutes) metricsHtml += '<span>⏱️ ' + log.duration_minutes + '분</span>';
+        if (log.distance_km) metricsHtml += '<span class="metric-val">📏 ' + log.distance_km + 'km</span>';
+        if (log.pace) metricsHtml += '<span>⚡ ' + escapeHtml(log.pace) + '</span>';
+        if (log.elevation_gain) metricsHtml += '<span style="color:#16a34a;">⛰️ +' + log.elevation_gain + 'm</span>';
+        if (log.depth) metricsHtml += '<span style="color:#0284c7;">🤿 ' + log.depth + 'm</span>';
+        if (log.intensity) metricsHtml += '<span class="metric-rpe">RPE ' + log.intensity + '</span>';
 
+        let photosHtml = '';
+        let ids = Array.isArray(log.photo_ids) ? log.photo_ids : [];
         if (ids.length > 0) {
           const isSingle = ids.length === 1;
           const itemsHtml = ids.map(function(id) {
-            const cdnUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s800';
+            const thumbUrl = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w800';
             const fullUrl = 'https://lh3.googleusercontent.com/d/' + id + '=s1600';
-            const fallbackUrl = 'https://drive.google.com/thumbnail?id=' + id + '&sz=w800';
-
             return '<div class="log-photo-item ' + (isSingle ? 'single' : '') + '" onclick="openPhotoModal(\'' + fullUrl + '\')">' +
-              '<img src="' + cdnUrl + '" onerror="this.onerror=null; this.src=\'' + fallbackUrl + '\';" referrerpolicy="no-referrer" loading="lazy" alt="운동 사진">' +
+              '<img src="' + thumbUrl + '" loading="lazy" alt="운동 사진">' +
             '</div>';
           }).join('');
 
           photosHtml = '<div style="margin-top:8px;">' +
-            (!isSingle ? '<div style="font-size:11px; font-weight:700; color:#64748b; margin-bottom:4px;">📸 사진 ' + ids.length + '장 (좌우 스크롤 / 터치하여 확대)</div>' : '') +
+            (!isSingle ? '<div style="font-size:11px; font-weight:700; color:#64748b; margin-bottom:4px;">📸 사진 ' + ids.length + '장 (좌우 스크롤)</div>' : '') +
             '<div class="log-photos-gallery">' + itemsHtml + '</div>' +
           '</div>';
         }
 
-        // 💬 Comments HTML (Always expanded, with edit & delete buttons)
-        const comments = log.comments || [];
-        const commentsHtml = comments.map(function(c) {
-          const safeText = encodeURIComponent(c.text || '');
-          return '<div class="comment-item">' +
-            '<div class="comment-meta">' +
-              '<span class="comment-author">' + (c.author || '작성자') + '</span>' +
-              '<div class="comment-meta-right">' +
-                '<span class="comment-time">' + (c.createdAt || '') + (c.updatedAt ? ' (수정됨)' : '') + '</span>' +
-                '<button type="button" class="comment-action-btn" onclick="editComment(' + log.rowIndex + ', \'' + c.id + '\', \'' + safeText + '\')" title="수정">✏️</button>' +
-                '<button type="button" class="comment-action-btn delete" onclick="deleteComment(' + log.rowIndex + ', \'' + c.id + '\')" title="삭제">🗑️</button>' +
-              '</div>' +
-            '</div>' +
-            '<div class="comment-text">' + (c.text || '') + '</div>' +
-          '</div>';
-        }).join('');
+        let sportClass = '';
+        if (log.sport === '런닝') sportClass = 'running';
+        else if (log.sport === '등산') sportClass = 'hiking';
+        else if (log.sport === '트레일런닝') sportClass = 'trail';
+        else if (log.sport === '프리다이빙') sportClass = 'diving';
+        else if (log.sport === '걷기') sportClass = 'walking';
 
-        const savedAuthor = localStorage.getItem('workout_author') || '';
+        const comments = log.comments || [];
+        const commentCount = comments.length;
+        const savedAuthor = localStorage.getItem('workout_author_name') || '';
+
+        const commentItemsHtml = comments.length > 0
+          ? comments.map(function(c) {
+              const safeText = encodeURIComponent(c.text || '');
+              return '<div class="comment-item">' +
+                '<div class="comment-header">' +
+                  '<span class="comment-author">💬 ' + escapeHtml(c.author || '작성자') + '</span>' +
+                  '<div class="comment-meta-right">' +
+                    '<span class="comment-time">' + escapeHtml(c.createdAt || '') + (c.updatedAt ? ' (수정됨)' : '') + '</span>' +
+                    '<button type="button" class="comment-action-btn" onclick="editComment(' + log.rowIndex + ', \'' + c.id + '\', \'' + safeText + '\')" title="수정">✏️</button>' +
+                    '<button type="button" class="comment-action-btn delete" onclick="deleteComment(' + log.rowIndex + ', \'' + c.id + '\')" title="삭제">🗑️</button>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="comment-text">' + escapeHtml(c.text || '') + '</div>' +
+              '</div>';
+            }).join('')
+          : '<div style="text-align:center; color:#94a3b8; font-size:11px; padding:4px;">아직 댓글이 없습니다. 첫 응원을 남겨보세요! ✨</div>';
+
+        const commentsSectionHtml = '<div class="comments-wrapper">' +
+          '<div class="comments-header">' +
+            '<span>💬 피드백 & 댓글 (' + commentCount + ')</span>' +
+          '</div>' +
+          '<div class="comment-list" id="comment-list-' + log.rowIndex + '">' +
+            commentItemsHtml +
+          '</div>' +
+          '<form class="comment-form" onsubmit="submitComment(event, ' + log.rowIndex + ')">' +
+            '<input type="text" id="comment-author-' + log.rowIndex + '" class="comment-input-author" placeholder="작성자" value="' + escapeHtml(savedAuthor) + '" required>' +
+            '<input type="text" id="comment-text-' + log.rowIndex + '" class="comment-input-text" placeholder="응원 및 피드백 작성..." required>' +
+            '<button type="submit" id="comment-btn-' + log.rowIndex + '" class="comment-btn-submit">등록</button>' +
+          '</form>' +
+        '</div>';
 
         return '<div class="log-item">' +
           '<div class="log-item-header">' +
-            '<div class="log-header-left">' +
-              '<span class="sport-tag">' + log.sport + '</span>' +
-              '<span class="log-date">' + log.date + ' (RPE ' + (log.intensity || 5) + ')</span>' +
+            '<div style="display:flex; align-items:center; gap:6px;">' +
+              '<span class="sport-tag ' + sportClass + '">' + escapeHtml(log.sport) + '</span>' +
+              '<span class="log-date">' + escapeHtml(log.date) + '</span>' +
             '</div>' +
             '<div class="log-actions">' +
-              '<button type="button" class="btn-log-action" onclick="openEditModal(' + log.rowIndex + ')">✏️ 수정</button>' +
-              '<button type="button" class="btn-log-action delete" onclick="confirmDelete(' + log.rowIndex + ')">🗑️ 삭제</button>' +
+              '<button type="button" class="btn-action edit" onclick="openEditModal(' + log.rowIndex + ')">✏️ 수정</button>' +
+              '<button type="button" class="btn-action del" onclick="deleteLog(' + log.rowIndex + ')">🗑️ 삭제</button>' +
             '</div>' +
           '</div>' +
-          '<div class="log-title">' + (log.title || log.sport + ' 운동') + '</div>' +
-          '<div class="log-metrics">' +
-            (log.distance_km ? '<span class="metric-dist">📍 ' + log.distance_km + ' km</span>' : '') +
-            (log.pace ? '<span>⏱️ ' + log.pace + '</span>' : '') +
-            (log.elevation_gain ? '<span class="metric-elev">⛰️ +' + log.elevation_gain + 'm</span>' : '') +
-            (log.freedive_depth ? '<span class="metric-depth">🤿 ' + log.freedive_depth + 'm</span>' : '') +
-            (log.duration_minutes ? '<span>⌛ ' + log.duration_minutes + '분</span>' : '') +
-          '</div>' +
-          (log.notes ? '<div class="log-notes">' + log.notes + '</div>' : '') +
+
+          '<div class="log-title">' + escapeHtml(log.title || (log.sport + ' 운동')) + '</div>' +
+          '<div class="log-metrics">' + metricsHtml + '</div>' +
+
+          (log.location || log.weather ? '<div style="font-size:12px; color:#64748b; margin-bottom:4px;">📍 ' + escapeHtml(log.location || '미지정') + ' · ' + escapeHtml(log.weather || '') + '</div>' : '') +
+          (log.notes ? '<div class="log-notes">' + escapeHtml(log.notes) + '</div>' : '') +
           photosHtml +
-          
-          '<!-- 💬 Always Visible Comments Area -->' +
-          '<div class="comments-box">' +
-            '<div class="comments-header">' +
-              '<span>💬 댓글 & 피드백 (' + comments.length + ')</span>' +
-            '</div>' +
-            '<div class="comments-list">' +
-              (commentsHtml || '<div style="font-size:11px; color:#94a3b8; padding:4px 0;">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</div>') +
-            '</div>' +
-            '<form class="comment-form" onsubmit="handleCommentSubmit(event, ' + log.rowIndex + ')">' +
-              '<input type="text" class="comment-input-author" placeholder="작성자" value="' + savedAuthor + '" required>' +
-              '<input type="text" class="comment-input-text" placeholder="응원이나 피드백을 남겨주세요" required>' +
-              '<button type="submit" class="comment-btn-submit">등록</button>' +
-            '</form>' +
-          '</div>' +
+          commentsSectionHtml +
         '</div>';
       }).join('');
     }
 
-    // ✏️ EDIT MODAL LOGIC
-    function openEditModal(rowIndex) {
-      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
-      if (!log) return;
-
-      document.getElementById('editRowIndex').value = rowIndex;
-      document.getElementById('editSport').value = log.sport;
-      document.getElementById('editDate').value = log.date;
-      document.getElementById('editTitle').value = log.title || '';
-      document.getElementById('editDuration').value = log.duration_minutes || '';
-      document.getElementById('editIntensity').value = log.intensity || 5;
-      document.getElementById('editRpeText').textContent = (log.intensity || 5) + ' / 10';
-      document.getElementById('editDistance').value = log.distance_km || '';
-      document.getElementById('editPace').value = log.pace || '';
-      document.getElementById('editElevation').value = log.elevation_gain || '';
-      document.getElementById('editMaxAlt').value = log.max_altitude || '';
-      document.getElementById('editDepth').value = log.freedive_depth || '';
-      document.getElementById('editDiscipline').value = log.discipline || '';
-      document.getElementById('editCustomSport').value = log.sport === '기타' ? (log.discipline || '') : '';
-      document.getElementById('editLocation').value = log.location_course || '';
-      document.getElementById('editWeather').value = log.weather || '맑음';
-      document.getElementById('editNotes').value = log.notes || '';
-
-      handleEditSportChange(log.sport);
-
-      editExistingPhotoIds = Array.isArray(log.photo_ids) ? log.photo_ids.slice() : [];
-      editSelectedPhotos = [];
-      renderExistingEditPhotos();
-      renderEditPhotoPreviews();
-
-      document.getElementById('editModal').classList.remove('hidden');
-    }
-
-    function closeEditModal() {
-      document.getElementById('editModal').classList.add('hidden');
-    }
-
-    function handleEditSportChange(sport) {
-      document.getElementById('edit-box-running').classList.toggle('hidden', !['런닝', '걷기', '트레일런닝'].includes(sport));
-      document.getElementById('edit-box-hiking').classList.toggle('hidden', !['등산', '트레일런닝'].includes(sport));
-      document.getElementById('edit-box-freedive').classList.toggle('hidden', sport !== '프리다이빙');
-      document.getElementById('edit-box-other').classList.toggle('hidden', sport !== '기타');
-    }
-
-    function handleEditSubmit(e) {
+    function submitComment(e, rowIndex) {
       e.preventDefault();
-      const btn = document.getElementById('btnEditSubmit');
-      btn.disabled = true;
-      btn.textContent = '수정 저장 중...';
-
-      const rowIndex = parseInt(document.getElementById('editRowIndex').value);
-      const sport = document.getElementById('editSport').value;
-
-      const data = {
-        rowIndex: rowIndex,
-        date: document.getElementById('editDate').value,
-        sport: sport,
-        title: document.getElementById('editTitle').value.trim(),
-        duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
-        intensity: parseInt(document.getElementById('editIntensity').value) || 5,
-        distance_km: parseFloat(document.getElementById('editDistance').value) || '',
-        pace: document.getElementById('editPace').value.trim(),
-        elevation_gain: parseInt(document.getElementById('editElevation').value) || '',
-        max_altitude: parseInt(document.getElementById('editMaxAlt').value) || '',
-        freedive_depth: parseFloat(document.getElementById('editDepth').value) || '',
-        discipline: (sport === '기타' ? document.getElementById('editCustomSport').value.trim() : document.getElementById('editDiscipline').value.trim()),
-        location_course: document.getElementById('editLocation').value.trim(),
-        weather: document.getElementById('editWeather').value,
-        notes: document.getElementById('editNotes').value.trim(),
-        existingPhotoIds: editExistingPhotoIds,
-        photos: editSelectedPhotos
-      };
-
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('운동 일지가 수정되었습니다! ✏️');
-          btn.disabled = false;
-          btn.textContent = '💾 수정 내용 저장';
-          closeEditModal();
-          loadData();
-        })
-        .withFailureHandler(function(err) {
-          alert('수정 실패: ' + err.message);
-          btn.disabled = false;
-          btn.textContent = '다시 시도';
-        })
-        .updateWorkout(data);
-    }
-
-    // 🗑️ DELETE WORKOUT LOGIC
-    function confirmDelete(rowIndex) {
-      if (!confirm('정말 이 운동 기록을 삭제하시겠습니까? (삭제 후 복구할 수 없습니다)')) {
-        return;
-      }
-      showToast('삭제 중...');
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('운동 기록이 삭제되었습니다! 🗑️');
-          loadData();
-        })
-        .withFailureHandler(function(err) {
-          alert('삭제 실패: ' + err.message);
-        })
-        .deleteWorkout(rowIndex);
-    }
-
-    // 💬 COMMENT SUBMIT LOGIC
-    function handleCommentSubmit(e, rowIndex) {
-      e.preventDefault();
-      const form = e.target;
-      const authorInput = form.querySelector('.comment-input-author');
-      const textInput = form.querySelector('.comment-input-text');
-      const submitBtn = form.querySelector('.comment-btn-submit');
+      const authorInput = document.getElementById('comment-author-' + rowIndex);
+      const textInput = document.getElementById('comment-text-' + rowIndex);
+      const submitBtn = document.getElementById('comment-btn-' + rowIndex);
 
       const author = authorInput.value.trim() || '작성자';
       const text = textInput.value.trim();
-
       if (!text) return;
 
-      localStorage.setItem('workout_author', author);
+      localStorage.setItem('workout_author_name', author);
+
       submitBtn.disabled = true;
       submitBtn.textContent = '...';
 
       google.script.run
         .withSuccessHandler(function(res) {
-          showToast('댓글이 등록되었습니다! 💬');
-          textInput.value = '';
           submitBtn.disabled = false;
           submitBtn.textContent = '등록';
-          loadData();
+          textInput.value = '';
+          showToast('댓글이 등록되었습니다! 💬');
+          
+          const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+          if (log) {
+            log.comments = res.comments;
+            renderLogs();
+          }
         })
         .withFailureHandler(function(err) {
-          alert('댓글 등록 실패: ' + err.message);
           submitBtn.disabled = false;
           submitBtn.textContent = '등록';
+          alert('댓글 등록 실패: ' + err.message);
         })
         .addWorkoutComment(rowIndex, { author: author, text: text });
     }
 
-    // ✏️ COMMENT EDIT
     function editComment(rowIndex, commentId, safeText) {
       const currentText = decodeURIComponent(safeText || '');
-      const newText = prompt('댓글을 수정하세요:', currentText);
+      const newText = prompt('댓글/피드백을 수정하세요:', currentText);
       if (newText === null || newText.trim() === '' || newText.trim() === currentText) return;
 
       showToast('댓글 수정 중...');
       google.script.run
-        .withSuccessHandler(function() {
+        .withSuccessHandler(function(res) {
           showToast('댓글이 수정되었습니다! ✏️');
-          loadData();
+          const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+          if (log) {
+            log.comments = res.comments;
+            renderLogs();
+          }
         })
         .withFailureHandler(function(err) {
           alert('댓글 수정 실패: ' + err.message);
@@ -1680,15 +1739,18 @@
         .updateWorkoutComment(rowIndex, commentId, newText.trim());
     }
 
-    // 🗑️ COMMENT DELETE
     function deleteComment(rowIndex, commentId) {
-      if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
+      if (!confirm('이 댓글/피드백을 삭제하시겠습니까?')) return;
 
       showToast('댓글 삭제 중...');
       google.script.run
-        .withSuccessHandler(function() {
+        .withSuccessHandler(function(res) {
           showToast('댓글이 삭제되었습니다! 🗑️');
-          loadData();
+          const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+          if (log) {
+            log.comments = res.comments;
+            renderLogs();
+          }
         })
         .withFailureHandler(function(err) {
           alert('댓글 삭제 실패: ' + err.message);
@@ -1696,7 +1758,6 @@
         .deleteWorkoutComment(rowIndex, commentId);
     }
 
-    // 🔔 TEST NTFY
     function testNtfy() {
       showToast('스마트폰 알림 발송 중...');
       google.script.run
@@ -2050,7 +2111,7 @@
       };
     }
 
-    function applyParsedWorkoutData(data, source) {
+    function applyParsedWorkoutData(data) {
       if (!data) return;
 
       if (data.date) document.getElementById('inputDate').value = data.date;
@@ -2062,19 +2123,18 @@
       if (data.elevGain) document.getElementById('inputElevation').value = data.elevGain;
       if (data.maxAlt) document.getElementById('inputMaxAlt').value = data.maxAlt;
 
-      let title = data.name || data.title || (data.sport + ' ' + (data.distance ? data.distance + 'km' : ''));
-      if (data.distance && data.pace && !data.name) {
+      let title = data.title || (data.sport + ' ' + (data.distance ? data.distance + 'km' : ''));
+      if (data.distance && data.pace) {
         title = data.distance + 'km ' + data.sport + ' (' + data.pace + '/km)';
-      } else if (data.sport === '등산' && data.elevGain && !data.name) {
+      } else if (data.sport === '등산' && data.elevGain) {
         title = '등산 (획득고도 +' + data.elevGain + 'm)';
       }
       document.getElementById('inputTitle').value = title;
 
-      if (data.avgHr || data.calories || data.notes) {
+      if (data.avgHr || data.calories) {
         let noteExtra = [];
         if (data.avgHr) noteExtra.push('❤️ 평균심박: ' + data.avgHr + 'bpm');
         if (data.calories) noteExtra.push('🔥 소모열량: ' + data.calories + 'kcal');
-        if (data.notes && !data.notes.includes('심박')) noteExtra.push(data.notes);
         const notesArea = document.getElementById('inputNotes');
         if (!notesArea.value) {
           notesArea.value = noteExtra.join(' | ');
@@ -2090,10 +2150,8 @@
       if (data.avgHr) parts.push('❤️ ' + data.avgHr + 'bpm');
 
       const banner = document.getElementById('gpxResultBanner');
-      const badge = document.getElementById('gpxBadgeText');
       const text = document.getElementById('gpxSummaryText');
       if (banner && text) {
-        if (badge) badge.textContent = source === 'Strava' ? '✅ Strava 동기화 완료' : '✅ Zepp 분석 완료';
         text.textContent = parts.join(' · ');
         banner.classList.remove('hidden');
       }
@@ -2105,70 +2163,14 @@
       showToast('가져온 운동 데이터 표시가 초기화되었습니다.');
     }
 
-    // 🟧 STRAVA API JS HANDLERS
-    function fetchLatestStravaWorkout() {
-      const btn = document.getElementById('btnStravaSync');
-      btn.disabled = true;
-      btn.innerHTML = '<span>⏳ 연동 중...</span>';
-      showToast('Strava에서 최신 운동을 가져오는 중... 🏃‍♂️');
-
-      google.script.run
-        .withSuccessHandler(function(res) {
-          btn.disabled = false;
-          btn.innerHTML = '<span>⚡ Strava 최신운동</span>';
-
-          if (res && res.notConfigured) {
-            openStravaModal();
-            return;
-          }
-
-          if (res && res.success && res.activity) {
-            applyParsedWorkoutData(res.activity, 'Strava');
-            showToast('Strava 최신 운동 데이터가 입력되었습니다! 🎉');
-          } else {
-            alert(res && res.message ? res.message : 'Strava 운동 데이터를 가져오지 못했습니다: ' + (res && res.error));
-          }
-        })
-        .withFailureHandler(function(err) {
-          btn.disabled = false;
-          btn.innerHTML = '<span>⚡ Strava 최신운동</span>';
-          alert('Strava 연동 오류: ' + err.message);
-        })
-        .getLatestStravaActivity();
-    }
-
-    function openStravaModal() {
-      document.getElementById('stravaModal').classList.remove('hidden');
-    }
-
-    function closeStravaModal() {
-      document.getElementById('stravaModal').classList.add('hidden');
-    }
-
-    function handleSaveStravaSettings(e) {
-      e.preventDefault();
-      const btn = document.getElementById('btnSaveStrava');
-      btn.disabled = true;
-      btn.textContent = '저장 중...';
-
-      const cid = document.getElementById('stravaClientId').value.trim();
-      const secret = document.getElementById('stravaClientSecret').value.trim();
-      const token = document.getElementById('stravaRefreshToken').value.trim();
-
-      google.script.run
-        .withSuccessHandler(function(res) {
-          btn.disabled = false;
-          btn.textContent = '저장 및 연동하기';
-          closeStravaModal();
-          showToast('Strava API 정보가 저장되었습니다! 🚀');
-          fetchLatestStravaWorkout();
-        })
-        .withFailureHandler(function(err) {
-          btn.disabled = false;
-          btn.textContent = '저장 및 연동하기';
-          alert('설정 저장 실패: ' + err.message);
-        })
-        .saveStravaSettings(cid, secret, token);
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     function showToast(msg) {
