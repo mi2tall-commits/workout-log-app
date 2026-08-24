@@ -87,6 +87,7 @@
     .stat-val.orange { color: #ea580c; }
     .stat-val.emerald { color: #16a34a; }
     .stat-val.indigo { color: #4f46e5; }
+    .stat-val.rose { color: #e11d48; }
 
     /* Nav Tabs (3 Main Tabs) */
     .nav-tabs {
@@ -324,6 +325,7 @@
       box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
     }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
     /* Dynamic Category Box */
     .dynamic-box {
@@ -333,6 +335,45 @@
       border: 1px solid #e2e8f0;
       background: #f8fafc;
     }
+    .box-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* 🤖 GEMINI AI COACH BAR */
+    .ai-coach-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, #eef2ff 0%, #fdf4ff 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+    }
+    .ai-coach-btn {
+      background: linear-gradient(135deg, #4f46e5, #9333ea);
+      color: #ffffff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+      transition: all 0.15s;
+    }
+    .ai-coach-btn:hover { transform: translateY(-1px); }
+    .ai-coach-btn:active { transform: scale(0.97); }
+    .ai-coach-btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
     /* Multi Photo Upload & Preview Grid */
     .photo-upload-btn {
@@ -485,10 +526,15 @@
     .log-metrics {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px 10px;
       font-size: 13px;
       font-weight: 600;
       margin-bottom: 6px;
+    }
+    .metric-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
     }
     .metric-val { color: #4f46e5; font-weight: 700; }
     .metric-rpe {
@@ -501,11 +547,14 @@
     }
     .log-notes {
       font-size: 12px;
-      color: #475569;
+      color: #334155;
       background: #f8fafc;
-      padding: 8px 10px;
-      border-radius: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
       margin-top: 6px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      border-left: 3px solid #818cf8;
     }
 
     /* Log Multi-Photo Gallery Horizontal Scroll */
@@ -745,10 +794,11 @@
         <div class="logo-icon">🏃</div>
         <div class="logo-text">
           <h1>나의 운동일지</h1>
-          <p>구글 드라이브 & 실시간 알림</p>
+          <p>티렉스 3 센서 & Gemini AI 코치</p>
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn-header" onclick="openApiKeyModal()" title="Gemini API 키 등록">⚙️ AI설정</button>
         <button class="btn-header" onclick="testNtfy()">🔔 알림테스트</button>
         <button class="btn-header" onclick="loadData()">🔄 새로고침</button>
       </div>
@@ -772,8 +822,8 @@
         <div id="stat-running-km" class="stat-val orange">0 km</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">누적 등산 고도</div>
-        <div id="stat-elevation-m" class="stat-val emerald">+0 m</div>
+        <div class="stat-label">총 소모 열량</div>
+        <div id="stat-total-calories" class="stat-val rose">0 kcal</div>
       </div>
     </div>
 
@@ -803,7 +853,7 @@
           <div class="gpx-icon">⌚</div>
           <div class="gpx-text">
             <strong>T-Rex 3 / Zepp 운동 파일 불러오기</strong>
-            <p>Zepp 앱에서 내보낸 <b>GPX</b> 또는 <b>TCX</b> 파일을 선택하면 폼이 자동 완성됩니다.</p>
+            <p>Zepp 앱에서 내보낸 <b>GPX</b> 또는 <b>TCX</b> 파일을 넣으면 모든 센서 데이터가 자동 완성됩니다.</p>
           </div>
           <label for="inputGpxFile" class="gpx-upload-btn">
             <span>📂 파일 선택</span>
@@ -812,7 +862,7 @@
         </div>
         <div id="gpxResultBanner" class="gpx-result-banner hidden">
           <div class="gpx-result-content">
-            <span class="gpx-badge">✅ Zepp 분석 완료</span>
+            <span class="gpx-badge">✅ T-Rex 3 분석 완료</span>
             <span id="gpxSummaryText" class="gpx-summary-text"></span>
           </div>
           <button type="button" class="gpx-clear-btn" onclick="clearGpxData()" title="초기화">✕</button>
@@ -852,16 +902,16 @@
           </div>
         </div>
 
-        <!-- Date -->
-        <div class="form-group">
-          <label class="form-label">날짜</label>
-          <input id="inputDate" type="date" required class="form-input">
-        </div>
-
-        <!-- Title -->
-        <div class="form-group">
-          <label class="form-label">운동 제목 / 코스명</label>
-          <input id="inputTitle" type="text" placeholder="예: 문수산 힐클라임 러닝" class="form-input">
+        <!-- Date & Title -->
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">날짜</label>
+            <input id="inputDate" type="date" required class="form-input">
+          </div>
+          <div>
+            <label class="form-label">운동 제목 / 코스명</label>
+            <input id="inputTitle" type="text" placeholder="예: 문수산 힐클라임 러닝" class="form-input">
+          </div>
         </div>
 
         <!-- Duration & Intensity -->
@@ -879,9 +929,29 @@
           </div>
         </div>
 
-        <!-- DYNAMIC: RUNNING / WALKING / TRAIL -->
+        <!-- ❤️ 1번 항목: 심박수 & 칼로리 (공통 센서 데이터) -->
+        <div class="form-group dynamic-box">
+          <div class="box-title">❤️ 심폐 & 에너지 (T-Rex 3 센서)</div>
+          <div class="grid-3">
+            <div>
+              <label class="form-label">평균 심박 (bpm)</label>
+              <input id="inputAvgHr" type="number" min="0" max="250" placeholder="예: 148" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">최대 심박 (bpm)</label>
+              <input id="inputMaxHr" type="number" min="0" max="250" placeholder="예: 172" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">소모 열량 (kcal)</label>
+              <input id="inputCalories" type="number" min="0" placeholder="예: 420" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- DYNAMIC: RUNNING / WALKING / TRAIL (거리, 페이스, 케이던스) -->
         <div id="box-running" class="dynamic-box">
-          <div class="grid-2">
+          <div class="box-title">🏃 주행 & 페이스 & 케이던스</div>
+          <div class="grid-3">
             <div>
               <label class="form-label">거리 (km)</label>
               <input id="inputDistance" type="number" step="0.01" min="0" placeholder="예: 5.20" class="form-input">
@@ -890,15 +960,24 @@
               <label class="form-label">평균 페이스</label>
               <input id="inputPace" type="text" placeholder="예: 5'30&quot;" class="form-input">
             </div>
+            <div>
+              <label class="form-label">평균 케이던스 (spm)</label>
+              <input id="inputCadence" type="number" min="0" max="300" placeholder="예: 180" class="form-input">
+            </div>
           </div>
         </div>
 
-        <!-- DYNAMIC: HIKING / TRAIL ELEVATION -->
+        <!-- DYNAMIC: HIKING / TRAIL ELEVATION (획득고도, 하강고도, 최고고도) -->
         <div id="box-hiking" class="dynamic-box hidden">
-          <div class="grid-2">
+          <div class="box-title">⛰️ 고도 프로필 (상승 & 하강)</div>
+          <div class="grid-3">
             <div>
-              <label class="form-label">획득 고도 (m)</label>
+              <label class="form-label">획득 고도 (+m)</label>
               <input id="inputElevation" type="number" min="0" placeholder="예: 450" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">하강 고도 (-m)</label>
+              <input id="inputElevLoss" type="number" min="0" placeholder="예: 450" class="form-input">
             </div>
             <div>
               <label class="form-label">최고 고도 (m)</label>
@@ -907,15 +986,26 @@
           </div>
         </div>
 
-        <!-- DYNAMIC: FREEDIVING -->
+        <!-- DYNAMIC: FREEDIVING (수심, 잠수시간, 수온, 종목) -->
         <div id="box-freedive" class="dynamic-box hidden">
+          <div class="box-title">🤿 다이빙 프로필 (수심 & 수온)</div>
           <div class="grid-2">
             <div>
               <label class="form-label">최대 수심 (m)</label>
               <input id="inputDepth" type="number" step="0.1" min="0" placeholder="예: 18.5" class="form-input">
             </div>
             <div>
-              <label class="form-label">종목 (CWT, FIM 등)</label>
+              <label class="form-label">잠수 시간 (분:초)</label>
+              <input id="inputDiveTime" type="text" placeholder="예: 01:45" class="form-input">
+            </div>
+          </div>
+          <div class="grid-2" style="margin-top:8px;">
+            <div>
+              <label class="form-label">수온 (℃)</label>
+              <input id="inputWaterTemp" type="number" step="0.1" placeholder="예: 24.5" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">종목 (CWTB, FIM 등)</label>
               <input id="inputDiscipline" type="text" placeholder="예: CWTB" class="form-input">
             </div>
           </div>
@@ -945,10 +1035,15 @@
           </div>
         </div>
 
-        <!-- Notes -->
+        <!-- 🤖 GEMINI AI COACH SUMMARY SECTION -->
         <div class="form-group">
-          <label class="form-label">메모 & 후기</label>
-          <textarea id="inputNotes" rows="2" placeholder="컨디션, 특이사항, 장비 착용 메모 등" class="form-textarea"></textarea>
+          <div class="ai-coach-bar">
+            <span style="font-size:12px; font-weight:700; color:#4338ca;">🤖 Gemini AI 코치</span>
+            <button type="button" id="btnAiCoach" class="ai-coach-btn" onclick="generateAiSummary('new')">
+              <span>✨ AI 훈련 분석 & 후기 생성</span>
+            </button>
+          </div>
+          <textarea id="inputNotes" rows="3" placeholder="컨디션 및 메모를 입력하거나, 위 'AI 후기 생성' 버튼을 눌러보세요!" class="form-textarea"></textarea>
         </div>
 
         <!-- MULTI PHOTO UPLOAD (최대 5장) -->
@@ -1068,9 +1163,28 @@
           <input id="editIntensity" type="range" min="1" max="10" value="5" oninput="document.getElementById('editRpeText').textContent = this.value + ' / 10'" style="width:100%; margin-top:8px;">
         </div>
 
+        <!-- Edit Sensor Stats -->
+        <div class="form-group dynamic-box">
+          <div class="box-title">❤️ 심폐 & 에너지</div>
+          <div class="grid-3">
+            <div>
+              <label class="form-label">평균 심박 (bpm)</label>
+              <input id="editAvgHr" type="number" min="0" max="250" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">최대 심박 (bpm)</label>
+              <input id="editMaxHr" type="number" min="0" max="250" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">소모 열량 (kcal)</label>
+              <input id="editCalories" type="number" min="0" class="form-input">
+            </div>
+          </div>
+        </div>
+
         <!-- Dynamic Edit Sections -->
         <div id="edit-box-running" class="dynamic-box">
-          <div class="grid-2">
+          <div class="grid-3">
             <div>
               <label class="form-label">거리 (km)</label>
               <input id="editDistance" type="number" step="0.01" min="0" class="form-input">
@@ -1079,14 +1193,22 @@
               <label class="form-label">평균 페이스</label>
               <input id="editPace" type="text" class="form-input">
             </div>
+            <div>
+              <label class="form-label">케이던스 (spm)</label>
+              <input id="editCadence" type="number" min="0" max="300" class="form-input">
+            </div>
           </div>
         </div>
 
         <div id="edit-box-hiking" class="dynamic-box hidden">
-          <div class="grid-2">
+          <div class="grid-3">
             <div>
-              <label class="form-label">획득 고도 (m)</label>
+              <label class="form-label">획득 고도 (+m)</label>
               <input id="editElevation" type="number" min="0" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">하강 고도 (-m)</label>
+              <input id="editElevLoss" type="number" min="0" class="form-input">
             </div>
             <div>
               <label class="form-label">최고 고도 (m)</label>
@@ -1100,6 +1222,16 @@
             <div>
               <label class="form-label">최대 수심 (m)</label>
               <input id="editDepth" type="number" step="0.1" min="0" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">잠수 시간 (분:초)</label>
+              <input id="editDiveTime" type="text" class="form-input">
+            </div>
+          </div>
+          <div class="grid-2" style="margin-top:8px;">
+            <div>
+              <label class="form-label">수온 (℃)</label>
+              <input id="editWaterTemp" type="number" step="0.1" class="form-input">
             </div>
             <div>
               <label class="form-label">종목</label>
@@ -1130,9 +1262,15 @@
           </div>
         </div>
 
+        <!-- Edit Notes with AI button -->
         <div class="form-group">
-          <label class="form-label">메모 & 후기</label>
-          <textarea id="editNotes" rows="2" class="form-textarea"></textarea>
+          <div class="ai-coach-bar">
+            <span style="font-size:12px; font-weight:700; color:#4338ca;">🤖 Gemini AI 코치</span>
+            <button type="button" id="btnEditAiCoach" class="ai-coach-btn" onclick="generateAiSummary('edit')">
+              <span>✨ AI 후기 다시 작성</span>
+            </button>
+          </div>
+          <textarea id="editNotes" rows="3" class="form-textarea"></textarea>
         </div>
 
         <!-- Existing Photos & Add Photos -->
@@ -1152,6 +1290,29 @@
         <div style="display:flex; gap:8px; margin-top:16px;">
           <button type="button" class="btn-header" style="flex:1; justify-content:center; padding:12px;" onclick="closeEditModal()">취소</button>
           <button type="submit" id="btnEditSubmit" class="submit-btn" style="flex:2; margin-top:0;">💾 수정 내용 저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ⚙️ API KEY MODAL -->
+  <div id="apiKeyModal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ Google Gemini AI 설정</div>
+        <button type="button" class="modal-close-btn" onclick="closeApiKeyModal()">✕</button>
+      </div>
+      <div style="font-size:13px; color:#475569; line-height:1.5; margin-bottom:12px;">
+        Google AI Studio에서 발급받은 무료 <b>Gemini API Key</b>를 입력하시면 더욱 풍부한 맞춤형 AI 코칭 분석을 받아보실 수 있습니다. (키가 없어도 기본 스마트 분석이 작동합니다!)
+      </div>
+      <form onsubmit="handleSaveApiKey(event)">
+        <div class="form-group">
+          <label class="form-label">Gemini API Key</label>
+          <input id="inputGeminiApiKey" type="password" placeholder="AIzaSy..." class="form-input" required>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <button type="button" class="btn-header" style="flex:1; justify-content:center;" onclick="closeApiKeyModal()">닫기</button>
+          <button type="submit" id="btnSaveApiKey" class="submit-btn" style="flex:2; margin-top:0;">저장하기</button>
         </div>
       </form>
     </div>
@@ -1224,6 +1385,97 @@
 
       if (tab === 'list') renderLogs();
       if (tab === 'charts') renderAllCharts();
+    }
+
+    // 🤖 GEMINI AI SUMMARY GENERATION
+    function generateAiSummary(mode) {
+      const isEdit = mode === 'edit';
+      const btn = document.getElementById(isEdit ? 'btnEditAiCoach' : 'btnAiCoach');
+      const notesEl = document.getElementById(isEdit ? 'editNotes' : 'inputNotes');
+
+      const sport = isEdit ? document.getElementById('editSport').value : curSport;
+      const data = {
+        sport: sport,
+        date: document.getElementById(isEdit ? 'editDate' : 'inputDate').value,
+        duration_minutes: parseInt(document.getElementById(isEdit ? 'editDuration' : 'inputDuration').value) || 0,
+        intensity: parseInt(document.getElementById(isEdit ? 'editIntensity' : 'inputIntensity').value) || 5,
+        distance_km: parseFloat(document.getElementById(isEdit ? 'editDistance' : 'inputDistance').value) || 0,
+        pace: document.getElementById(isEdit ? 'editPace' : 'inputPace').value.trim(),
+        avg_hr: parseInt(document.getElementById(isEdit ? 'editAvgHr' : 'inputAvgHr').value) || 0,
+        max_hr: parseInt(document.getElementById(isEdit ? 'editMaxHr' : 'inputMaxHr').value) || 0,
+        calories: parseInt(document.getElementById(isEdit ? 'editCalories' : 'inputCalories').value) || 0,
+        cadence: parseInt(document.getElementById(isEdit ? 'editCadence' : 'inputCadence').value) || 0,
+        elevation_gain: parseInt(document.getElementById(isEdit ? 'editElevation' : 'inputElevation').value) || 0,
+        elevation_loss: parseInt(document.getElementById(isEdit ? 'editElevLoss' : 'inputElevLoss').value) || 0,
+        max_altitude: parseInt(document.getElementById(isEdit ? 'editMaxAlt' : 'inputMaxAlt').value) || 0,
+        freedive_depth: parseFloat(document.getElementById(isEdit ? 'editDepth' : 'inputDepth').value) || 0,
+        dive_time: document.getElementById(isEdit ? 'editDiveTime' : 'inputDiveTime').value.trim(),
+        water_temp: document.getElementById(isEdit ? 'editWaterTemp' : 'inputWaterTemp').value.trim(),
+        location_course: document.getElementById(isEdit ? 'editLocation' : 'inputLocation').value.trim(),
+        weather: document.getElementById(isEdit ? 'editWeather' : 'inputWeather').value
+      };
+
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ AI 코칭 분석 중...</span>';
+      showToast('Gemini AI가 훈련 데이터를 분석 중입니다... 🤖✨');
+
+      if (typeof google === 'undefined' || !google.script || !google.script.run) {
+        setTimeout(function() {
+          btn.disabled = false;
+          btn.innerHTML = '<span>✨ AI 훈련 분석 & 후기 생성</span>';
+          notesEl.value = "[📊 AI 훈련 성과 분석]\n" + (data.distance_km ? data.distance_km + "km " : "") + data.sport + " 훈련을 성공적으로 마쳤습니다. 심박수와 케이던스를 안정적으로 유지하여 부상 없이 높은 효율을 기록했습니다!\n\n[💡 코치 팁 & 회복]\n충분한 스트레칭과 수분 섭취로 근육 피로를 풀어주세요. 수고하셨습니다! 🔥";
+          showToast('AI 코칭 후기 생성 완료! ✨');
+        }, 1000);
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false;
+          btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
+          if (res && res.summary) {
+            notesEl.value = res.summary;
+            showToast('AI 코칭 후기가 입력되었습니다! 🎯');
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
+          alert('AI 생성 실패: ' + err.message);
+        })
+        .generateGeminiWorkoutSummary(data);
+    }
+
+    function openApiKeyModal() {
+      document.getElementById('apiKeyModal').classList.remove('hidden');
+    }
+
+    function closeApiKeyModal() {
+      document.getElementById('apiKeyModal').classList.add('hidden');
+    }
+
+    function handleSaveApiKey(e) {
+      e.preventDefault();
+      const key = document.getElementById('inputGeminiApiKey').value.trim();
+      if (!key) return;
+
+      const btn = document.getElementById('btnSaveApiKey');
+      btn.disabled = true;
+      btn.textContent = '저장 중...';
+
+      google.script.run
+        .withSuccessHandler(function() {
+          btn.disabled = false;
+          btn.textContent = '저장하기';
+          closeApiKeyModal();
+          showToast('Gemini API Key가 안전하게 저장되었습니다! 🤖✨');
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = '저장하기';
+          alert('저장 실패: ' + err.message);
+        })
+        .saveGeminiApiKey(key);
     }
 
     function handlePhotosSelect(e, mode) {
@@ -1417,9 +1669,9 @@
     function updateStats(overview) {
       if (!overview) return;
       document.getElementById('stat-total-workouts').textContent = (overview.total_workouts || 0) + ' 회';
-      document.getElementById('stat-total-hours').textContent = (overview.total_hours || 0) + ' 시간';
-      document.getElementById('stat-running-km').textContent = (overview.total_running_km || 0) + ' km';
-      document.getElementById('stat-elevation-m').textContent = '+' + (overview.total_elevation_m || 0) + ' m';
+      document.getElementById('stat-total-hours').textContent = (overview.total_duration_hours || 0) + ' 시간';
+      document.getElementById('stat-running-km').textContent = (overview.running_total_km || 0) + ' km';
+      document.getElementById('stat-total-calories').textContent = (overview.total_calories ? overview.total_calories.toLocaleString() : '0') + ' kcal';
     }
 
     function handleSubmit(e) {
@@ -1436,11 +1688,20 @@
         intensity: parseInt(document.getElementById('inputIntensity').value) || 5,
         distance_km: parseFloat(document.getElementById('inputDistance').value) || 0,
         pace: document.getElementById('inputPace').value.trim(),
-        elevation_gain_m: parseInt(document.getElementById('inputElevation').value) || 0,
-        max_altitude_m: parseInt(document.getElementById('inputMaxAlt').value) || 0,
-        depth_m: parseFloat(document.getElementById('inputDepth').value) || 0,
-        custom_sport: document.getElementById('inputCustomSport').value.trim() || document.getElementById('inputDiscipline').value.trim(),
-        location: document.getElementById('inputLocation').value.trim(),
+        // 1 & 2번 항목
+        avg_hr: parseInt(document.getElementById('inputAvgHr').value) || 0,
+        max_hr: parseInt(document.getElementById('inputMaxHr').value) || 0,
+        calories: parseInt(document.getElementById('inputCalories').value) || 0,
+        cadence: parseInt(document.getElementById('inputCadence').value) || 0,
+        elevation_gain: parseInt(document.getElementById('inputElevation').value) || 0,
+        elevation_loss: parseInt(document.getElementById('inputElevLoss').value) || 0,
+        max_altitude: parseInt(document.getElementById('inputMaxAlt').value) || 0,
+        freedive_depth: parseFloat(document.getElementById('inputDepth').value) || 0,
+        dive_time: document.getElementById('inputDiveTime').value.trim(),
+        water_temp: document.getElementById('inputWaterTemp').value.trim(),
+        discipline: document.getElementById('inputDiscipline').value.trim(),
+        custom_sport: document.getElementById('inputCustomSport').value.trim(),
+        location_course: document.getElementById('inputLocation').value.trim(),
         weather: document.getElementById('inputWeather').value,
         notes: document.getElementById('inputNotes').value.trim(),
         photos: selectedPhotos
@@ -1482,15 +1743,24 @@
       document.getElementById('editIntensity').value = log.intensity || 5;
       document.getElementById('editRpeText').textContent = (log.intensity || 5) + ' / 10';
 
+      // 1/2번 항목
+      document.getElementById('editAvgHr').value = log.avg_hr || '';
+      document.getElementById('editMaxHr').value = log.max_hr || '';
+      document.getElementById('editCalories').value = log.calories || '';
+      document.getElementById('editCadence').value = log.cadence || '';
+
       document.getElementById('editDistance').value = log.distance_km || '';
       document.getElementById('editPace').value = log.pace || '';
       document.getElementById('editElevation').value = log.elevation_gain || '';
+      document.getElementById('editElevLoss').value = log.elevation_loss || '';
       document.getElementById('editMaxAlt').value = log.max_altitude || '';
-      document.getElementById('editDepth').value = log.depth || '';
-      document.getElementById('editDiscipline').value = log.custom_sport || '';
-      document.getElementById('editCustomSport').value = log.custom_sport || '';
+      document.getElementById('editDepth').value = log.freedive_depth || '';
+      document.getElementById('editDiveTime').value = log.dive_time || '';
+      document.getElementById('editWaterTemp').value = log.water_temp !== undefined ? log.water_temp : '';
+      document.getElementById('editDiscipline').value = log.discipline || '';
+      document.getElementById('editCustomSport').value = log.discipline || '';
 
-      document.getElementById('editLocation').value = log.location || '';
+      document.getElementById('editLocation').value = log.location_course || '';
       document.getElementById('editWeather').value = log.weather || '맑음';
       document.getElementById('editNotes').value = log.notes || '';
 
@@ -1531,11 +1801,20 @@
         intensity: parseInt(document.getElementById('editIntensity').value) || 5,
         distance_km: parseFloat(document.getElementById('editDistance').value) || 0,
         pace: document.getElementById('editPace').value.trim(),
-        elevation_gain_m: parseInt(document.getElementById('editElevation').value) || 0,
-        max_altitude_m: parseInt(document.getElementById('editMaxAlt').value) || 0,
-        depth_m: parseFloat(document.getElementById('editDepth').value) || 0,
-        custom_sport: document.getElementById('editCustomSport').value.trim() || document.getElementById('editDiscipline').value.trim(),
-        location: document.getElementById('editLocation').value.trim(),
+        // 1 & 2번 항목
+        avg_hr: parseInt(document.getElementById('editAvgHr').value) || 0,
+        max_hr: parseInt(document.getElementById('editMaxHr').value) || 0,
+        calories: parseInt(document.getElementById('editCalories').value) || 0,
+        cadence: parseInt(document.getElementById('editCadence').value) || 0,
+        elevation_gain: parseInt(document.getElementById('editElevation').value) || 0,
+        elevation_loss: parseInt(document.getElementById('editElevLoss').value) || 0,
+        max_altitude: parseInt(document.getElementById('editMaxAlt').value) || 0,
+        freedive_depth: parseFloat(document.getElementById('editDepth').value) || 0,
+        dive_time: document.getElementById('editDiveTime').value.trim(),
+        water_temp: document.getElementById('editWaterTemp').value.trim(),
+        discipline: document.getElementById('editDiscipline').value.trim(),
+        custom_sport: document.getElementById('editCustomSport').value.trim(),
+        location_course: document.getElementById('editLocation').value.trim(),
         weather: document.getElementById('editWeather').value,
         notes: document.getElementById('editNotes').value.trim(),
         photos: editSelectedPhotos,
@@ -1592,11 +1871,14 @@
 
       container.innerHTML = filtered.map(function(log) {
         let metricsHtml = '';
-        if (log.duration_minutes) metricsHtml += '<span>⏱️ ' + log.duration_minutes + '분</span>';
-        if (log.distance_km) metricsHtml += '<span class="metric-val">📏 ' + log.distance_km + 'km</span>';
-        if (log.pace) metricsHtml += '<span>⚡ ' + escapeHtml(log.pace) + '</span>';
-        if (log.elevation_gain) metricsHtml += '<span style="color:#16a34a;">⛰️ +' + log.elevation_gain + 'm</span>';
-        if (log.depth) metricsHtml += '<span style="color:#0284c7;">🤿 ' + log.depth + 'm</span>';
+        if (log.duration_minutes) metricsHtml += '<span class="metric-badge">⏱️ ' + log.duration_minutes + '분</span>';
+        if (log.distance_km) metricsHtml += '<span class="metric-badge metric-val">📏 ' + log.distance_km + 'km</span>';
+        if (log.pace) metricsHtml += '<span class="metric-badge">⚡ ' + escapeHtml(log.pace) + '</span>';
+        if (log.avg_hr) metricsHtml += '<span class="metric-badge" style="color:#e11d48;">❤️ ' + log.avg_hr + 'bpm' + (log.max_hr ? ' (최고 ' + log.max_hr + ')' : '') + '</span>';
+        if (log.calories) metricsHtml += '<span class="metric-badge" style="color:#ea580c;">🔥 ' + log.calories + 'kcal</span>';
+        if (log.cadence) metricsHtml += '<span class="metric-badge" style="color:#0284c7;">👣 ' + log.cadence + 'spm</span>';
+        if (log.elevation_gain) metricsHtml += '<span class="metric-badge" style="color:#16a34a;">⛰️ +' + log.elevation_gain + 'm' + (log.elevation_loss ? ' / -' + log.elevation_loss + 'm' : '') + '</span>';
+        if (log.freedive_depth) metricsHtml += '<span class="metric-badge" style="color:#0284c7;">🤿 ' + log.freedive_depth + 'm' + (log.dive_time ? ' (' + log.dive_time + ')' : '') + (log.water_temp ? ' · ' + log.water_temp + '℃' : '') + '</span>';
         if (log.intensity) metricsHtml += '<span class="metric-rpe">RPE ' + log.intensity + '</span>';
 
         let photosHtml = '';
@@ -1674,7 +1956,7 @@
           '<div class="log-title">' + escapeHtml(log.title || (log.sport + ' 운동')) + '</div>' +
           '<div class="log-metrics">' + metricsHtml + '</div>' +
 
-          (log.location || log.weather ? '<div style="font-size:12px; color:#64748b; margin-bottom:4px;">📍 ' + escapeHtml(log.location || '미지정') + ' · ' + escapeHtml(log.weather || '') + '</div>' : '') +
+          (log.location_course || log.weather ? '<div style="font-size:12px; color:#64748b; margin-bottom:4px;">📍 ' + escapeHtml(log.location_course || '미지정') + ' · ' + escapeHtml(log.weather || '') + '</div>' : '') +
           (log.notes ? '<div class="log-notes">' + escapeHtml(log.notes) + '</div>' : '') +
           photosHtml +
           commentsSectionHtml +
@@ -1963,6 +2245,10 @@
       if (!trkpts || trkpts.length === 0) return null;
 
       let pts = [];
+      let hrValues = [];
+      let cadValues = [];
+      let tempValues = [];
+
       for (let i = 0; i < trkpts.length; i++) {
         const pt = trkpts[i];
         const lat = parseFloat(pt.getAttribute('lat'));
@@ -1973,10 +2259,38 @@
         const ele = eleNode ? parseFloat(eleNode.textContent) : 0;
         const timeStr = timeNode ? timeNode.textContent.trim() : null;
         pts.push({ lat: lat, lon: lon, ele: ele, time: timeStr });
+
+        // HR & Cadence from extensions
+        const hrNodes = pt.getElementsByTagName('hr');
+        const gpxtpxHr = pt.getElementsByTagName('gpxtpx:hr');
+        const hrEl = gpxtpxHr.length > 0 ? gpxtpxHr[0] : (hrNodes.length > 0 ? hrNodes[0] : null);
+        if (hrEl) {
+          const v = parseInt(hrEl.textContent);
+          if (v > 30 && v < 240) hrValues.push(v);
+        }
+
+        const cadNodes = pt.getElementsByTagName('cad');
+        const gpxtpxCad = pt.getElementsByTagName('gpxtpx:cad');
+        const cadEl = gpxtpxCad.length > 0 ? gpxtpxCad[0] : (cadNodes.length > 0 ? cadNodes[0] : null);
+        if (cadEl) {
+          let c = parseInt(cadEl.textContent);
+          // If cadence is single-leg (e.g. 85~95), double it to SPM (170~190)
+          if (c > 40 && c < 120) c = c * 2;
+          if (c >= 120 && c <= 260) cadValues.push(c);
+        }
+
+        const atempNodes = pt.getElementsByTagName('atemp');
+        const gpxtpxAtemp = pt.getElementsByTagName('gpxtpx:atemp');
+        const tempEl = gpxtpxAtemp.length > 0 ? gpxtpxAtemp[0] : (atempNodes.length > 0 ? atempNodes[0] : null);
+        if (tempEl) {
+          const t = parseFloat(tempEl.textContent);
+          if (!isNaN(t)) tempValues.push(t);
+        }
       }
 
       let totalDist = 0;
       let elevGain = 0;
+      let elevLoss = 0;
       let maxAlt = pts[0].ele;
       let minAlt = pts[0].ele;
 
@@ -1984,9 +2298,8 @@
         const d = haversineDistance(pts[i].lat, pts[i].lon, pts[i+1].lat, pts[i+1].lon);
         totalDist += d;
         const de = pts[i+1].ele - pts[i].ele;
-        if (de > 0.5) {
-          elevGain += de;
-        }
+        if (de > 0.5) elevGain += de;
+        if (de < -0.5) elevLoss += Math.abs(de);
         if (pts[i+1].ele > maxAlt) maxAlt = pts[i+1].ele;
         if (pts[i+1].ele < minAlt) minAlt = pts[i+1].ele;
       }
@@ -2020,15 +2333,25 @@
         paceStr = formatPace(paceVal);
       }
 
+      let avgHr = hrValues.length > 0 ? Math.round(hrValues.reduce((a,b)=>a+b,0) / hrValues.length) : 0;
+      let maxHr = hrValues.length > 0 ? Math.max(...hrValues) : 0;
+      let avgCadence = cadValues.length > 0 ? Math.round(cadValues.reduce((a,b)=>a+b,0) / cadValues.length) : 0;
+      let avgWaterTemp = tempValues.length > 0 ? Math.round((tempValues.reduce((a,b)=>a+b,0) / tempValues.length) * 10) / 10 : '';
+
       return {
         date: dateStr,
         sport: detectedSport,
         duration: durMinutes,
         distance: Math.round(totalDist * 100) / 100,
         pace: paceStr,
+        avgHr: avgHr,
+        maxHr: maxHr,
+        cadence: avgCadence,
         elevGain: Math.round(elevGain),
+        elevLoss: Math.round(elevLoss),
         maxAlt: Math.round(maxAlt),
         minAlt: Math.round(minAlt),
+        waterTemp: avgWaterTemp,
         title: (typeNode ? typeNode.textContent : '') || (detectedSport + ' ' + (Math.round(totalDist * 100) / 100) + 'km')
       };
     }
@@ -2042,26 +2365,40 @@
       let totalMeters = 0;
       let calories = 0;
       let hrValues = [];
+      let cadValues = [];
 
       for (let i = 0; i < laps.length; i++) {
         const lap = laps[i];
         const tNode = lap.getElementsByTagName('TotalTimeSeconds')[0];
         const dNode = lap.getElementsByTagName('DistanceMeters')[0];
         const cNode = lap.getElementsByTagName('Calories')[0];
+        const cadNode = lap.getElementsByTagName('Cadence')[0];
+
         if (tNode) totalSeconds += parseFloat(tNode.textContent);
         if (dNode) totalMeters += parseFloat(dNode.textContent);
         if (cNode) calories += parseInt(cNode.textContent);
+        if (cadNode) {
+          let c = parseInt(cadNode.textContent);
+          if (c > 40 && c < 120) c = c * 2;
+          if (c >= 120) cadValues.push(c);
+        }
       }
 
       const hrs = xmlDoc.getElementsByTagName('HeartRateBpm');
       for (let i = 0; i < hrs.length; i++) {
         const valNode = hrs[i].getElementsByTagName('Value')[0];
-        if (valNode) hrValues.push(parseInt(valNode.textContent));
+        if (valNode) {
+          const v = parseInt(valNode.textContent);
+          if (v > 30 && v < 240) hrValues.push(v);
+        }
       }
       let avgHr = hrValues.length > 0 ? Math.round(hrValues.reduce((a,b)=>a+b,0) / hrValues.length) : 0;
+      let maxHr = hrValues.length > 0 ? Math.max(...hrValues) : 0;
+      let avgCadence = cadValues.length > 0 ? Math.round(cadValues.reduce((a,b)=>a+b,0) / cadValues.length) : 0;
 
       const trackpoints = xmlDoc.getElementsByTagName('Trackpoint');
       let elevGain = 0;
+      let elevLoss = 0;
       let maxAlt = 0;
       let prevEle = null;
       let startTime = null;
@@ -2076,6 +2413,7 @@
           if (prevEle !== null) {
             const de = ele - prevEle;
             if (de > 0.5) elevGain += de;
+            if (de < -0.5) elevLoss += Math.abs(de);
           }
           if (ele > maxAlt) maxAlt = ele;
           prevEle = ele;
@@ -2103,10 +2441,13 @@
         duration: durMinutes,
         distance: distKm,
         pace: paceStr,
-        elevGain: Math.round(elevGain),
-        maxAlt: Math.round(maxAlt),
         avgHr: avgHr,
+        maxHr: maxHr,
         calories: calories,
+        cadence: avgCadence,
+        elevGain: Math.round(elevGain),
+        elevLoss: Math.round(elevLoss),
+        maxAlt: Math.round(maxAlt),
         title: detectedSport + ' ' + distKm + 'km'
       };
     }
@@ -2120,8 +2461,14 @@
 
       if (data.distance) document.getElementById('inputDistance').value = data.distance;
       if (data.pace) document.getElementById('inputPace').value = data.pace;
+      if (data.avgHr) document.getElementById('inputAvgHr').value = data.avgHr;
+      if (data.maxHr) document.getElementById('inputMaxHr').value = data.maxHr;
+      if (data.calories) document.getElementById('inputCalories').value = data.calories;
+      if (data.cadence) document.getElementById('inputCadence').value = data.cadence;
       if (data.elevGain) document.getElementById('inputElevation').value = data.elevGain;
+      if (data.elevLoss) document.getElementById('inputElevLoss').value = data.elevLoss;
       if (data.maxAlt) document.getElementById('inputMaxAlt').value = data.maxAlt;
+      if (data.waterTemp) document.getElementById('inputWaterTemp').value = data.waterTemp;
 
       let title = data.title || (data.sport + ' ' + (data.distance ? data.distance + 'km' : ''));
       if (data.distance && data.pace) {
@@ -2131,23 +2478,15 @@
       }
       document.getElementById('inputTitle').value = title;
 
-      if (data.avgHr || data.calories) {
-        let noteExtra = [];
-        if (data.avgHr) noteExtra.push('❤️ 평균심박: ' + data.avgHr + 'bpm');
-        if (data.calories) noteExtra.push('🔥 소모열량: ' + data.calories + 'kcal');
-        const notesArea = document.getElementById('inputNotes');
-        if (!notesArea.value) {
-          notesArea.value = noteExtra.join(' | ');
-        }
-      }
-
       let parts = [];
       if (data.sport) parts.push('종목: ' + data.sport);
       if (data.distance) parts.push(data.distance + 'km');
       if (data.duration) parts.push(data.duration + '분');
       if (data.pace) parts.push('페이스 ' + data.pace);
-      if (data.elevGain) parts.push('+' + data.elevGain + 'm');
       if (data.avgHr) parts.push('❤️ ' + data.avgHr + 'bpm');
+      if (data.calories) parts.push('🔥 ' + data.calories + 'kcal');
+      if (data.cadence) parts.push('👣 ' + data.cadence + 'spm');
+      if (data.elevGain) parts.push('⛰️ +' + data.elevGain + 'm' + (data.elevLoss ? ' / -' + data.elevLoss + 'm' : ''));
 
       const banner = document.getElementById('gpxResultBanner');
       const text = document.getElementById('gpxSummaryText');
@@ -2155,6 +2494,9 @@
         text.textContent = parts.join(' · ');
         banner.classList.remove('hidden');
       }
+
+      // 파일 업로드 시 AI 코치 요약 자동 생성 제안/트리거
+      generateAiSummary('new');
     }
 
     function clearGpxData() {
