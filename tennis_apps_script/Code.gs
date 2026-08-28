@@ -871,3 +871,131 @@ function testTennisTelegramAlert() {
   Logger.log("테니스일지 텔레그램 테스트 알림 발송 완료!");
   return { success: true };
 }
+
+// -------------------------------------------------------------
+// [8. 🎥 GEMINI AI 비디오 폼 정밀 분석 (테니스 & 러닝)]
+// -------------------------------------------------------------
+function analyzeTennisVideoFormAI(item) {
+  try {
+    var apiKey = item.geminiApiKey || DEFAULT_GEMINI_API_KEY;
+    var videoBase64 = item.videoBase64;
+    var mimeType = item.mimeType || "video/mp4";
+    var motionType = item.motionType || "테니스 - 포핸드 스트로크";
+    var focusNotes = item.focusNotes || "";
+    var modelPref = item.modelPreference || "pro";
+
+    if (!videoBase64) {
+      return {
+        success: false,
+        error: "분석할 동영상 파일 데이터가 전달되지 않았습니다."
+      };
+    }
+
+    var prompt = "당신은 세계적인 프로 테니스 수석 코치이자 스포츠 바이오메카닉스(동작 생체역학) 및 러닝 폼 전문 분석가입니다.\n\n" +
+      "사용자가 업로드한 10~30초 동영상(촬영된 " + motionType + " 동작)을 프레임 단위로 정밀 분석하여, 아래 [필수 구성 양식]에 맞춰 최고의 전문 코칭 리포트를 작성해주세요.\n\n" +
+      (focusNotes ? "【사용자의 중점 질문 및 점검 요청】: \"" + focusNotes + "\"\n\n" : "") +
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+      "【필수 분석 가이드 및 출력 포맷】\n" +
+      "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+      "🎯 [1. 폼 종합 평가 & 완성도 점수]\n" +
+      "• 폼 완성도: [XX점 / 100점] (등급: S / A / B / C 중 택1)\n" +
+      "• 핵심 진단 한줄평: (해당 동작의 가장 큰 강점과 즉각 개선이 필요한 핵심 1줄 요약)\n\n" +
+      "⏱️ [2. 프레임별 타임스탬프 동작 분해 분석]\n" +
+      "(영상에 나타난 실제 시간 [MM:SS] 또는 [00:0X] 타임스탬프를 명시하여 단계별로 상세히 분석할 것)\n" +
+      "• [00:00 ~ 00:0X] 준비 자세 & 유닛 턴 (Ready Position & Unit Turn / Stance)\n" +
+      "  - 시선, 스탠스 넓이, 상체 회전 각도 및 밸런스 점검\n" +
+      "• [00:0X ~ 00:0X] 테이크백 & 라켓 드롭 (Backswing / Racket Drop / Knee Bend)\n" +
+      "  - 라켓 헤드 높이, 팔꿈치 여유 공간, 무릎 굽힘 및 하체 코일링(에너지 축적)\n" +
+      "• [00:0X ~ 00:0X] 포워드 스윙 & 임팩트 타점 (Forward Swing & Contact Point / Foot Strike)\n" +
+      "  - 임팩트 시 몸 앞 타점 위치, 라켓면 각도, 체중 이동, 러닝 시 착지 패턴(미드풋/힐) 및 무릎 각도\n" +
+      "• [00:0X ~ 00:0X] 팔로우스루 & 리커버리 (Follow-Through & Kinetic Chain Finish)\n" +
+      "  - 릴리즈 궤적, 숄더 오버 숄더 회전, 착지 후 다음 동작 복귀 안정성\n\n" +
+      "💡 [3. 핵심 교정 처방 3가지 (Action Items)]\n" +
+      "1) [가장 시급한 폼 교정]: (원인 분석 + 구체적인 몸 동작 수정 가이드)\n" +
+      "2) [파워 & 정확도 향상 포인트]: (하체 체중 이동, 라켓 가속 타이밍 등)\n" +
+      "3) [추천 실전 연습 드릴]: (코트 또는 집에서 혼자 할 수 있는 1가지 맞춤형 연습법)\n\n" +
+      "⚠️ [4. 생체역학 & 관절 부상 위험도 점검]\n" +
+      "• 엘보(팔꿈치) / 손목 부하: (손목 꺾임, 충격 흡수 상태 진단)\n" +
+      "• 어깨 회전근개 / 허리 부하: (과도한 젖힘이나 무리한 스윙 여부)\n" +
+      "• 무릎 / 발목 관절 부하: (착지 충격 및 무릎 안쪽 쏠림 여부)\n\n" +
+      "친절하면서도 권위 있는 프로 코치의 어조로 읽기 쉽게 작성해주세요.";
+
+    var modelsToTry = [];
+    if (modelPref === "pro") {
+      modelsToTry = ["gemini-2.5-pro", "gemini-1.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-3-flash-preview", "gemini-flash-latest"];
+    } else {
+      modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-3-flash-preview", "gemini-flash-latest", "gemini-2.5-pro", "gemini-1.5-pro"];
+    }
+
+    var lastError = "";
+
+    for (var i = 0; i < modelsToTry.length; i++) {
+      var modelName = modelsToTry[i];
+      var url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
+
+      var payload = {
+        contents: [{
+          parts: [
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: videoBase64
+              }
+            },
+            {
+              text: prompt
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 8192
+        }
+      };
+
+      var options = {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      };
+
+      var response = UrlFetchApp.fetch(url, options);
+      var resCode = response.getResponseCode();
+      var resText = response.getContentText();
+
+      if (resCode === 200) {
+        var json = JSON.parse(resText);
+        if (json.candidates && json.candidates.length > 0 && json.candidates[0].content && json.candidates[0].content.parts.length > 0) {
+          var parts = json.candidates[0].content.parts;
+          var fullText = "";
+          for (var p = 0; p < parts.length; p++) {
+            if (!parts[p].thought && parts[p].text) fullText += parts[p].text;
+          }
+          if (!fullText.trim()) fullText = parts[parts.length - 1].text || "";
+          if (fullText.trim()) {
+            return {
+              success: true,
+              modelUsed: modelName,
+              analysis: fullText.trim()
+            };
+          }
+        }
+      } else {
+        lastError = "Model " + modelName + " (" + resCode + "): " + resText;
+        Logger.log("Video analysis error on model " + modelName + ": " + resText);
+      }
+    }
+
+    return {
+      success: false,
+      error: lastError || "AI 비디오 분석 모델 응답을 받지 못했습니다."
+    };
+  } catch(e) {
+    Logger.log("analyzeTennisVideoFormAI error: " + e.message);
+    return {
+      success: false,
+      error: "동영상 분석 중 오류가 발생했습니다: " + e.message
+    };
+  }
+}

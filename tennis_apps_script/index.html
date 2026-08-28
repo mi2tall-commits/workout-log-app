@@ -835,6 +835,190 @@
       color: #475569;
     }
 
+    /* 🎥 5번째 탭: AI 비디오 폼 분석 스타일 */
+    .video-hero-card {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+      color: #ffffff;
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 10px;
+      box-shadow: 0 4px 15px rgba(49, 46, 129, 0.25);
+    }
+    .video-hero-title {
+      font-size: 13px;
+      color: #c7d2fe;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .video-hero-headline {
+      font-size: 18px;
+      font-weight: 800;
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+    .video-hero-desc {
+      font-size: 12px;
+      color: #e0e7ff;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* Video Upload Dropzone */
+    .video-dropzone {
+      border: 2px dashed #818cf8;
+      background: #f5f3ff;
+      border-radius: 14px;
+      padding: 20px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 12px;
+    }
+    .video-dropzone:hover {
+      background: #ede9fe;
+      border-color: #6366f1;
+    }
+    .video-dropzone.dragover {
+      background: #ddd6fe;
+      border-color: #4f46e5;
+    }
+    .video-dropzone-icon { font-size: 32px; margin-bottom: 6px; }
+    .video-dropzone-text { font-size: 14px; font-weight: 700; color: #3730a3; }
+    .video-dropzone-sub { font-size: 11px; color: #6b7280; margin-top: 3px; }
+
+    /* Video Player Box */
+    .video-player-box {
+      margin-top: 12px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0f172a;
+      border: 1px solid #cbd5e1;
+      position: relative;
+    }
+    .video-player-box video {
+      width: 100%;
+      max-height: 320px;
+      display: block;
+      object-fit: contain;
+    }
+    .video-meta-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Motion Type Selection Grid */
+    .motion-type-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+    @media (min-width: 480px) {
+      .motion-type-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .motion-btn {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .motion-btn.active {
+      background: #4338ca;
+      border-color: #4338ca;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 2px 4px rgba(67, 56, 202, 0.25);
+    }
+
+    /* Quick Checklist Chips */
+    .focus-chip {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      display: inline-block;
+      margin: 2px;
+      transition: all 0.15s;
+    }
+    .focus-chip.active {
+      background: #e0e7ff;
+      border-color: #6366f1;
+      color: #3730a3;
+      font-weight: 700;
+    }
+
+    /* Big Run Button */
+    .btn-run-video-analysis {
+      width: 100%;
+      margin-top: 16px;
+      background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+      color: #ffffff;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(67, 56, 202, 0.3);
+      transition: all 0.2s;
+    }
+    .btn-run-video-analysis:hover { transform: translateY(-1px); }
+    .btn-run-video-analysis:active { transform: scale(0.98); }
+    .btn-run-video-analysis:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+
+    /* Video Analysis Result Card */
+    .video-result-card {
+      background: #ffffff;
+      border: 1.5px solid #6366f1;
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 16px;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.12);
+    }
+    .video-result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .video-score-badge {
+      background: linear-gradient(135deg, #4338ca, #6366f1);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+    .video-result-content {
+      font-size: 13px;
+      color: #1e293b;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+
     /* Modals */
     .modal-overlay {
       position: fixed;
@@ -935,12 +1119,13 @@
       </div>
     </div>
 
-    <!-- 4 Navigation Tabs -->
+    <!-- 5 Navigation Tabs -->
     <div class="nav-tabs">
       <button id="tab-new" class="nav-tab active" onclick="switchTab('new')">✍️ 테니스 기록</button>
       <button id="tab-list" class="nav-tab" onclick="switchTab('list')">📋 일지 목록</button>
       <button id="tab-charts" class="nav-tab" onclick="switchTab('charts')">📊 전적 통계</button>
       <button id="tab-strings" class="nav-tab" onclick="switchTab('strings')">🎾 스트링 & AI</button>
+      <button id="tab-video" class="nav-tab" onclick="switchTab('video')">🎥 AI 폼 분석</button>
     </div>
 
     <!-- VIEW 1: DAILY FORM -->
@@ -1190,6 +1375,117 @@
 
     </section>
 
+    <!-- VIEW 5: 🎥 AI VIDEO FORM ANALYSIS -->
+    <section id="view-video" class="hidden">
+      <!-- Hero Banner -->
+      <div class="video-hero-card">
+        <div class="video-hero-title">🎾 Gemini Multimodal AI Coach</div>
+        <div class="video-hero-headline">AI 비디오 폼 정밀 분석</div>
+        <div class="video-hero-desc">
+          스마트폰으로 촬영한 10~30초 테니스(서브, 포핸드, 백핸드, 발리) 또는 러닝 폼 영상을 업로드하시면 Gemini AI가 프레임 단위 타점, 궤적, 관절 각도, 착지 패턴을 시각적 타임스탬프와 함께 전문 코치 수준으로 분석해 드립니다.
+        </div>
+      </div>
+
+      <div class="card">
+        <!-- 1. Motion Type Selection -->
+        <div>
+          <label class="form-label">분석할 동작 유형</label>
+          <div class="motion-type-grid">
+            <button type="button" class="motion-btn active" data-motion="테니스 - 서브 (Serve)" onclick="selectMotionType(this)">🎾 테니스 - 서브</button>
+            <button type="button" class="motion-btn" data-motion="테니스 - 포핸드 스트로크 (Forehand)" onclick="selectMotionType(this)">🎾 테니스 - 포핸드</button>
+            <button type="button" class="motion-btn" data-motion="테니스 - 백핸드 스트로크 (Backhand)" onclick="selectMotionType(this)">🎾 테니스 - 백핸드</button>
+            <button type="button" class="motion-btn" data-motion="테니스 - 발리 & 스매시 (Volley/Smash)" onclick="selectMotionType(this)">🎾 테니스 - 발리/스매시</button>
+            <button type="button" class="motion-btn" data-motion="러닝 - 주행 폼 & 착지 (Running Form)" onclick="selectMotionType(this)">🏃 러닝 - 주행 폼</button>
+            <button type="button" class="motion-btn" data-motion="트레일러닝 - 오르막/내리막 주법" onclick="selectMotionType(this)">🌲 트레일러닝</button>
+          </div>
+          <input type="hidden" id="selectedMotionType" value="테니스 - 서브 (Serve)">
+        </div>
+
+        <!-- 2. Video Upload & Dropzone -->
+        <div class="form-group">
+          <label class="form-label">동영상 업로드 (10~30초 권장, 최대 30MB)</label>
+          <div class="video-dropzone" id="videoDropzone" onclick="document.getElementById('videoFileInput').click()">
+            <div class="video-dropzone-icon">📹</div>
+            <div class="video-dropzone-text">동영상 파일 선택 또는 여기에 드래그</div>
+            <div class="video-dropzone-sub">스마트폰 촬영 영상 (MP4, MOV, WebM 지원)</div>
+          </div>
+          <input type="file" id="videoFileInput" accept="video/*" style="display:none;" onchange="handleVideoSelect(event)">
+        </div>
+
+        <!-- Video Player Preview -->
+        <div id="videoPreviewContainer" class="video-player-box hidden">
+          <video id="formVideoPlayer" controls playsinline preload="metadata"></video>
+          <div class="video-meta-bar">
+            <span id="videoFileName">video.mp4</span>
+            <span id="videoFileSize">0 MB</span>
+          </div>
+        </div>
+
+        <!-- 3. Focus Checklist Chips & Custom Question -->
+        <div class="form-group">
+          <label class="form-label">중점 점검 요청사항 (선택)</label>
+          <div style="margin-bottom:6px;">
+            <span class="focus-chip" onclick="toggleFocusChip(this, '임팩트 타점 높이 및 몸 앞 위치')">🎯 타점 위치/높이</span>
+            <span class="focus-chip" onclick="toggleFocusChip(this, '라켓 헤드 드롭 및 스윙 궤적')">⚡ 라켓 궤적</span>
+            <span class="focus-chip" onclick="toggleFocusChip(this, '무릎 굽힘 및 하체 체중 이동')">🦵 하체/무릎 굽힘</span>
+            <span class="focus-chip" onclick="toggleFocusChip(this, '손목/팔꿈치 엘보 부상 위험도')">⚠️ 손목/엘보 부하</span>
+            <span class="focus-chip" onclick="toggleFocusChip(this, '러닝 착지 패턴(미드풋/힐) 및 오버스트라이드')">👣 러닝 착지/보폭</span>
+          </div>
+          <input type="text" id="inputVideoFocusNotes" placeholder="예: 서브 토스 높이가 적절한지, 임팩트 때 손목 꺾임이 심한지 봐주세요" class="form-input">
+        </div>
+
+        <!-- 4. AI Model Preference Option -->
+        <div class="form-group">
+          <div class="grid-2">
+            <div>
+              <label class="form-label">AI 분석 엔진</label>
+              <select id="selectVideoAiModel" class="form-select">
+                <option value="pro">Gemini Pro (정밀 심층 분석 ⭐ 추천)</option>
+                <option value="flash">Gemini Flash (초고속 분석)</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">API Key 상태</label>
+              <button type="button" class="btn-header" style="width:100%; height:42px; justify-content:center;" onclick="openApiKeyModal()">
+                ⚙️ API Key 설정 점검
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Big Action Button -->
+        <button type="button" id="btnRunVideoAnalysis" class="btn-run-video-analysis" onclick="runVideoFormAnalysis()">
+          <span>✨ Gemini AI 비디오 폼 정밀 분석 시작</span>
+        </button>
+
+        <!-- Progress Box -->
+        <div id="videoProgressBox" class="hidden" style="margin-top:14px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:12px; text-align:center;">
+          <div style="font-size:13px; font-weight:700; color:#1d4ed8;" id="videoProgressText">⏳ 동영상 인코딩 및 Gemini AI Vision 분석 준비 중...</div>
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">비디오 프레임 추출 및 바이오메카닉스 분석에 약 10~25초가 소요됩니다. 잠시만 기다려주세요! 🎾✨</div>
+        </div>
+
+        <!-- 6. Structured Coaching Report Card -->
+        <div id="videoAnalysisResultCard" class="video-result-card hidden">
+          <div class="video-result-header">
+            <div>
+              <span style="font-size:14px; font-weight:800; color:#312e81;">🤖 Gemini Pro 비디오 폼 코칭 리포트</span>
+              <div id="videoResultMotionSub" style="font-size:11px; color:#64748b; margin-top:2px;">테니스 - 서브 동작 분석</div>
+            </div>
+            <button type="button" class="btn-header" style="font-size:11px; padding:4px 8px;" onclick="copyVideoReport()">📋 텍스트 복사</button>
+          </div>
+          
+          <div id="videoAnalysisResultContent" class="video-result-content"></div>
+
+          <div style="display:flex; gap:8px; margin-top:14px; border-top:1px dashed #e2e8f0; padding-top:10px;">
+            <button type="button" class="btn-header" style="flex:1; justify-content:center; background:#f0fdf4; color:#15803d; border-color:#bbf7d0;" onclick="applyVideoReportToDailyLog()">
+              ✍️ 오늘 테니스 일지에 피드백 반영하기
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </div>
 
   <!-- ➕ STRING REPLACEMENT MODAL -->
@@ -1327,6 +1623,7 @@
       loadData();
       loadStringData();
       initPhotoSwipeListeners();
+      initVideoDropzone();
     });
 
     function selectCategory(cat) {
@@ -1361,11 +1658,13 @@
       document.getElementById('view-list').classList.toggle('hidden', tab !== 'list');
       document.getElementById('view-charts').classList.toggle('hidden', tab !== 'charts');
       document.getElementById('view-strings').classList.toggle('hidden', tab !== 'strings');
+      document.getElementById('view-video').classList.toggle('hidden', tab !== 'video');
 
       document.getElementById('tab-new').classList.toggle('active', tab === 'new');
       document.getElementById('tab-list').classList.toggle('active', tab === 'list');
       document.getElementById('tab-charts').classList.toggle('active', tab === 'charts');
       document.getElementById('tab-strings').classList.toggle('active', tab === 'strings');
+      document.getElementById('tab-video').classList.toggle('active', tab === 'video');
 
       if (tab === 'list') renderLogs();
       if (tab === 'charts') renderAllCharts();
@@ -2137,6 +2436,316 @@
           }
         });
       }
+    }
+
+    // -------------------------------------------------------------
+    // 🎥 5. VIDEO FORM ANALYSIS JAVASCRIPT
+    // -------------------------------------------------------------
+    let selectedVideoFile = null;
+    let selectedVideoBase64 = null;
+    let selectedVideoMime = 'video/mp4';
+    let lastVideoAnalysisReport = '';
+
+    function selectMotionType(btn) {
+      document.querySelectorAll('.motion-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      const val = btn.getAttribute('data-motion');
+      document.getElementById('selectedMotionType').value = val;
+    }
+
+    function toggleFocusChip(chip, text) {
+      chip.classList.toggle('active');
+      const input = document.getElementById('inputVideoFocusNotes');
+      let cur = input.value.trim();
+      if (chip.classList.contains('active')) {
+        input.value = cur ? (cur + ', ' + text) : text;
+      } else {
+        let parts = cur.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s && s !== text; });
+        input.value = parts.join(', ');
+      }
+    }
+
+    function handleVideoSelect(e) {
+      const files = e.target.files;
+      if (!files || !files.length) return;
+      processVideoFile(files[0]);
+    }
+
+    function processVideoFile(file) {
+      if (!file) return;
+      const sizeMB = file.size / (1024 * 1024);
+      if (sizeMB > 45) {
+        alert("동영상 파일 용량이 너무 큽니다 (" + sizeMB.toFixed(1) + "MB).\n원활한 분석을 위해 30MB 이하 (10~30초) 동영상을 선택해주세요.");
+        return;
+      }
+
+      selectedVideoFile = file;
+      selectedVideoMime = file.type || 'video/mp4';
+
+      document.getElementById('videoFileName').textContent = file.name;
+      document.getElementById('videoFileSize').textContent = sizeMB.toFixed(1) + ' MB';
+
+      const player = document.getElementById('formVideoPlayer');
+      const blobUrl = URL.createObjectURL(file);
+      player.src = blobUrl;
+      document.getElementById('videoPreviewContainer').classList.remove('hidden');
+
+      showToast('동영상이 로드되었습니다! 📹 (' + sizeMB.toFixed(1) + 'MB)');
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const fullDataUrl = evt.target.result;
+        const base64Index = fullDataUrl.indexOf(';base64,');
+        if (base64Index !== -1) {
+          selectedVideoBase64 = fullDataUrl.substring(base64Index + 8);
+        } else {
+          selectedVideoBase64 = fullDataUrl;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function initVideoDropzone() {
+      const dropzone = document.getElementById('videoDropzone');
+      if (!dropzone) return;
+
+      ['dragenter', 'dragover'].forEach(function(eventName) {
+        dropzone.addEventListener(eventName, function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add('dragover');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(function(eventName) {
+        dropzone.addEventListener(eventName, function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove('dragover');
+        }, false);
+      });
+
+      dropzone.addEventListener('drop', function(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+          processVideoFile(files[0]);
+        }
+      }, false);
+    }
+
+    function runVideoFormAnalysis() {
+      if (!selectedVideoBase64 && !selectedVideoFile) {
+        alert("먼저 분석할 10~30초 동영상을 업로드해주세요! 📹");
+        return;
+      }
+
+      const apiKey = localStorage.getItem('gemini_api_key') || '';
+      const motionType = document.getElementById('selectedMotionType').value;
+      const focusNotes = document.getElementById('inputVideoFocusNotes').value.trim();
+      const modelPref = document.getElementById('selectVideoAiModel').value;
+
+      const btn = document.getElementById('btnRunVideoAnalysis');
+      const progressBox = document.getElementById('videoProgressBox');
+      const progressText = document.getElementById('videoProgressText');
+      const resultCard = document.getElementById('videoAnalysisResultCard');
+      const resultContent = document.getElementById('videoAnalysisResultContent');
+      const resultSub = document.getElementById('videoResultMotionSub');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Gemini AI Vision 정밀 분석 중...</span>';
+      progressBox.classList.remove('hidden');
+      resultCard.classList.add('hidden');
+      progressText.textContent = '⏳ 비디오 프레임 추출 및 Gemini AI Vision 모델 호출 중...';
+
+      if (apiKey && selectedVideoBase64) {
+        executeDirectGeminiVideoAnalysis(apiKey, selectedVideoBase64, selectedVideoMime, motionType, focusNotes, modelPref)
+          .then(function(report) {
+            handleVideoAnalysisSuccess(report, motionType);
+          })
+          .catch(function(err) {
+            console.warn("Direct API fail, falling back to GAS backend:", err);
+            progressText.textContent = '⏳ 구글 서버 백엔드를 통해 AI 비디오 분석 재시도 중...';
+            executeGasBackendVideoAnalysis(apiKey, selectedVideoBase64, selectedVideoMime, motionType, focusNotes, modelPref);
+          });
+      } else {
+        executeGasBackendVideoAnalysis(apiKey, selectedVideoBase64, selectedVideoMime, motionType, focusNotes, modelPref);
+      }
+    }
+
+    function executeDirectGeminiVideoAnalysis(apiKey, videoBase64, mimeType, motionType, focusNotes, modelPref) {
+      return new Promise(function(resolve, reject) {
+        const models = modelPref === 'pro'
+          ? ['gemini-2.5-pro', 'gemini-1.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash']
+          : ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'];
+
+        const prompt = "당신은 세계적인 프로 테니스 수석 코치이자 스포츠 바이오메카닉스(동작 생체역학) 및 러닝 폼 전문 분석가입니다.\n\n" +
+          "사용자가 업로드한 10~30초 동영상(촬영된 " + motionType + " 동작)을 프레임 단위로 정밀 분석하여, 아래 [필수 구성 양식]에 맞춰 최고의 전문 코칭 리포트를 작성해주세요.\n\n" +
+          (focusNotes ? "【사용자의 중점 질문 및 점검 요청】: \"" + focusNotes + "\"\n\n" : "") +
+          "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+          "【필수 분석 가이드 및 출력 포맷】\n" +
+          "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+          "🎯 [1. 폼 종합 평가 & 완성도 점수]\n" +
+          "• 폼 완성도: [XX점 / 100점] (등급: S / A / B / C 중 택1)\n" +
+          "• 핵심 진단 한줄평: (해당 동작의 가장 큰 강점과 즉각 개선이 필요한 핵심 1줄 요약)\n\n" +
+          "⏱️ [2. 프레임별 타임스탬프 동작 분해 분석]\n" +
+          "(영상에 나타난 실제 시간 [MM:SS] 또는 [00:0X] 타임스탬프를 명시하여 단계별로 상세히 분석할 것)\n" +
+          "• [00:00 ~ 00:0X] 준비 자세 & 유닛 턴 (Ready Position & Unit Turn / Stance)\n" +
+          "  - 시선, 스탠스 넓이, 상체 회전 각도 및 밸런스 점검\n" +
+          "• [00:0X ~ 00:0X] 테이크백 & 라켓 드롭 (Backswing / Racket Drop / Knee Bend)\n" +
+          "  - 라켓 헤드 높이, 팔꿈치 여유 공간, 무릎 굽힘 및 하체 코일링(에너지 축적)\n" +
+          "• [00:0X ~ 00:0X] 포워드 스윙 & 임팩트 타점 (Forward Swing & Contact Point / Foot Strike)\n" +
+          "  - 임팩트 시 몸 앞 타점 위치, 라켓면 각도, 체중 이동, 러닝 시 착지 패턴(미드풋/힐) 및 무릎 각도\n" +
+          "• [00:0X ~ 00:0X] 팔로우스루 & 리커버리 (Follow-Through & Kinetic Chain Finish)\n" +
+          "  - 릴리즈 궤적, 숄더 오버 숄더 회전, 착지 후 다음 동작 복귀 안정성\n\n" +
+          "💡 [3. 핵심 교정 처방 3가지 (Action Items)]\n" +
+          "1) [가장 시급한 폼 교정]: (원인 분석 + 구체적인 몸 동작 수정 가이드)\n" +
+          "2) [파워 & 정확도 향상 포인트]: (하체 체중 이동, 라켓 가속 타이밍 등)\n" +
+          "3) [추천 실전 연습 드릴]: (코트 또는 집에서 혼자 할 수 있는 1가지 맞춤형 연습법)\n\n" +
+          "⚠️ [4. 생체역학 & 관절 부상 위험도 점검]\n" +
+          "• 엘보(팔꿈치) / 손목 부하: (손목 꺾임, 충격 흡수 상태 진단)\n" +
+          "• 어깨 회전근개 / 허리 부하: (과도한 젖힘이나 무리한 스윙 여부)\n" +
+          "• 무릎 / 발목 관절 부하: (착지 충격 및 무릎 안쪽 쏠림 여부)\n\n" +
+          "친절하면서도 권위 있는 프로 코치의 어조로 읽기 쉽게 작성해주세요.";
+
+        function tryModel(idx) {
+          if (idx >= models.length) {
+            reject(new Error("모든 Gemini 모델 호출에 실패했습니다."));
+            return;
+          }
+          const model = models[idx];
+          const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+
+          const payload = {
+            contents: [{
+              parts: [
+                {
+                  inline_data: {
+                    mime_type: mimeType,
+                    data: videoBase64
+                  }
+                },
+                {
+                  text: prompt
+                }
+              ]
+            }],
+            generationConfig: {
+              temperature: 0.4,
+              maxOutputTokens: 8192
+            }
+          };
+
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            if (data.candidates && data.candidates.length > 0 && data.candidates[0].content && data.candidates[0].content.parts.length > 0) {
+              const parts = data.candidates[0].content.parts;
+              let fullText = '';
+              for (let p = 0; p < parts.length; p++) {
+                if (!parts[p].thought && parts[p].text) fullText += parts[p].text;
+              }
+              if (!fullText.trim()) fullText = parts[parts.length - 1].text || '';
+              if (fullText.trim()) {
+                resolve(fullText.trim());
+                return;
+              }
+            }
+            tryModel(idx + 1);
+          })
+          .catch(function(e) {
+            console.warn("Model " + model + " error:", e);
+            tryModel(idx + 1);
+          });
+        }
+
+        tryModel(0);
+      });
+    }
+
+    function executeGasBackendVideoAnalysis(apiKey, videoBase64, mimeType, motionType, focusNotes, modelPref) {
+      if (typeof google === 'undefined' || !google.script || !google.script.run) {
+        handleVideoAnalysisFailure("Google Apps Script 환경이 아니거나 API Key가 올바르지 않습니다.");
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.success) {
+            handleVideoAnalysisSuccess(res.analysis, motionType);
+          } else {
+            handleVideoAnalysisFailure(res ? res.error : "알 수 없는 오류");
+          }
+        })
+        .withFailureHandler(function(err) {
+          handleVideoAnalysisFailure(err.message);
+        })
+        .analyzeTennisVideoFormAI({
+          geminiApiKey: apiKey,
+          videoBase64: videoBase64,
+          mimeType: mimeType,
+          motionType: motionType,
+          focusNotes: focusNotes,
+          modelPreference: modelPref
+        });
+    }
+
+    function handleVideoAnalysisSuccess(reportText, motionType) {
+      const btn = document.getElementById('btnRunVideoAnalysis');
+      const progressBox = document.getElementById('videoProgressBox');
+      const resultCard = document.getElementById('videoAnalysisResultCard');
+      const resultContent = document.getElementById('videoAnalysisResultContent');
+      const resultSub = document.getElementById('videoResultMotionSub');
+
+      btn.disabled = false;
+      btn.innerHTML = '<span>✨ Gemini AI 비디오 폼 정밀 분석 시작</span>';
+      progressBox.classList.add('hidden');
+
+      lastVideoAnalysisReport = reportText;
+      resultContent.textContent = reportText;
+      resultSub.textContent = motionType + ' 정밀 코칭 리포트';
+      resultCard.classList.remove('hidden');
+
+      showToast('AI 비디오 폼 분석 리포트 완성! 🎾✨');
+      resultCard.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function handleVideoAnalysisFailure(errMsg) {
+      const btn = document.getElementById('btnRunVideoAnalysis');
+      const progressBox = document.getElementById('videoProgressBox');
+
+      btn.disabled = false;
+      btn.innerHTML = '<span>✨ Gemini AI 비디오 폼 정밀 분석 시작</span>';
+      progressBox.classList.add('hidden');
+
+      alert("AI 비디오 분석 실패: " + errMsg + "\n\n상단 '⚙️ AI설정'에서 유효한 Gemini API Key가 입력되었는지 확인해주세요.");
+    }
+
+    function copyVideoReport() {
+      if (!lastVideoAnalysisReport) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(lastVideoAnalysisReport).then(function() {
+          showToast('코칭 리포트가 클립보드에 복사되었습니다! 📋');
+        });
+      } else {
+        alert("리포트를 복사했습니다:\n\n" + lastVideoAnalysisReport.substring(0, 100) + "...");
+      }
+    }
+
+    function applyVideoReportToDailyLog() {
+      if (!lastVideoAnalysisReport) return;
+      const notesEl = document.getElementById('inputNotes');
+      const curNotes = notesEl.value.trim();
+      const motion = document.getElementById('selectedMotionType').value;
+      const snippet = '🎥 [AI 비디오 폼 분석 피드백 - ' + motion + ']\n' + lastVideoAnalysisReport;
+
+      notesEl.value = curNotes ? (curNotes + '\n\n' + snippet) : snippet;
+      switchTab('new');
+      showToast('오늘 테니스 일지 수기 메모에 비디오 분석 피드백이 적용되었습니다! ✍️');
     }
 
     function escapeHtml(str) {
