@@ -6,8 +6,8 @@
 // 🔔 스마트폰 ntfy 앱에서 설정하신 토픽 이름을 적어주세요!
 var NTFY_TOPIC = "my-workout-log-7788"; 
 
-// 🔑 Google Gemini AI API Key (등록 완료)
-var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6I72Dj0lVu4k9TVb2j-24rQVj5I2VAvPovlf7CntVEXlA"; 
+// 🔑 Google Gemini AI API Key (신규 활성화 키)
+var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6INIjH3Md1wSsrIG66nwP_70P-ImQK5eUZiLrfYj5j73g"; 
 
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('index');

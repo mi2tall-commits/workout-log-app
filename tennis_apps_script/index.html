@@ -1654,21 +1654,21 @@
     }
 
     function switchTab(tab) {
-      document.getElementById('view-new').classList.toggle('hidden', tab !== 'new');
-      document.getElementById('view-list').classList.toggle('hidden', tab !== 'list');
-      document.getElementById('view-charts').classList.toggle('hidden', tab !== 'charts');
-      document.getElementById('view-strings').classList.toggle('hidden', tab !== 'strings');
-      document.getElementById('view-video').classList.toggle('hidden', tab !== 'video');
+      try {
+        var views = ['new', 'list', 'charts', 'strings', 'video'];
+        views.forEach(function(v) {
+          var viewEl = document.getElementById('view-' + v);
+          if (viewEl) viewEl.classList.toggle('hidden', v !== tab);
+          var tabEl = document.getElementById('tab-' + v);
+          if (tabEl) tabEl.classList.toggle('active', v === tab);
+        });
 
-      document.getElementById('tab-new').classList.toggle('active', tab === 'new');
-      document.getElementById('tab-list').classList.toggle('active', tab === 'list');
-      document.getElementById('tab-charts').classList.toggle('active', tab === 'charts');
-      document.getElementById('tab-strings').classList.toggle('active', tab === 'strings');
-      document.getElementById('tab-video').classList.toggle('active', tab === 'video');
-
-      if (tab === 'list') renderLogs();
-      if (tab === 'charts') renderAllCharts();
-      if (tab === 'strings') renderStringDashboard();
+        if (tab === 'list') renderLogs();
+        if (tab === 'charts') renderAllCharts();
+        if (tab === 'strings') renderStringDashboard();
+      } catch (err) {
+        console.error('switchTab error:', err);
+      }
     }
 
     function loadData() {
@@ -2027,6 +2027,8 @@
 
     function updatePhotoModalView() {
       if (!curModalPhotos.length) return;
+      const photoId = curModalPhotos[curModalPhotoIdx];
+      if (!photoId) return;
       const imgEl = document.getElementById('photoModalImg');
       imgEl.setAttribute('referrerpolicy', 'no-referrer');
       imgEl.src = 'https://lh3.googleusercontent.com/d/' + photoId;

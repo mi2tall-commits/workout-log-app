@@ -7,8 +7,8 @@
 var TELEGRAM_BOT_TOKEN = "8954888605:AAEkNvwrNAVUSbTnKeE7mw2hmfeHx19xkVY";
 var TELEGRAM_CHAT_ID = "8667003350";
 
-// 🔑 Google Gemini AI API Key (등록 완료)
-var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6I72Dj0lVu4k9TVb2j-24rQVj5I2VAvPovlf7CntVEXlA"; 
+// 🔑 Google Gemini AI API Key (신규 활성화 키)
+var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6INIjH3Md1wSsrIG66nwP_70P-ImQK5eUZiLrfYj5j73g"; 
 
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('index');
@@ -155,8 +155,23 @@ function getTennisData() {
       if (result === '패' || result === '패배') monthlyMap[monthStr]["패"]++;
 
       var photoIds = [];
+      function isDriveId(str) {
+        return /^[a-zA-Z0-9_\-]{20,50}$/.test(str);
+      }
+
       if (photoIdsStr) {
-        photoIds = photoIdsStr.split(',').map(function(id) { return id.trim(); }).filter(Boolean);
+        photoIds = photoIdsStr.split(',').map(function(id) { return id.trim(); }).filter(isDriveId);
+      }
+
+      // 만약 aiSummary에 사진 Drive ID가 잘못 들어가 있는 경우 자동 복구
+      if (aiSummary && (aiSummary.indexOf('1') === 0 || aiSummary.indexOf(',') > 0)) {
+        var potentialIds = aiSummary.split(',').map(function(id) { return id.trim(); }).filter(isDriveId);
+        if (potentialIds.length > 0 && potentialIds.length === aiSummary.split(',').length) {
+          if (photoIds.length === 0) {
+            photoIds = potentialIds;
+          }
+          aiSummary = '';
+        }
       }
 
       var comments = [];

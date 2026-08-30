@@ -949,35 +949,25 @@
     <!-- VIEW 1: FORM -->
     <section id="view-new" class="card">
       
-      <!-- 🔄 입력 모드 선택 (수기 입력 vs GPX 파일 자동완성) -->
-      <div class="input-mode-toggle">
-        <button type="button" id="mode-btn-manual" class="mode-btn active" onclick="setInputMode('manual')">
-          ✍️ 직접 수기 입력
-        </button>
-        <button type="button" id="mode-btn-gpx" class="mode-btn" onclick="setInputMode('gpx')">
-          ⌚ Zepp / GPX 파일 자동완성
-        </button>
-      </div>
-
-      <!-- ⌚ T-REX 3 / ZEPP GPX & TCX IMPORT BOX (선택 시에만 노출) -->
-      <div class="gpx-import-box hidden" id="gpxDropZone">
+      <!-- ⌚ T-REX 3 PRO / ZEPP GPX & TCX IMPORT BOX (상단 배치) -->
+      <div class="gpx-import-box" id="gpxDropZone" onclick="if(event.target.tagName !== 'BUTTON' && !event.target.closest('.gpx-clear-btn')) document.getElementById('inputGpxFile').click()">
         <div class="gpx-import-inner">
           <div class="gpx-icon">⌚</div>
           <div class="gpx-text">
-            <strong>T-Rex 3 / Zepp 운동 파일 불러오기</strong>
-            <p>Zepp 앱에서 내보낸 <b>GPX</b> 또는 <b>TCX</b> 파일을 넣으면 모든 센서 데이터가 자동 완성됩니다.</p>
+            <strong>T-Rex 3 Pro / Zepp GPX 파일 불러오기</strong>
+            <p>스마트워치 GPX/TCX 파일을 넣으면 날짜·거리·페이스·심박·케이던스·고도가 <b>1초 만에 자동 완성</b>됩니다.</p>
           </div>
-          <label for="inputGpxFile" class="gpx-upload-btn">
-            <span>📂 파일 선택</span>
+          <label for="inputGpxFile" class="gpx-upload-btn" onclick="event.stopPropagation()">
+            <span>📂 GPX 파일 선택</span>
           </label>
-          <input type="file" id="inputGpxFile" accept=".gpx,.tcx,.xml" style="display:none;" onchange="handleGpxFileSelect(event)">
+          <input type="file" id="inputGpxFile" accept=".gpx,.tcx,.xml,*/*" style="display:none;" onchange="handleGpxFileSelect(event)">
         </div>
         <div id="gpxResultBanner" class="gpx-result-banner hidden">
           <div class="gpx-result-content">
-            <span class="gpx-badge">✅ T-Rex 3 분석 완료</span>
+            <span class="gpx-badge">✅ T-Rex 3 Pro 분석 완료</span>
             <span id="gpxSummaryText" class="gpx-summary-text"></span>
           </div>
-          <button type="button" class="gpx-clear-btn" onclick="clearGpxData()" title="초기화">✕</button>
+          <button type="button" class="gpx-clear-btn" onclick="clearGpxData(); event.stopPropagation();" title="초기화">✕</button>
         </div>
       </div>
 
@@ -2495,7 +2485,7 @@
     }
 
     function parseGpx(xmlDoc, rawText, fileName) {
-      // 🌟 1. XML 네임스페이스에 구애받지 않는 정규식 기반 지표 추출 (T-Rex 3, Zepp, Strava, Garmin 100% 호환)
+      // 🌟 1. XML 네임스페이스에 구애받지 않는 정규식 기반 지표 추출 (T-Rex 3 Pro, Zepp, Strava, Garmin 100% 호환)
       let hrValues = [];
       const hrRegex = /<[^>]*:?hr[^>]*>(\d+)<|<heartrate[^>]*>(\d+)<|<HeartRateBpm>[\s\S]*?<Value>(\d+)<\/Value>/gi;
       let match;
@@ -2582,12 +2572,32 @@
 
       let dateStr = new Date().toISOString().split('T')[0];
       let durMinutes = 0;
-      if (pts[0].time && pts[pts.length - 1].time) {
-        const t0 = new Date(pts[0].time);
-        const t1 = new Date(pts[pts.length - 1].time);
-        if (!isNaN(t0.getTime())) {
-          dateStr = t0.toISOString().split('T')[0];
+      let startTime = null;
+      let endTime = null;
+
+      const metaTimeNode = xmlDoc ? xmlDoc.getElementsByTagName('time')[0] : null;
+      if (metaTimeNode && metaTimeNode.textContent) {
+        startTime = metaTimeNode.textContent.trim();
+      }
+
+      if (pts.length > 0) {
+        if (!startTime && pts[0].time) startTime = pts[0].time;
+        if (pts[pts.length - 1].time) endTime = pts[pts.length - 1].time;
+      }
+
+      if (startTime) {
+        const dObj = new Date(startTime);
+        if (!isNaN(dObj.getTime())) {
+          const y = dObj.getFullYear();
+          const m = ('0' + (dObj.getMonth() + 1)).slice(-2);
+          const d = ('0' + dObj.getDate()).slice(-2);
+          dateStr = y + '-' + m + '-' + d;
         }
+      }
+
+      if (startTime && endTime) {
+        const t0 = new Date(startTime);
+        const t1 = new Date(endTime);
         if (!isNaN(t0.getTime()) && !isNaN(t1.getTime())) {
           durMinutes = Math.round((t1.getTime() - t0.getTime()) / 60000);
         }
@@ -2598,13 +2608,13 @@
       typeText = typeText.toLowerCase();
 
       let detectedSport = '런닝';
-      if (typeText.includes('hike') || typeText.includes('등산') || (elevGain > 200 && durMinutes > 60 && (durMinutes / totalDist > 9))) {
+      if (typeText.includes('hike') || typeText.includes('등산') || typeText.includes('climb') || typeText.includes('mountaineer') || (elevGain > 150 && durMinutes > 45 && (totalDist > 0 && durMinutes / totalDist > 9))) {
         detectedSport = '등산';
       } else if (typeText.includes('trail') || typeText.includes('트레일')) {
         detectedSport = '트레일런닝';
       } else if (typeText.includes('walk') || typeText.includes('걷기') || typeText.includes('산책')) {
         detectedSport = '걷기';
-      } else if (typeText.includes('dive') || typeText.includes('다이빙')) {
+      } else if (typeText.includes('dive') || typeText.includes('다이빙') || typeText.includes('swim') || typeText.includes('수영')) {
         detectedSport = '프리다이빙';
       }
 
@@ -2713,7 +2723,17 @@
         }
       }
 
-      let dateStr = startTime ? new Date(startTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      let dateStr = new Date().toISOString().split('T')[0];
+      if (startTime) {
+        const dObj = new Date(startTime);
+        if (!isNaN(dObj.getTime())) {
+          const y = dObj.getFullYear();
+          const m = ('0' + (dObj.getMonth() + 1)).slice(-2);
+          const d = ('0' + dObj.getDate()).slice(-2);
+          dateStr = y + '-' + m + '-' + d;
+        }
+      }
+
       let durMinutes = Math.round(totalSeconds / 60);
       let distKm = Math.round((totalMeters / 1000) * 100) / 100;
       
@@ -2725,7 +2745,7 @@
       let detectedSport = '런닝';
       const sLower = (fileName || '').toLowerCase();
       if (sLower.includes('hike') || sLower.includes('등산')) detectedSport = '등산';
-      else if (sLower.includes('trail')) detectedSport = '트레일런닝';
+      else if (sLower.includes('trail') || sLower.includes('트레일')) detectedSport = '트레일런닝';
       else if (sLower.includes('walk') || sLower.includes('걷기')) detectedSport = '걷기';
 
       let avgHr = hrValues.length > 0 ? Math.round(hrValues.reduce((a,b)=>a+b,0) / hrValues.length) : 0;
