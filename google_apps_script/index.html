@@ -7,134 +7,203 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap');
     
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
     body {
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      background-color: #f8fafc;
-      color: #1e293b;
-      line-height: 1.5;
-      padding-bottom: 40px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Pretendard", system-ui, sans-serif;
+      background-color: #F2F2F7;
+      color: #000000;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 85px);
     }
 
-    .container { max-width: 680px; margin: 0 auto; padding: 12px 16px; }
-
-    /* Header */
-    .header {
-      background: #ffffff;
-      border-bottom: 1px solid #e2e8f0;
-      position: sticky;
-      top: 0;
-      z-index: 50;
+    .container {
+      max-width: 620px;
+      margin: 0 auto;
       padding: 12px 16px;
     }
+
+    /* 📱 Apple iOS Dynamic Frosted Navigation Bar */
+    .header {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-bottom: 0.5px solid rgba(60, 60, 67, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      padding: 12px 16px;
+      padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+    }
     .header-inner {
-      max-width: 680px;
+      max-width: 620px;
       margin: 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .logo-box { display: flex; align-items: center; gap: 10px; }
+    .logo-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .logo-icon {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #4f46e5, #0ea5e9);
-      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
     }
-    .logo-text h1 { font-size: 17px; font-weight: 800; color: #0f172a; line-height: 1.2; }
-    .logo-text p { font-size: 11px; color: #64748b; font-weight: 500; }
-    
-    .header-actions { display: flex; align-items: center; gap: 6px; }
-    .btn-header {
-      background: #f1f5f9;
-      border: none;
-      padding: 7px 11px;
-      border-radius: 8px;
-      font-size: 12px;
+    .logo-text h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #000000;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+    .logo-text p {
+      font-size: 11px;
+      color: #8E8E93;
       font-weight: 600;
-      color: #475569;
+      margin-top: 1px;
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-header {
+      background: rgba(118, 118, 128, 0.12);
+      border: none;
+      padding: 7px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #007AFF;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      transition: all 0.15s ease;
     }
-    .btn-header:hover { background: #e2e8f0; color: #0f172a; }
+    .btn-header:active {
+      background: rgba(118, 118, 128, 0.24);
+      transform: scale(0.95);
+    }
 
-    /* Stat Cards */
+    /* 📊 Apple Fitness Style Ring & Summary Cards */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
-      margin-top: 12px;
+      margin-top: 14px;
     }
     @media (min-width: 480px) {
       .stats-grid { grid-template-columns: repeat(4, 1fr); }
     }
     .stat-card {
-      background: #ffffff;
-      padding: 12px;
-      border-radius: 14px;
-      border: 1px solid #e2e8f0;
+      background: #FFFFFF;
+      padding: 14px 15px;
+      border-radius: 18px;
+      border: 0.5px solid rgba(0, 0, 0, 0.05);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03), 0 8px 20px rgba(0, 0, 0, 0.02);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s;
     }
-    .stat-label { font-size: 11px; color: #64748b; font-weight: 600; }
-    .stat-val { font-size: 18px; font-weight: 800; margin-top: 2px; color: #0f172a; }
-    .stat-val.orange { color: #ea580c; }
-    .stat-val.emerald { color: #16a34a; }
-    .stat-val.indigo { color: #4f46e5; }
-    .stat-val.rose { color: #e11d48; }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3.5px;
+      border-radius: 18px 18px 0 0;
+    }
+    .stat-card:nth-child(1)::before { background: linear-gradient(90deg, #007AFF, #5856D6); }
+    .stat-card:nth-child(2)::before { background: linear-gradient(90deg, #5856D6, #AF52DE); }
+    .stat-card:nth-child(3)::before { background: linear-gradient(90deg, #34C759, #30D158); }
+    .stat-card:nth-child(4)::before { background: linear-gradient(90deg, #FF9500, #FF2D55); }
 
-    /* Nav Tabs (3 Main Tabs) */
+    .stat-label {
+      font-size: 11.5px;
+      color: #8E8E93;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      text-transform: uppercase;
+    }
+    .stat-val {
+      font-size: 20px;
+      font-weight: 900;
+      margin-top: 4px;
+      color: #000000;
+      letter-spacing: -0.6px;
+    }
+    .stat-val.orange { color: #FF9500; }
+    .stat-val.emerald { color: #34C759; }
+    .stat-val.indigo { color: #5856D6; }
+    .stat-val.rose { color: #FF2D55; }
+
+    /* 🔘 iOS Segmented Control (Top Tabs) */
     .nav-tabs {
       display: flex;
-      background: #e2e8f0;
-      padding: 4px;
-      border-radius: 12px;
+      background: rgba(118, 118, 128, 0.14);
+      padding: 3.5px;
+      border-radius: 14px;
       margin-top: 14px;
-      gap: 4px;
+      gap: 3px;
     }
     .nav-tab {
       flex: 1;
       border: none;
       background: transparent;
       padding: 10px 4px;
-      border-radius: 9px;
-      font-size: 13px;
+      border-radius: 11px;
+      font-size: 13.5px;
       font-weight: 600;
-      color: #64748b;
+      color: #636366;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       text-align: center;
+      letter-spacing: -0.3px;
     }
     .nav-tab.active {
-      background: #ffffff;
-      color: #4f46e5;
-      font-weight: 700;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: #FFFFFF;
+      color: #000000;
+      font-weight: 800;
+      box-shadow: 0 3px 9px rgba(0, 0, 0, 0.12), 0 0.5px 2px rgba(0, 0, 0, 0.06);
     }
 
-    /* Card */
+    /* 📦 iOS Grouped Inset Card */
     .card {
-      background: #ffffff;
-      border-radius: 16px;
-      border: 1px solid #e2e8f0;
-      padding: 16px;
+      background: #FFFFFF;
+      border-radius: 22px;
+      border: 0.5px solid rgba(0, 0, 0, 0.05);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      padding: 18px 16px;
       margin-top: 14px;
     }
 
-    /* Input Mode Toggle (수기 입력 vs GPX 파일 입력) */
+    /* Input Mode Toggle */
     .input-mode-toggle {
       display: flex;
-      background: #f1f5f9;
-      padding: 3px;
-      border-radius: 10px;
+      background: #F2F2F7;
+      padding: 3.5px;
+      border-radius: 12px;
       margin-bottom: 14px;
-      border: 1px solid #e2e8f0;
+      border: 0.5px solid rgba(60, 60, 67, 0.08);
       gap: 4px;
     }
     .mode-btn {
@@ -142,80 +211,83 @@
       border: none;
       background: transparent;
       padding: 8px 6px;
-      border-radius: 8px;
-      font-size: 12px;
+      border-radius: 9px;
+      font-size: 12.5px;
       font-weight: 600;
-      color: #64748b;
+      color: #8E8E93;
       cursor: pointer;
       transition: all 0.15s;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
+      gap: 4px;
     }
     .mode-btn.active {
-      background: #ffffff;
-      color: #4f46e5;
-      font-weight: 700;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      background: #FFFFFF;
+      color: #007AFF;
+      font-weight: 800;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
-    /* ⌚ Zepp / T-Rex GPX & TCX Importer Box */
+    /* ⌚ Zepp / T-Rex GPX & TCX Apple Watch Style Importer Box */
     .gpx-import-box {
-      background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%);
-      border: 1.5px dashed #93c5fd;
-      border-radius: 14px;
-      padding: 14px;
+      background: linear-gradient(135deg, rgba(52, 199, 89, 0.09) 0%, rgba(0, 122, 255, 0.09) 100%);
+      border: 1.5px dashed rgba(0, 122, 255, 0.45);
+      border-radius: 18px;
+      padding: 15px;
       margin-bottom: 14px;
+      cursor: pointer;
       transition: all 0.2s ease;
     }
+    .gpx-import-box:hover {
+      background: linear-gradient(135deg, rgba(52, 199, 89, 0.14) 0%, rgba(0, 122, 255, 0.14) 100%);
+      border-color: #007AFF;
+    }
     .gpx-import-box.dragover {
-      border-color: #4f46e5;
-      background: #eef2ff;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+      border-color: #007AFF;
+      background: rgba(0, 122, 255, 0.18);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25);
     }
     .gpx-import-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 12px;
     }
     .gpx-icon {
       font-size: 24px;
       flex-shrink: 0;
-      width: 40px;
-      height: 40px;
-      background: #ffffff;
-      border-radius: 10px;
+      width: 44px;
+      height: 44px;
+      background: #FFFFFF;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid #dbeafe;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border: 0.5px solid rgba(0, 122, 255, 0.25);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     }
-    .gpx-text {
-      flex: 1;
-      min-width: 0;
-    }
+    .gpx-text { flex: 1; min-width: 0; }
     .gpx-text strong {
       display: block;
-      font-size: 13px;
-      color: #0f172a;
-      font-weight: 700;
+      font-size: 14px;
+      color: #000000;
+      font-weight: 800;
+      letter-spacing: -0.3px;
     }
     .gpx-text p {
-      font-size: 11px;
-      color: #64748b;
+      font-size: 11.5px;
+      color: #636366;
       margin-top: 2px;
-      line-height: 1.3;
+      line-height: 1.35;
     }
     .gpx-upload-btn {
-      background: #4f46e5;
-      color: #ffffff;
+      background: #007AFF;
+      color: #FFFFFF;
       border: none;
-      padding: 8px 14px;
-      border-radius: 10px;
-      font-size: 12px;
+      padding: 9px 15px;
+      border-radius: 14px;
+      font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
@@ -223,15 +295,18 @@
       transition: all 0.15s;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      box-shadow: 0 2px 5px rgba(79, 70, 229, 0.25);
+      gap: 4px;
+      box-shadow: 0 3px 10px rgba(0, 122, 255, 0.35);
     }
-    .gpx-upload-btn:hover { background: #4338ca; }
+    .gpx-upload-btn:active {
+      background: #0062cc;
+      transform: scale(0.96);
+    }
     
     .gpx-result-banner {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px dashed #bfdbfe;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(0, 122, 255, 0.3);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -245,27 +320,26 @@
       gap: 6px;
     }
     .gpx-badge {
-      background: #dcfce7;
-      color: #15803d;
+      background: #D4F7DC;
+      color: #197B30;
       font-weight: 800;
       font-size: 11px;
-      padding: 2px 7px;
-      border-radius: 6px;
-      border: 1px solid #bbf7d0;
+      padding: 3px 9px;
+      border-radius: 8px;
     }
     .gpx-summary-text {
-      font-weight: 600;
-      color: #1e293b;
-      font-size: 12px;
+      font-weight: 700;
+      color: #1C1C1E;
+      font-size: 12.5px;
     }
     .gpx-clear-btn {
-      background: #fee2e2;
-      border: 1px solid #fca5a5;
-      color: #b91c1c;
-      width: 22px;
-      height: 22px;
-      border-radius: 6px;
-      font-size: 11px;
+      background: #FEE2E2;
+      border: none;
+      color: #DC2626;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      font-size: 12px;
       font-weight: 800;
       cursor: pointer;
       display: flex;
@@ -273,7 +347,7 @@
       justify-content: center;
     }
 
-    /* Sport Selector Buttons */
+    /* 🏃 iOS Apple Watch Squircle Sport Selector Grid */
     .sport-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -284,127 +358,149 @@
       .sport-grid { grid-template-columns: repeat(6, 1fr); }
     }
     .sport-btn {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 10px 4px;
+      background: #F2F2F7;
+      border: 0.5px solid rgba(60, 60, 67, 0.08);
+      border-radius: 16px;
+      padding: 12px 4px;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 4px;
       cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      color: #475569;
-      transition: all 0.15s;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #3A3A3C;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .sport-btn .icon { font-size: 18px; }
+    .sport-btn .icon { font-size: 22px; }
     .sport-btn.active {
-      background: #eef2ff;
-      border-color: #4f46e5;
-      color: #4338ca;
-      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+      background: #007AFF;
+      color: #FFFFFF;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(0, 122, 255, 0.4);
+      transform: scale(1.03);
+    }
+    .sport-btn:active {
+      transform: scale(0.95);
     }
 
-    /* Form Controls */
-    .form-group { margin-top: 12px; }
-    .form-label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    /* 📝 iOS Clean Form Controls */
+    .form-group { margin-top: 14px; }
+    .form-label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #8E8E93;
+      margin-bottom: 5px;
+      letter-spacing: -0.2px;
+    }
     .form-input, .form-select, .form-textarea {
       width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      font-size: 14px;
-      background: #ffffff;
-      color: #1e293b;
+      padding: 12px 14px;
+      border: 0.5px solid rgba(60, 60, 67, 0.15);
+      border-radius: 14px;
+      font-size: 15px;
+      background: #F2F2F7;
+      color: #000000;
       outline: none;
       font-family: inherit;
+      -webkit-appearance: none;
+      transition: all 0.2s;
     }
     .form-input:focus, .form-select:focus, .form-textarea:focus {
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+      background: #FFFFFF;
+      border-color: #007AFF;
+      box-shadow: 0 0 0 3.5px rgba(0, 122, 255, 0.18);
     }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
     /* Dynamic Category Box */
     .dynamic-box {
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-      background: #f8fafc;
+      margin-top: 14px;
+      padding: 14px 15px;
+      border-radius: 18px;
+      border: 0.5px solid rgba(60, 60, 67, 0.08);
+      background: #F2F2F7;
     }
     .box-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #334155;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #3A3A3C;
       margin-bottom: 8px;
       display: flex;
       align-items: center;
       gap: 5px;
+      letter-spacing: -0.2px;
     }
 
-    /* 🤖 GEMINI AI COACH BAR */
+    /* 🤖 GEMINI AI COACH BAR (Apple Intelligence Style) */
     .ai-coach-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: linear-gradient(135deg, #eef2ff 0%, #fdf4ff 100%);
-      border: 1px solid #c7d2fe;
-      border-radius: 10px;
-      padding: 8px 12px;
+      background: linear-gradient(135deg, rgba(88, 86, 214, 0.1) 0%, rgba(255, 45, 85, 0.1) 100%);
+      border: 0.5px solid rgba(88, 86, 214, 0.3);
+      border-radius: 14px;
+      padding: 9px 13px;
       margin-bottom: 6px;
     }
     .ai-coach-btn {
-      background: linear-gradient(135deg, #4f46e5, #9333ea);
-      color: #ffffff;
+      background: linear-gradient(135deg, #007AFF 0%, #5856D6 50%, #AF52DE 100%);
+      color: #FFFFFF;
       border: none;
-      padding: 6px 12px;
-      border-radius: 8px;
+      padding: 7px 14px;
+      border-radius: 12px;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+      gap: 4px;
+      box-shadow: 0 2px 10px rgba(88, 86, 214, 0.3);
       transition: all 0.15s;
     }
-    .ai-coach-btn:hover { transform: translateY(-1px); }
-    .ai-coach-btn:active { transform: scale(0.97); }
-    .ai-coach-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .ai-coach-btn:active {
+      transform: scale(0.96);
+      opacity: 0.9;
+    }
+    .ai-coach-btn:disabled {
+      background: #C7C7CC;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
 
-    /* Multi Photo Upload & Preview Grid */
+    /* Multi Photo Upload */
     .photo-upload-btn {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: #f1f5f9;
-      border: 1px dashed #94a3b8;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #334155;
+      background: #F2F2F7;
+      border: 1px dashed rgba(60, 60, 67, 0.3);
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #007AFF;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .photo-upload-btn:hover { background: #e2e8f0; border-color: #4f46e5; }
+    .photo-upload-btn:active { background: #E5E5EA; }
     
     .photos-preview-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
       gap: 8px;
       margin-top: 10px;
     }
     .photo-preview-item {
       position: relative;
-      border-radius: 10px;
+      border-radius: 14px;
       overflow: hidden;
       aspect-ratio: 1 / 1;
-      background: #0f172a;
-      border: 1px solid #cbd5e1;
+      background: #000000;
+      border: 0.5px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
     .photo-preview-item img {
       width: 100%;
@@ -416,37 +512,46 @@
       position: absolute;
       top: 4px;
       right: 4px;
-      background: rgba(239, 68, 68, 0.9);
-      color: #ffffff;
+      background: rgba(255, 59, 48, 0.95);
+      color: #FFFFFF;
       border: none;
       border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      font-size: 12px;
+      width: 24px;
+      height: 24px;
+      font-size: 13px;
       font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     }
 
-    /* Submit Button */
+    /* 🚀 iOS Primary Action Button */
     .submit-btn {
       width: 100%;
-      margin-top: 16px;
-      background: #4f46e5;
-      color: #ffffff;
+      margin-top: 18px;
+      background: #007AFF;
+      color: #FFFFFF;
       border: none;
-      padding: 13px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
+      padding: 15px;
+      border-radius: 16px;
+      font-size: 16.5px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 5px 16px rgba(0, 122, 255, 0.38);
+      transition: all 0.15s ease;
     }
-    .submit-btn:active { transform: scale(0.98); }
-    .submit-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .submit-btn:active {
+      transform: scale(0.98);
+      background: #0062cc;
+    }
+    .submit-btn:disabled {
+      background: #C7C7CC;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
 
     /* Filter Pills */
     .filter-scroll {
@@ -455,106 +560,121 @@
       overflow-x: auto;
       padding-bottom: 4px;
       margin-top: 12px;
+      -webkit-overflow-scrolling: touch;
     }
     .filter-pill {
       white-space: nowrap;
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-      color: #475569;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
+      border: 0.5px solid rgba(60, 60, 67, 0.15);
+      background: #FFFFFF;
+      color: #636366;
+      padding: 7px 14px;
+      border-radius: 18px;
+      font-size: 13px;
+      font-weight: 700;
       cursor: pointer;
+      transition: all 0.15s;
     }
     .filter-pill.active {
-      background: #4f46e5;
-      color: #ffffff;
-      border-color: #4f46e5;
+      background: #007AFF;
+      color: #FFFFFF;
+      border-color: #007AFF;
+      box-shadow: 0 3px 10px rgba(0, 122, 255, 0.3);
     }
 
-    /* Log Items */
+    /* 📋 iOS Workout Log List Cards */
     .log-item {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      padding: 14px;
-      margin-top: 10px;
+      background: #FFFFFF;
+      border: 0.5px solid rgba(0, 0, 0, 0.05);
+      border-radius: 20px;
+      padding: 16px 17px;
+      margin-top: 12px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
     }
     .log-item-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+      margin-bottom: 7px;
     }
     .sport-tag {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: #f1f5f9;
-      color: #475569;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 7px;
+      background: rgba(0, 122, 255, 0.12);
+      color: #007AFF;
     }
-    .sport-tag.running { background: #ffedd5; color: #c2410c; }
-    .sport-tag.hiking { background: #dcfce7; color: #15803d; }
-    .sport-tag.trail { background: #ccfbf1; color: #0f766e; }
-    .sport-tag.diving { background: #e0f2fe; color: #0369a1; }
-    .sport-tag.walking { background: #f3e8ff; color: #7e22ce; }
+    .sport-tag.running { background: rgba(255, 149, 0, 0.14); color: #FF9500; }
+    .sport-tag.hiking { background: rgba(52, 199, 89, 0.14); color: #34C759; }
+    .sport-tag.trail { background: rgba(0, 199, 190, 0.14); color: #00C7BE; }
+    .sport-tag.diving { background: rgba(90, 200, 250, 0.14); color: #007AFF; }
+    .sport-tag.circuit { background: rgba(255, 45, 85, 0.14); color: #FF2D55; }
+    .sport-tag.walking { background: rgba(175, 82, 222, 0.14); color: #AF52DE; }
 
-    .log-date { font-size: 12px; color: #94a3b8; font-weight: 500; }
-    .log-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .log-date {
+      font-size: 12.5px;
+      color: #8E8E93;
+      font-weight: 600;
+    }
+    .log-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #000000;
+      margin-bottom: 7px;
+      letter-spacing: -0.3px;
+    }
     
     .log-actions {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
     }
     .btn-action {
-      border: 1px solid #e2e8f0;
-      background: #f8fafc;
-      padding: 3px 7px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 600;
-      color: #475569;
+      border: none;
+      background: #F2F2F7;
+      padding: 5px 9px;
+      border-radius: 9px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #636366;
       cursor: pointer;
       transition: all 0.15s;
     }
-    .btn-action.edit:hover { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
-    .btn-action.del:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+    .btn-action.edit:active { background: rgba(0, 122, 255, 0.15); color: #007AFF; }
+    .btn-action.del:active { background: rgba(255, 59, 48, 0.15); color: #FF3B30; }
 
     .log-metrics {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px 10px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 6px;
+      gap: 7px 11px;
+      font-size: 13.5px;
+      font-weight: 700;
+      margin-bottom: 7px;
     }
     .metric-badge {
       display: inline-flex;
       align-items: center;
       gap: 3px;
     }
-    .metric-val { color: #4f46e5; font-weight: 700; }
+    .metric-val { color: #007AFF; font-weight: 800; }
     .metric-rpe {
-      background: #eef2ff;
-      color: #4338ca;
-      font-size: 11px;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-weight: 700;
+      background: rgba(0, 122, 255, 0.12);
+      color: #007AFF;
+      font-size: 11.5px;
+      padding: 2px 7px;
+      border-radius: 7px;
+      font-weight: 800;
     }
     .log-notes {
-      font-size: 12px;
-      color: #334155;
-      background: #f8fafc;
-      padding: 10px 12px;
-      border-radius: 10px;
-      margin-top: 6px;
+      font-size: 13px;
+      color: #3A3A3C;
+      background: #F2F2F7;
+      padding: 12px 14px;
+      border-radius: 14px;
+      margin-top: 7px;
       white-space: pre-wrap;
       line-height: 1.5;
-      border-left: 3px solid #818cf8;
+      border-left: 3.5px solid #007AFF;
     }
 
     /* Log Multi-Photo Gallery Horizontal Scroll */
@@ -564,19 +684,20 @@
       overflow-x: auto;
       margin-top: 10px;
       padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
     }
     .log-photo-item {
-      flex: 0 0 140px;
+      flex: 0 0 135px;
       height: 110px;
-      border-radius: 10px;
+      border-radius: 14px;
       overflow: hidden;
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
+      background: #E5E5EA;
+      border: 0.5px solid rgba(0, 0, 0, 0.08);
       cursor: pointer;
     }
     .log-photo-item.single {
       flex: 1 1 100%;
-      height: 180px;
+      height: 190px;
     }
     .log-photo-item img {
       width: 100%;
@@ -585,136 +706,163 @@
       display: block;
       transition: transform 0.2s;
     }
-    .log-photo-item:hover img { transform: scale(1.03); }
+    .log-photo-item:active img { transform: scale(0.97); }
 
-    /* 💬 ALWAYS EXPANDED COMMENTS SECTION */
+    /* 💬 COMMENTS SECTION (원래의 작고 깔끔한 글자 크기 복원) */
     .comments-wrapper {
-      margin-top: 12px;
-      border-top: 1px dashed #e2e8f0;
-      padding-top: 10px;
+      margin-top: 10px;
+      border-top: 1px dashed rgba(60, 60, 67, 0.15);
+      padding-top: 8px;
     }
     .comments-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      color: #475569;
+      color: #8E8E93;
       margin-bottom: 6px;
     }
     .comment-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-bottom: 8px;
+      gap: 5px;
+      margin-bottom: 6px;
     }
     .comment-item {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 12px;
+      background: #F2F2F7;
+      border: 0.5px solid rgba(60, 60, 67, 0.08);
+      border-radius: 9px;
+      padding: 6px 9px;
+      font-size: 11px;
     }
     .comment-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     .comment-author {
       font-weight: 700;
-      color: #4f46e5;
+      color: #007AFF;
       display: flex;
       align-items: center;
-      gap: 4px;
-      font-size: 12px;
+      gap: 3px;
+      font-size: 11px;
     }
     .comment-meta-right {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
-    .comment-time { font-size: 10px; color: #94a3b8; }
-    
+    .comment-time {
+      font-size: 9.5px;
+      color: #8E8E93;
+    }
     .comment-action-btn {
       background: none;
       border: none;
-      font-size: 11px;
-      color: #94a3b8;
+      font-size: 10.5px;
+      color: #8E8E93;
       cursor: pointer;
       padding: 1px 3px;
       border-radius: 4px;
+      line-height: 1;
     }
-    .comment-action-btn:hover { color: #4f46e5; background: #eef2ff; }
-    .comment-action-btn.delete:hover { color: #ef4444; background: #fee2e2; }
+    .comment-action-btn:active { color: #007AFF; background: rgba(0, 122, 255, 0.12); }
+    .comment-action-btn.delete:active { color: #FF3B30; background: rgba(255, 59, 48, 0.12); }
+    .comment-text {
+      color: #1C1C1E;
+      line-height: 1.35;
+      word-break: break-word;
+      font-size: 11px;
+    }
 
-    .comment-text { color: #1e293b; line-height: 1.4; word-break: break-word; font-size: 12px; }
-
-    /* Compact Comment Form */
+    /* 💬 댓글 입력 폼 (작성자란 너비 슬림 최적화) */
     .comment-form {
       display: flex;
-      gap: 6px;
-      margin-top: 8px;
+      gap: 5px;
+      margin-top: 6px;
       align-items: center;
     }
     .comment-input-author {
-      width: 65px;
-      flex-shrink: 0;
-      padding: 7px 6px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 12px;
+      width: 64px !important;
+      min-width: 64px !important;
+      max-width: 64px !important;
+      flex: 0 0 64px !important;
+      padding: 6px 2px !important;
+      border: 0.5px solid rgba(60, 60, 67, 0.2) !important;
+      border-radius: 8px !important;
+      font-size: 11px !important;
+      font-weight: 700;
       outline: none;
-      background: #ffffff;
+      background: #FFFFFF !important;
       text-align: center;
+      text-align-last: center;
       font-family: inherit;
+      color: #1C1C1E;
+      cursor: pointer;
     }
     .comment-input-text {
-      flex: 1;
+      flex: 1 1 auto;
       min-width: 0;
-      padding: 7px 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 12px;
+      padding: 6px 9px !important;
+      border: 0.5px solid rgba(60, 60, 67, 0.2) !important;
+      border-radius: 8px !important;
+      font-size: 11.5px !important;
       outline: none;
-      background: #ffffff;
+      background: #FFFFFF !important;
       font-family: inherit;
+      color: #1C1C1E;
+      -webkit-appearance: none;
     }
     .comment-input-author:focus, .comment-input-text:focus {
-      border-color: #4f46e5;
+      border-color: #007AFF !important;
+      box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.15) !important;
     }
     .comment-btn-submit {
-      background: #4f46e5;
-      color: #ffffff;
+      background: #007AFF;
+      color: #FFFFFF;
       border: none;
-      padding: 7px 12px;
+      padding: 6px 11px;
       border-radius: 8px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
+      transition: all 0.15s;
     }
     .comment-btn-submit:active { transform: scale(0.96); }
 
-    /* Chart Containers */
+    /* Chart Box */
     .chart-box {
-      background: #ffffff;
-      border-radius: 14px;
-      border: 1px solid #e2e8f0;
-      padding: 14px;
-      margin-top: 12px;
+      background: #FFFFFF;
+      border-radius: 22px;
+      border: 0.5px solid rgba(0, 0, 0, 0.05);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      padding: 18px;
+      margin-top: 14px;
     }
-    .chart-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 10px; }
-    .chart-container { position: relative; height: 220px; width: 100%; }
+    .chart-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: #000000;
+      margin-bottom: 12px;
+    }
+    .chart-container {
+      position: relative;
+      height: 220px;
+      width: 100%;
+    }
 
-    .hidden { display: none !important; }
-
-    /* Modals */
+    /* 🔍 iOS Fullscreen Gallery Modal */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       z-index: 150;
       display: flex;
       align-items: center;
@@ -722,51 +870,75 @@
       padding: 16px;
     }
     .modal-content {
-      background: #ffffff;
-      border-radius: 16px;
-      max-width: 540px;
+      background: #FFFFFF;
+      border-radius: 24px;
+      max-width: 500px;
       width: 100%;
       max-height: 90vh;
       overflow-y: auto;
-      padding: 18px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      padding: 22px 18px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
     }
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 8px;
+      margin-bottom: 14px;
+      border-bottom: 0.5px solid rgba(60, 60, 67, 0.12);
+      padding-bottom: 10px;
     }
-    .modal-title { font-size: 16px; font-weight: 800; color: #0f172a; }
+    .modal-title {
+      font-size: 17.5px;
+      font-weight: 800;
+      color: #000000;
+      letter-spacing: -0.3px;
+    }
     .modal-close-btn {
-      background: none;
+      background: #E5E5EA;
       border: none;
-      font-size: 20px;
-      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 800;
+      color: #8E8E93;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
       cursor: pointer;
-    }
-
-    /* Fullscreen Photo Lightbox Modal (좌우 스와이프 & 이전/다음 지원) */
-    #photoModal {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.92);
-      z-index: 200;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+    }
+
+    /* 🔍 iOS Fullscreen Gallery Lightbox Modal (사진 확대 & 좌우 스와이프) */
+    #photoModal {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(0, 0, 0, 0.94) !important;
+      backdrop-filter: blur(25px) !important;
+      -webkit-backdrop-filter: blur(25px) !important;
+      z-index: 9999 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 16px !important;
+      touch-action: none;
+    }
+    #photoModal.hidden {
+      display: none !important;
     }
     .photo-modal-content {
       position: relative;
-      max-width: 90vw;
+      max-width: 95vw;
       max-height: 90vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      width: 100%;
     }
     .photo-modal-img-wrap {
       max-width: 100%;
@@ -776,125 +948,139 @@
       justify-content: center;
       user-select: none;
       touch-action: pan-y;
+      width: 100%;
     }
     .photo-modal-img {
       max-width: 100%;
-      max-height: 80vh;
-      border-radius: 12px;
+      max-height: 75vh;
+      border-radius: 16px;
       object-fit: contain;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+      transition: transform 0.2s ease-out;
     }
     .photo-modal-close {
       position: absolute;
-      top: -38px;
-      right: 0;
-      background: rgba(255, 255, 255, 0.2);
+      top: -45px;
+      right: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
       border: none;
-      color: #ffffff;
-      font-size: 24px;
-      width: 34px;
-      height: 34px;
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 800;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s;
-      z-index: 10;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
-    .photo-modal-close:hover { background: rgba(255, 255, 255, 0.4); }
     .photo-nav-btn {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      background: rgba(0, 0, 0, 0.5);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(30, 30, 30, 0.7);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      color: #FFFFFF;
+      border: 0.5px solid rgba(255, 255, 255, 0.2);
       font-size: 28px;
-      width: 44px;
-      height: 44px;
+      width: 46px;
+      height: 46px;
       border-radius: 50%;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s;
-      z-index: 10;
+      z-index: 90;
+      transition: all 0.15s;
     }
-    .photo-nav-btn:hover { background: rgba(0, 0, 0, 0.8); }
-    .photo-nav-btn.prev { left: -50px; }
-    .photo-nav-btn.next { right: -50px; }
+    .photo-nav-btn.prev { left: -52px; }
+    .photo-nav-btn.next { right: -52px; }
     @media (max-width: 600px) {
       .photo-nav-btn.prev { left: 8px; }
       .photo-nav-btn.next { right: 8px; }
     }
     .photo-modal-counter {
-      color: #ffffff;
-      font-size: 13px;
-      font-weight: 700;
-      margin-top: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 3px 12px;
-      border-radius: 12px;
+      color: #FFFFFF;
+      font-size: 13.5px;
+      font-weight: 800;
+      margin-top: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      padding: 4px 14px;
+      border-radius: 14px;
+      letter-spacing: -0.2px;
     }
 
-    /* 📄 Pagination Bar */
+    /* 📄 iOS Pagination Bar */
     .pagination-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 10px 14px;
+      background: #FFFFFF;
+      border: 0.5px solid rgba(0, 0, 0, 0.05);
+      border-radius: 18px;
+      padding: 11px 15px;
       margin-top: 14px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     }
     .page-nav-btn {
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      padding: 7px 14px;
+      background: #F2F2F7;
+      border: none;
+      border-radius: 11px;
+      padding: 8px 15px;
       font-size: 13px;
       font-weight: 700;
-      color: #334155;
+      color: #007AFF;
       cursor: pointer;
       transition: all 0.15s;
     }
-    .page-nav-btn:hover:not(:disabled) {
-      background: #e2e8f0;
-      color: #0f172a;
+    .page-nav-btn:active:not(:disabled) {
+      background: #E5E5EA;
+      transform: scale(0.96);
     }
     .page-nav-btn:disabled {
       opacity: 0.35;
       cursor: not-allowed;
+      color: #8E8E93;
     }
     .page-indicator {
-      font-size: 12px;
-      font-weight: 600;
-      color: #64748b;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #8E8E93;
     }
     .page-indicator b {
-      color: #2563eb;
-      font-weight: 800;
+      color: #007AFF;
+      font-weight: 900;
     }
 
     #toast {
       position: fixed;
-      bottom: 24px;
+      bottom: calc(env(safe-area-inset-bottom, 20px) + 28px);
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.9);
-      color: #ffffff;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
+      background: rgba(28, 28, 30, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: #FFFFFF;
+      padding: 12px 22px;
+      border-radius: 24px;
+      font-size: 13.5px;
+      font-weight: 700;
       opacity: 0;
-      transition: opacity 0.25s;
+      transition: opacity 0.25s, transform 0.25s;
       pointer-events: none;
-      z-index: 100;
+      z-index: 200;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
-    #toast.show { opacity: 1; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(-5px); }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -992,6 +1178,10 @@
             <button type="button" data-sport="프리다이빙" class="sport-btn" onclick="selectSport('프리다이빙')">
               <span class="icon">🤿</span>
               <span>프리다이빙</span>
+            </button>
+            <button type="button" data-sport="서킷트레이닝" class="sport-btn" onclick="selectSport('서킷트레이닝')">
+              <span class="icon">🔥</span>
+              <span>서킷</span>
             </button>
             <button type="button" data-sport="걷기" class="sport-btn" onclick="selectSport('걷기')">
               <span class="icon">🚶</span>
@@ -1182,6 +1372,7 @@
         <button class="filter-pill" onclick="filterLogs('등산')">⛰️ 등산</button>
         <button class="filter-pill" onclick="filterLogs('트레일런닝')">🌲 트레일런</button>
         <button class="filter-pill" onclick="filterLogs('프리다이빙')">🤿 프리다이빙</button>
+        <button class="filter-pill" onclick="filterLogs('서킷트레이닝')">🔥 서킷</button>
         <button class="filter-pill" onclick="filterLogs('걷기')">🚶 걷기</button>
         <button class="filter-pill" onclick="filterLogs('기타')">🏅 기타</button>
       </div>
@@ -1236,6 +1427,7 @@
             <option value="등산">⛰️ 등산</option>
             <option value="트레일런닝">🌲 트레일런닝</option>
             <option value="프리다이빙">🤿 프리다이빙</option>
+            <option value="서킷트레이닝">🔥 서킷트레이닝</option>
             <option value="걷기">🚶 걷기</option>
             <option value="기타">🏅 기타</option>
           </select>
@@ -1540,7 +1732,7 @@
       btn.innerHTML = '<span>⏳ AI 코칭 분석 중...</span>';
       showToast('Gemini AI가 훈련 데이터를 분석 중입니다... 🤖✨');
 
-      if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      if (typeof google === 'undefined' || !google.script || !google.script.run || typeof google.script.run.generateGeminiWorkoutSummary !== 'function') {
         setTimeout(function() {
           btn.disabled = false;
           btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
@@ -1550,27 +1742,35 @@
         return;
       }
 
-      google.script.run
-        .withSuccessHandler(function(res) {
-          btn.disabled = false;
-          btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
-          if (res && res.summary) {
-            notesEl.value = res.summary;
-            if (res.error) {
-              alert(res.error);
-            } else if (res.isAi) {
-              showToast('Gemini 딥러닝 AI 코칭 분석 완료! 🤖✨');
-            } else {
-              showToast(res.notice || 'AI 코칭 후기 생성 완료!');
+      try {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            btn.disabled = false;
+            btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
+            if (res && res.summary) {
+              notesEl.value = res.summary;
+              if (res.error) {
+                alert(res.error);
+              } else if (res.isAi) {
+                showToast('Gemini 딥러닝 AI 코칭 분석 완료! 🤖✨');
+              } else {
+                showToast(res.notice || 'AI 코칭 후기 생성 완료!');
+              }
             }
-          }
-        })
-        .withFailureHandler(function(err) {
-          btn.disabled = false;
-          btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
-          alert('AI 생성 실패: ' + err.message);
-        })
-        .generateGeminiWorkoutSummary(data);
+          })
+          .withFailureHandler(function(err) {
+            btn.disabled = false;
+            btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
+            notesEl.value = "[📊 훈련 분석]\n" + (data.distance_km ? data.distance_km + "km " : "") + data.sport + " 훈련을 성공적으로 마쳤습니다.\n\n[💡 코칭 가이드]\n회복과 영양 섭취에 신경써주세요. 🔥";
+            showToast('기본 코칭 후기가 생성되었습니다.');
+          })
+          .generateGeminiWorkoutSummary(data);
+      } catch(e) {
+        btn.disabled = false;
+        btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
+        notesEl.value = "[📊 훈련 분석]\n" + (data.distance_km ? data.distance_km + "km " : "") + data.sport + " 훈련을 성공적으로 마쳤습니다.\n\n[💡 코칭 가이드]\n회복과 영양 섭취에 신경써주세요. 🔥";
+        showToast('기본 코칭 후기가 생성되었습니다.');
+      }
     }
 
     function openApiKeyModal() {
@@ -2138,6 +2338,7 @@
         else if (log.sport === '등산') sportClass = 'hiking';
         else if (log.sport === '트레일런닝') sportClass = 'trail';
         else if (log.sport === '프리다이빙') sportClass = 'diving';
+        else if (log.sport === '서킷트레이닝') sportClass = 'circuit';
         else if (log.sport === '걷기') sportClass = 'walking';
 
         const comments = log.comments || [];
@@ -2161,7 +2362,13 @@
             }).join('')
           : '<div style="text-align:center; color:#94a3b8; font-size:11px; padding:4px;">아직 댓글이 없습니다. 첫 응원을 남겨보세요! ✨</div>';
 
-        const commentsSectionHtml = '<div class="comments-wrapper">' +
+          const isDarami = savedAuthor === '다람이';
+          const authorSelectHtml = '<select id="comment-author-' + log.rowIndex + '" class="comment-input-author" onchange="localStorage.setItem(\'workout_author_name\', this.value)">' +
+            '<option value="징징이"' + (!isDarami ? ' selected' : '') + '>징징이</option>' +
+            '<option value="다람이"' + (isDarami ? ' selected' : '') + '>다람이</option>' +
+          '</select>';
+
+          const commentsSectionHtml = '<div class="comments-wrapper">' +
           '<div class="comments-header">' +
             '<span>💬 피드백 & 댓글 (' + commentCount + ')</span>' +
           '</div>' +
@@ -2169,7 +2376,7 @@
             commentItemsHtml +
           '</div>' +
           '<form class="comment-form" onsubmit="submitComment(event, ' + log.rowIndex + ')">' +
-            '<input type="text" id="comment-author-' + log.rowIndex + '" class="comment-input-author" placeholder="작성자" value="' + escapeHtml(savedAuthor) + '" required>' +
+            authorSelectHtml +
             '<input type="text" id="comment-text-' + log.rowIndex + '" class="comment-input-text" placeholder="응원 및 피드백 작성..." required>' +
             '<button type="submit" id="comment-btn-' + log.rowIndex + '" class="comment-btn-submit">등록</button>' +
           '</form>' +
@@ -2305,10 +2512,10 @@
       if (ctx1 && monthlyTrendsData.length > 0) {
         if (chart1) chart1.destroy();
         const months = monthlyTrendsData.map(function(m) { return m.month; });
-        const sports = ['런닝', '등산', '트레일런닝', '프리다이빙', '걷기', '기타'];
+        const sports = ['런닝', '등산', '트레일런닝', '프리다이빙', '서킷트레이닝', '걷기', '기타'];
         const colors = {
           '런닝': '#ea580c', '등산': '#16a34a', '트레일런닝': '#0d9488',
-          '프리다이빙': '#0284c7', '걷기': '#9333ea', '기타': '#e11d48'
+          '프리다이빙': '#0284c7', '서킷트레이닝': '#ff2d55', '걷기': '#9333ea', '기타': '#e11d48'
         };
 
         const datasets = sports.map(function(sp) {
@@ -2575,14 +2782,26 @@
       let startTime = null;
       let endTime = null;
 
-      const metaTimeNode = xmlDoc ? xmlDoc.getElementsByTagName('time')[0] : null;
-      if (metaTimeNode && metaTimeNode.textContent) {
-        startTime = metaTimeNode.textContent.trim();
+      // 1. 트랙포인트의 첫 번째 유효 시간과 마지막 유효 시간 검색 (가장 정확한 운동 시간)
+      for (let i = 0; i < pts.length; i++) {
+        if (pts[i].time) {
+          startTime = pts[i].time;
+          break;
+        }
+      }
+      for (let i = pts.length - 1; i >= 0; i--) {
+        if (pts[i].time) {
+          endTime = pts[i].time;
+          break;
+        }
       }
 
-      if (pts.length > 0) {
-        if (!startTime && pts[0].time) startTime = pts[0].time;
-        if (pts[pts.length - 1].time) endTime = pts[pts.length - 1].time;
+      // 2. 만약 트랙포인트에 time이 전혀 없다면 메타데이터 time 검색
+      if (!startTime) {
+        const metaTimeNode = xmlDoc ? xmlDoc.getElementsByTagName('time')[0] : null;
+        if (metaTimeNode && metaTimeNode.textContent) {
+          startTime = metaTimeNode.textContent.trim();
+        }
       }
 
       if (startTime) {
@@ -2599,8 +2818,15 @@
         const t0 = new Date(startTime);
         const t1 = new Date(endTime);
         if (!isNaN(t0.getTime()) && !isNaN(t1.getTime())) {
-          durMinutes = Math.round((t1.getTime() - t0.getTime()) / 60000);
+          let diffMs = t1.getTime() - t0.getTime();
+          if (diffMs < 0) diffMs = Math.abs(diffMs);
+          durMinutes = Math.round(diffMs / 60000);
         }
+      }
+
+      // 만약 계산된 시간이 0분이거나 음수인데 이동거리가 있다면, 평균 조깅 속도(6분/km)로 시간 보정
+      if (durMinutes <= 0 && totalDist > 0.1) {
+        durMinutes = Math.round(totalDist * 6);
       }
 
       let typeNode = xmlDoc ? (xmlDoc.getElementsByTagName('type')[0] || xmlDoc.getElementsByTagName('name')[0]) : null;
@@ -2619,9 +2845,24 @@
       }
 
       let paceStr = '';
-      if (totalDist > 0.1 && durMinutes > 0) {
+      if (totalDist > 0.05 && durMinutes > 0) {
         const paceVal = durMinutes / totalDist;
         paceStr = formatPace(paceVal);
+      }
+
+      let titleStr = '';
+      if (totalDist > 0.05 && paceStr) {
+        titleStr = (Math.round(totalDist * 100) / 100) + 'km ' + detectedSport + ' (페이스 ' + paceStr + '/km)';
+      } else if (detectedSport === '등산' && elevGain > 0) {
+        titleStr = '등산 (획득고도 +' + Math.round(elevGain) + 'm)';
+      } else {
+        let rawTitle = (typeNode ? typeNode.textContent : '') || fileName || '';
+        rawTitle = rawTitle.replace(/\.[^/.]+$/, "").replace(/^[_\-]+|[_\-]+$/g, "");
+        if (!rawTitle || rawTitle.toLowerCase() === 'zepp' || rawTitle.toLowerCase().includes('running') || rawTitle.toLowerCase().includes('track')) {
+          titleStr = dateStr + ' ' + detectedSport + (totalDist > 0 ? ' ' + (Math.round(totalDist * 100) / 100) + 'km' : '');
+        } else {
+          titleStr = rawTitle;
+        }
       }
 
       let avgHr = hrValues.length > 0 ? Math.round(hrValues.reduce((a,b)=>a+b,0) / hrValues.length) : 0;
@@ -2657,7 +2898,7 @@
         maxAlt: Math.round(maxAlt),
         minAlt: Math.round(minAlt),
         waterTemp: avgWaterTemp,
-        title: (typeNode ? typeNode.textContent : '') || (detectedSport + ' ' + (Math.round(totalDist * 100) / 100) + 'km')
+        title: titleStr
       };
     }
 
@@ -2738,7 +2979,7 @@
       let distKm = Math.round((totalMeters / 1000) * 100) / 100;
       
       let paceStr = '';
-      if (distKm > 0.1 && durMinutes > 0) {
+      if (distKm > 0.05 && durMinutes > 0) {
         paceStr = formatPace(durMinutes / distKm);
       }
 
@@ -2769,7 +3010,7 @@
         elevGain: Math.round(elevGain),
         elevLoss: Math.round(elevLoss),
         maxAlt: Math.round(maxAlt),
-        title: detectedSport + ' ' + distKm + 'km'
+        title: (distKm > 0.05 && paceStr) ? (distKm + 'km ' + detectedSport + ' (페이스 ' + paceStr + '/km)') : (detectedSport + ' ' + distKm + 'km')
       };
     }
 
@@ -2781,7 +3022,13 @@
       if (data.sport) selectSport(data.sport);
 
       if (data.distance) document.getElementById('inputDistance').value = data.distance;
-      if (data.pace) document.getElementById('inputPace').value = data.pace;
+      
+      // 페이스 자동 입력
+      let finalPace = data.pace;
+      if (!finalPace && data.distance > 0 && data.duration > 0) {
+        finalPace = formatPace(data.duration / data.distance);
+      }
+      if (finalPace) document.getElementById('inputPace').value = finalPace;
       
       // ❤️ 심폐 & 에너지 (T-Rex 3 센서)
       document.getElementById('inputAvgHr').value = data.avgHr || '';
@@ -2799,19 +3046,15 @@
       // 🤿 수온
       if (data.waterTemp) document.getElementById('inputWaterTemp').value = data.waterTemp;
 
-      let title = data.title || (data.sport + ' ' + (data.distance ? data.distance + 'km' : ''));
-      if (data.distance && data.pace) {
-        title = data.distance + 'km ' + data.sport + ' (' + data.pace + '/km)';
-      } else if (data.sport === '등산' && data.elevGain) {
-        title = '등산 (획득고도 +' + data.elevGain + 'm)';
+      if (data.title) {
+        document.getElementById('inputTitle').value = data.title;
       }
-      document.getElementById('inputTitle').value = title;
 
       let parts = [];
       if (data.sport) parts.push('종목: ' + data.sport);
       if (data.distance) parts.push(data.distance + 'km');
       if (data.duration) parts.push(data.duration + '분');
-      if (data.pace) parts.push('페이스 ' + data.pace);
+      if (finalPace) parts.push('페이스 ' + finalPace);
       if (data.avgHr) parts.push('❤️ ' + data.avgHr + 'bpm' + (data.maxHr ? ' (최고 ' + data.maxHr + ')' : ''));
       if (data.calories) parts.push('🔥 ' + data.calories + 'kcal');
       if (data.cadence) parts.push('👣 ' + data.cadence + 'spm');
@@ -2823,9 +3066,6 @@
         text.textContent = parts.join(' · ');
         banner.classList.remove('hidden');
       }
-
-      // 파일 업로드 시 AI 코치 요약 자동 생성 트리거
-      generateAiSummary('new');
     }
 
     function clearGpxData() {

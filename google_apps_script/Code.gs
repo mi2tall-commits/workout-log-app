@@ -6,6 +6,14 @@
 // 🔔 스마트폰 ntfy 앱에서 설정하신 토픽 이름을 적어주세요!
 var NTFY_TOPIC = "my-workout-log-7788"; 
 
+// 🤖 텔레그램 AI 비서 봇 연동 설정 (댓글 작성 시 텔레그램 실시간 알림 발송)
+var TELEGRAM_BOT_TOKEN = "8314231452:AAEZHefOy9cbL7DV8ig4SOoLz5XbthL3Gv0";
+var TELEGRAM_CHAT_ID = "8667003350";
+
+// 💚 LINE(라인) 메신저 알림 봇 연동 설정 (댓글 작성 시 라인 실시간 알림 발송)
+var LINE_CHANNEL_ACCESS_TOKEN = "ki0Y79Xq6YcpLeBdN5bjtKSUPjgEIevaaNyOJpukIUoaylhBVaKRvqCzAHG2J9Yj8ezDMREpE5aP3K+4i69mMhjtoFH0TJ6/M8Vq7HcLsjQghw/8sCfOEk2QlhFiLQ9ZzXxxqQEIyClkT7L+TLWyvQdB04t89/1O/w1cDnyilFU=";
+var LINE_USER_ID = "U5ba8afd0b3aaaaee7e6270598b0c6f80";
+
 // 🔑 Google Gemini AI API Key (신규 활성화 키)
 var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6INIjH3Md1wSsrIG66nwP_70P-ImQK5eUZiLrfYj5j73g"; 
 
@@ -288,6 +296,9 @@ function saveWorkout(item) {
       avgHr, maxHr, calories, cadence, elevLoss, diveTime, waterTemp
     ]);
 
+    // 💚 LINE(라인) 메신저로 새 운동 기록 실시간 알림 발송
+    sendLineWorkoutNotification(item);
+
     sendNtfyWorkoutNotification(item);
 
     return { success: true };
@@ -441,6 +452,15 @@ function addWorkoutComment(rowIndex, commentData) {
     var logDate = normalizeDateString(rowData[0]);
     var logTitle = rowData[2] || rowData[1] || '운동 일지';
 
+    // 💚 LINE(라인) 메신저 봇: '징징이'가 댓글을 달았을 때는 라인으로만 알림 발송 (텔레그램 제외)
+    if (newComment.author && newComment.author.indexOf('징징이') !== -1) {
+      sendLineCommentNotification(logDate, logTitle, newComment);
+    } else {
+      // 🤖 텔레그램 AI 비서 봇: 징징이가 아닐 때(다람이 등)만 텔레그램으로 알림 발송
+      sendTelegramCommentNotification(logDate, logTitle, newComment);
+    }
+
+    // 스마트폰 ntfy 알림 (설정된 경우)
     sendNtfyCommentNotification(logDate, logTitle, newComment);
 
     return { success: true, comments: comments };
@@ -692,6 +712,17 @@ function generateSmartCoachTemplate(item) {
       "내리막 하강 구간의 충격으로 무릎과 대퇴사두근 피로가 높을 수 있으니 족욕 및 폼롤러 마사지를 추천합니다. " + (cal ? "총 " + cal + " kcal 소모 완료! 🏔️✨" : "");
 
     return p1 + p2;
+  } else if (sport === '서킷트레이닝') {
+    var zoneText = avgHr >= 150 ? "고강도 무산소/인터벌 Zone 4~5" : (avgHr >= 125 ? "심폐 강화 및 고효율 체지방 연소 Zone 3" : "유산소 기초 체력 Zone 2");
+    var p1 = "[🔥 서킷트레이닝 고강도 전신 분석]\n" +
+      (dur ? "총 " + dur + "분 동안 " : "") +
+      (avgHr ? "평균 심박수 " + avgHr + " bpm" + (maxHr ? "(최고 " + maxHr + " bpm)" : "") + "으로 " + zoneText + " 영역을 소화했습니다. " : "") +
+      (cal ? "총 " + cal + " kcal를 폭발적으로 소모하며 " : "") + "전신 근지구력과 심폐 기능을 극대화한 고강도 세션이었습니다.";
+
+    var p2 = "\n\n[💡 서킷 쿨다운 & 근회복 가이드]\n" +
+      "전신 다관절 복합 운동 후 젖산 축적과 근육 피로를 줄이기 위해 전해질 수분 섭취와 폼롤러 전신 이완 스트레칭을 적극 추천합니다! 완벽한 훈련이었습니다! 🔥💪";
+
+    return p1 + p2;
   } else if (sport === '프리다이빙') {
     return "[🤿 다이브 로그 분석]\n" +
       "최대 수심 " + depth + "m" + (diveTime ? ", 잠수 시간 " + diveTime : "") + (item.water_temp ? ", 수온 " + item.water_temp + "℃" : "") + " 다이빙을 안전하게 마쳤습니다. " +
@@ -772,7 +803,172 @@ function testWorkoutNtfyAlert() {
   var title = "🏃 [운동일지 알림 테스트] 성공!";
   var message = "스마트폰으로 종합 운동일지 알림이 정상적으로 수신됩니다! 🎉";
   sendNtfyMessage(NTFY_TOPIC, title, message, ["runner", "tada"]);
-  Logger.log("운동일지 테스트 알림 발송 완료!");
+  
+  // 🤖 텔레그램 AI 비서 봇으로도 테스트 알림 전송
+  testWorkoutTelegramCommentAlert();
+
+  // 💚 LINE(라인) 메신저로도 테스트 알림 전송
+  testWorkoutLineCommentAlert();
+  
+  Logger.log("운동일지, 텔레그램, 라인 테스트 알림 발송 완료!");
+}
+
+// ==========================================
+// 💚 LINE(라인) 메신저 알림 봇 실시간 연동
+// ==========================================
+
+function sendLineMessage(text) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var token = props.getProperty("LINE_CHANNEL_ACCESS_TOKEN") || LINE_CHANNEL_ACCESS_TOKEN;
+    var userId = props.getProperty("LINE_USER_ID") || LINE_USER_ID;
+    if (!token || !userId) return;
+
+    var url = "https://api.line.me/v2/bot/message/push";
+    var payload = {
+      to: String(userId),
+      messages: [
+        {
+          type: "text",
+          text: text
+        }
+      ]
+    };
+    var options = {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    UrlFetchApp.fetch(url, options);
+  } catch (e) {
+    Logger.log("LINE 알림 발송 실패: " + e.message);
+  }
+}
+
+function sendLineWorkoutNotification(item) {
+  try {
+    var sportEmoji = "🏃";
+    if (item.sport === "등산") sportEmoji = "⛰️";
+    else if (item.sport === "트레일런닝") sportEmoji = "🌲";
+    else if (item.sport === "프리다이빙") sportEmoji = "🤿";
+    else if (item.sport === "서킷트레이닝") sportEmoji = "🔥";
+    else if (item.sport === "걷기") sportEmoji = "🚶";
+    else if (item.sport === "기타") sportEmoji = "🏅";
+
+    var title = (item.title || (item.sport + " 운동")).trim();
+    var lines = [
+      sportEmoji + " [종합운동일지] 새 운동 기록 등록 완료!",
+      "━━━━━━━━━━━━━━━━━━━━",
+      "🏅 종목: " + item.sport,
+      "📅 날짜: " + item.date,
+      "📝 제목: " + title
+    ];
+
+    if (item.duration_minutes) lines.push("⏱️ 운동시간: " + item.duration_minutes + "분");
+    if (item.distance_km) lines.push("📏 이동거리: " + item.distance_km + "km" + (item.pace ? " (페이스 " + item.pace + "/km)" : ""));
+    if (item.avg_hr) lines.push("❤️ 심박수: " + item.avg_hr + " bpm" + (item.max_hr ? " (최고 " + item.max_hr + " bpm)" : ""));
+    if (item.calories) lines.push("🔥 소모열량: " + item.calories + " kcal");
+    if (item.elevation_gain) lines.push("⛰️ 누적상승: +" + item.elevation_gain + "m");
+    if (item.freedive_depth) lines.push("🤿 최대수심: " + item.freedive_depth + "m" + (item.dive_time ? " (" + item.dive_time + ")" : ""));
+    if (item.intensity) lines.push("⚡ 운동강도: RPE " + item.intensity + "/10");
+
+    if (item.notes) {
+      lines.push("━━━━━━━━━━━━━━━━━━━━");
+      lines.push("🗒️ 후기/메모:\n" + item.notes);
+    }
+
+    sendLineMessage(lines.join("\n"));
+  } catch (e) {
+    Logger.log("sendLineWorkoutNotification error: " + e.message);
+  }
+}
+
+function sendLineCommentNotification(dateStr, logTitle, comment) {
+  try {
+    var message = "💬 [종합운동일지] 새 피드백 & 댓글 도착!\n" +
+      "━━━━━━━━━━━━━━━━━━━━\n" +
+      "🏃 운동 일지: " + (logTitle || "운동 일지") + " (" + (dateStr || "") + ")\n" +
+      "👤 작성자: " + (comment.author || "운동 동료") + "\n" +
+      "📝 댓글 내용:\n" +
+      comment.text + "\n" +
+      "━━━━━━━━━━━━━━━━━━━━\n" +
+      "⏰ " + (comment.createdAt || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"));
+
+    sendLineMessage(message);
+  } catch(e) {
+    Logger.log("sendLineCommentNotification error: " + e.message);
+  }
+}
+
+function testWorkoutLineCommentAlert() {
+  var testComment = {
+    author: "다람이",
+    text: "오늘 운동도 고생 많으셨습니다! 완벽한 세션이었습니다 🔥👍",
+    createdAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm")
+  };
+  sendLineCommentNotification("2026-09-01", "서킷트레이닝", testComment);
+  return { success: true };
+}
+
+// ==========================================
+// 🤖 텔레그램 AI 비서 봇 실시간 알림 연동
+// ==========================================
+
+function sendTelegramMessage(text) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var token = props.getProperty("TELEGRAM_BOT_TOKEN") || TELEGRAM_BOT_TOKEN;
+    var chatId = props.getProperty("TELEGRAM_CHAT_ID") || TELEGRAM_CHAT_ID;
+    if (!token || !chatId) return;
+
+    var url = "https://api.telegram.org/bot" + token + "/sendMessage";
+    var payload = {
+      chat_id: String(chatId),
+      text: text,
+      parse_mode: "HTML"
+    };
+    var options = {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    UrlFetchApp.fetch(url, options);
+  } catch (e) {
+    Logger.log("Telegram 알림 발송 실패: " + e.message);
+  }
+}
+
+function sendTelegramCommentNotification(dateStr, logTitle, comment) {
+  try {
+    var lines = [
+      "💬 <b>[종합운동일지] 새 피드백 & 댓글 도착!</b>",
+      "━━━━━━━━━━━━━━━━━━━━",
+      "🏃 <b>운동 일지:</b> " + (logTitle || "운동 일지") + " (" + (dateStr || "") + ")",
+      "👤 <b>작성자:</b> " + (comment.author || "운동 동료"),
+      "📝 <b>댓글 내용:</b>",
+      comment.text,
+      "━━━━━━━━━━━━━━━━━━━━",
+      "⏰ " + (comment.createdAt || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"))
+    ];
+    sendTelegramMessage(lines.join("\n"));
+  } catch(e) {
+    Logger.log("sendTelegramCommentNotification error: " + e.message);
+  }
+}
+
+function testWorkoutTelegramCommentAlert() {
+  var testComment = {
+    author: "다람이",
+    text: "오늘 훈련도 고생하셨습니다! 페이스 굿굿 👍🔥",
+    createdAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm")
+  };
+  sendTelegramCommentNotification("2026-08-31", "4.16km 런닝 (페이스 6'44\"/km)", testComment);
+  return { success: true };
 }
 
 // 프론트엔드 호환용 별칭 (Aliases)

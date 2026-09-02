@@ -648,13 +648,18 @@
 
     .comment-form { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
     .comment-input-author {
-      width: 65px;
+      width: 68px;
       flex-shrink: 0;
-      padding: 7px 6px;
+      padding: 6px 2px;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
-      font-size: 12px;
+      font-size: 11.5px;
+      font-weight: 700;
       text-align: center;
+      text-align-last: center;
+      background: #ffffff;
+      cursor: pointer;
+      color: #1e293b;
     }
     .comment-input-text {
       flex: 1;
@@ -1553,6 +1558,153 @@
     </div>
   </div>
 
+  <!-- ✏️ EDIT TENNIS LOG MODAL -->
+  <div id="editTennisModal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title">✏️ 테니스 일지 수정</div>
+        <button type="button" class="modal-close-btn" onclick="closeEditTennisModal()">✕</button>
+      </div>
+
+      <form id="editTennisForm" onsubmit="handleEditTennisSubmit(event)">
+        <input type="hidden" id="editRowIndex">
+        
+        <!-- Category Selector -->
+        <div>
+          <label class="form-label">활동 구분</label>
+          <div class="category-grid">
+            <button type="button" data-editcat="레슨" class="cat-btn active" onclick="selectEditCategory('레슨')">
+              <span class="icon">🎾</span>
+              <span>레슨</span>
+            </button>
+            <button type="button" data-editcat="클럽게임" class="cat-btn" onclick="selectEditCategory('클럽게임')">
+              <span class="icon">🏆</span>
+              <span>클럽게임</span>
+            </button>
+            <button type="button" data-editcat="랠리/연습" class="cat-btn" onclick="selectEditCategory('랠리/연습')">
+              <span class="icon">🎯</span>
+              <span>랠리/연습</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Date & Duration -->
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">날짜</label>
+            <input id="editDate" type="date" required class="form-input">
+          </div>
+          <div>
+            <label class="form-label">운동 시간 (분)</label>
+            <input id="editDuration" type="number" min="0" required class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">일지 제목</label>
+          <input id="editTitle" type="text" class="form-input">
+        </div>
+
+        <!-- RPE -->
+        <div class="form-group">
+          <div style="display:flex; justify-content:space-between;">
+            <label class="form-label">운동 강도 (RPE)</label>
+            <span id="editRpeText" style="font-size:12px; font-weight:700; color:#16a34a;">6 / 10</span>
+          </div>
+          <input id="editIntensity" type="range" min="1" max="10" value="6" oninput="document.getElementById('editRpeText').textContent = this.value + ' / 10'" style="width:100%; margin-top:6px;">
+        </div>
+
+        <!-- GAME SPECIFIC: RESULT & SCORE & PLAYERS -->
+        <div id="edit-box-game" class="dynamic-box blue hidden">
+          <label class="form-label">경기 결과</label>
+          <div class="grid-3" style="margin-bottom:10px;">
+            <button type="button" id="btnEditResWin" class="result-btn active-win" onclick="setEditGameResult('승')">승리 🥇</button>
+            <button type="button" id="btnEditResLoss" class="result-btn" onclick="setEditGameResult('패')">패배 🥈</button>
+            <button type="button" id="btnEditResDraw" class="result-btn" onclick="setEditGameResult('무')">무승부 🤝</button>
+          </div>
+          <div class="form-group" style="margin-top:0; margin-bottom:10px;">
+            <label class="form-label">세부 스코어 (세트 결과)</label>
+            <input id="editScore" type="text" class="form-input">
+          </div>
+          <div class="form-group" style="margin-top:0; margin-bottom:2px;">
+            <label class="form-label">👥 함께한 동반자 (파트너 / 상대 선수)</label>
+            <input id="editPlayers" type="text" class="form-input">
+          </div>
+        </div>
+
+        <!-- LESSON / PRACTICE: FOCUS SKILL CHIPS -->
+        <div id="edit-box-skills" class="form-group">
+          <label class="form-label">집중 훈련 기술 (다중 선택)</label>
+          <div class="skill-chips-grid">
+            <div class="skill-chip edit-skill" onclick="toggleEditSkill(this, '포핸드 스트로크')">🎾 포핸드</div>
+            <div class="skill-chip edit-skill" onclick="toggleEditSkill(this, '백핸드 스트로크')">🎾 백핸드</div>
+            <div class="skill-chip edit-skill" onclick="toggleEditSkill(this, '서브 / 에이스')">🚀 서브</div>
+            <div class="skill-chip edit-skill" onclick="toggleEditSkill(this, '발리 / 네트플레이')">⚡ 발리</div>
+            <div class="skill-chip edit-skill" onclick="toggleEditSkill(this, '스매시 / 로브')">💥 스매시</div>
+            <div class="skill-chip edit-skill" onclick="toggleEditSkill(this, '리턴 / 패싱')">🛡️ 리턴</div>
+            <div class="skill-chip edit-skill" onclick="toggleEditSkill(this, '풋워크 / 체력')">👣 풋워크</div>
+            <div class="skill-chip edit-skill" onclick="toggleEditSkill(this, '전술 / 멘탈')">🧠 경기전술</div>
+          </div>
+          <input type="hidden" id="editFocusSkill">
+        </div>
+
+        <!-- Court & Location -->
+        <div class="grid-2 form-group">
+          <div>
+            <label class="form-label">코트 종류</label>
+            <select id="editCourtType" class="form-select">
+              <option value="인조잔디">인조잔디 🟩</option>
+              <option value="하드코트">하드코트 🟦</option>
+              <option value="실내코트">실내코트 🏠</option>
+              <option value="클레이코트">클레이코트 🟧</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">테니스 구장</label>
+            <select id="editSelectLocation" class="form-select" onchange="handleEditLocationChange(this.value)">
+              <option value="중구">중구 🏟️</option>
+              <option value="남산">남산 🏟️</option>
+              <option value="문수">문수 🏟️</option>
+              <option value="야음">야음 🏟️</option>
+              <option value="두왕">두왕 🏟️</option>
+              <option value="동서">동서 🏟️</option>
+              <option value="공단">공단 🏟️</option>
+              <option value="custom">✍️ 기타 (수기입력)</option>
+            </select>
+            <input id="editLocationCustom" type="text" placeholder="구장명 직접 입력" class="form-input hidden" style="margin-top:6px;">
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label class="form-label">📝 나의 운동 메모 / 타구 소감</label>
+          <textarea id="editNotes" rows="3" class="form-textarea"></textarea>
+        </div>
+
+        <!-- AI Summary -->
+        <div class="form-group">
+          <label class="form-label">🤖 Gemini AI 코칭 피드백</label>
+          <textarea id="editAiSummary" rows="4" class="form-textarea" style="background:#f0fdf4; border-color:#a7f3d0;"></textarea>
+        </div>
+
+        <!-- Photos -->
+        <div class="form-group">
+          <label class="form-label">📸 사진 관리</label>
+          <div id="editPhotosPreviewGrid" class="photos-preview-grid"></div>
+          <label for="editPhotoInput" class="btn-header" style="width:100%; height:38px; justify-content:center; margin-top:8px; cursor:pointer;">
+            📷 추가 사진 선택
+          </label>
+          <input type="file" id="editPhotoInput" accept="image/*" multiple style="display:none;" onchange="handleEditPhotoSelect(event)">
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <button type="button" class="btn-header" style="flex:1; justify-content:center;" onclick="closeEditTennisModal()">취소</button>
+          <button type="submit" id="btnEditSubmit" class="submit-btn" style="flex:2; margin-top:0;">수정 완료 저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ⚙️ API KEY MODAL -->
   <div id="apiKeyModal" class="modal-overlay hidden">
     <div class="modal-content" style="max-width: 440px;">
@@ -1626,7 +1778,218 @@
       initVideoDropzone();
     });
 
-    function selectCategory(cat) {
+
+    // -------------------------------------------------------------
+    // ✏️ EDIT MODAL LOGIC
+    // -------------------------------------------------------------
+    let curEditCategory = '레슨';
+    let curEditGameResult = '승';
+    let editSelectedSkills = [];
+    let editExistingPhotoIds = [];
+    let editNewPhotos = [];
+
+    function openEditTennisModal(rowIndex) {
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+      if (!log) return;
+
+      document.getElementById('editRowIndex').value = log.rowIndex;
+      document.getElementById('editDate').value = log.date;
+      document.getElementById('editDuration').value = log.duration_minutes || 60;
+      document.getElementById('editTitle').value = log.title || '';
+      
+      const intensity = log.intensity || 6;
+      document.getElementById('editIntensity').value = intensity;
+      document.getElementById('editRpeText').textContent = intensity + ' / 10';
+
+      selectEditCategory(log.category || '레슨');
+
+      if (log.category === '클럽게임') {
+        setEditGameResult(log.result || '승');
+        document.getElementById('editScore').value = log.score || '';
+        document.getElementById('editPlayers').value = log.players || '';
+      }
+
+      // Skills
+      editSelectedSkills = log.focus_skill ? log.focus_skill.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+      document.getElementById('editFocusSkill').value = editSelectedSkills.join(', ');
+      document.querySelectorAll('.edit-skill').forEach(function(chip) {
+        const text = chip.textContent.replace(/[^\uAC00-\uD7A3a-zA-Z0-9\/]/g, '').trim();
+        const active = editSelectedSkills.some(function(sk) { return sk.includes(text) || text.includes(sk); });
+        chip.classList.toggle('active', active);
+      });
+
+      // Court & Location
+      document.getElementById('editCourtType').value = log.court_type || '인조잔디';
+      
+      const loc = log.location || '중구';
+      const presetLocations = ['중구', '남산', '문수', '야음', '두왕', '동서', '공단'];
+      if (presetLocations.includes(loc)) {
+        document.getElementById('editSelectLocation').value = loc;
+        document.getElementById('editLocationCustom').classList.add('hidden');
+        document.getElementById('editLocationCustom').value = '';
+      } else {
+        document.getElementById('editSelectLocation').value = 'custom';
+        document.getElementById('editLocationCustom').classList.remove('hidden');
+        document.getElementById('editLocationCustom').value = loc;
+      }
+
+      document.getElementById('editNotes').value = log.notes || '';
+      document.getElementById('editAiSummary').value = log.ai_summary || '';
+
+      // Photos
+      editExistingPhotoIds = log.photos ? [...log.photos] : [];
+      editNewPhotos = [];
+      renderEditPhotosPreview();
+
+      document.getElementById('editTennisModal').classList.remove('hidden');
+    }
+
+    function closeEditTennisModal() {
+      document.getElementById('editTennisModal').classList.add('hidden');
+      editExistingPhotoIds = [];
+      editNewPhotos = [];
+    }
+
+    function selectEditCategory(cat) {
+      curEditCategory = cat;
+      document.querySelectorAll('[data-editcat]').forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-editcat') === cat);
+      });
+      document.getElementById('edit-box-game').classList.toggle('hidden', cat !== '클럽게임');
+      const skillBox = document.getElementById('edit-box-skills');
+      if (skillBox) skillBox.classList.toggle('hidden', cat === '클럽게임');
+    }
+
+    function setEditGameResult(res) {
+      curEditGameResult = res;
+      document.getElementById('btnEditResWin').className = 'result-btn' + (res === '승' ? ' active-win' : '');
+      document.getElementById('btnEditResLoss').className = 'result-btn' + (res === '패' ? ' active-loss' : '');
+      document.getElementById('btnEditResDraw').className = 'result-btn' + (res === '무' ? ' active-draw' : '');
+    }
+
+    function toggleEditSkill(chip, skillName) {
+      chip.classList.toggle('active');
+      if (chip.classList.contains('active')) {
+        if (!editSelectedSkills.includes(skillName)) editSelectedSkills.push(skillName);
+      } else {
+        editSelectedSkills = editSelectedSkills.filter(function(s) { return s !== skillName; });
+      }
+      document.getElementById('editFocusSkill').value = editSelectedSkills.join(', ');
+    }
+
+    function handleEditLocationChange(val) {
+      const customInput = document.getElementById('editLocationCustom');
+      if (val === 'custom') {
+        customInput.classList.remove('hidden');
+        customInput.focus();
+      } else {
+        customInput.classList.add('hidden');
+        customInput.value = '';
+      }
+    }
+
+    function handleEditPhotoSelect(e) {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      let loaded = 0;
+      files.forEach(function(file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          editNewPhotos.push(evt.target.result);
+          loaded++;
+          if (loaded === files.length) {
+            renderEditPhotosPreview();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    }
+
+    function removeEditExistingPhoto(idx) {
+      editExistingPhotoIds.splice(idx, 1);
+      renderEditPhotosPreview();
+    }
+
+    function removeEditNewPhoto(idx) {
+      editNewPhotos.splice(idx, 1);
+      renderEditPhotosPreview();
+    }
+
+    function renderEditPhotosPreview() {
+      const grid = document.getElementById('editPhotosPreviewGrid');
+      if (editExistingPhotoIds.length === 0 && editNewPhotos.length === 0) {
+        grid.innerHTML = '<div style="font-size:12px; color:#94a3b8; grid-column:1/-1; text-align:center; padding:10px;">등록된 사진이 없습니다.</div>';
+        return;
+      }
+
+      let html = '';
+      editExistingPhotoIds.forEach(function(id, idx) {
+        const thumbUrl = 'https://lh3.googleusercontent.com/d/' + id;
+        html += '<div class="photo-preview-item">' +
+          '<img src="' + thumbUrl + '" alt="기존 사진" onerror="this.src=\'https://drive.google.com/thumbnail?id=' + id + '&sz=w300\'">' +
+          '<button type="button" class="photo-delete-btn" onclick="removeEditExistingPhoto(' + idx + ')" title="삭제">✕</button>' +
+        '</div>';
+      });
+
+      editNewPhotos.forEach(function(b64, idx) {
+        html += '<div class="photo-preview-item">' +
+          '<img src="' + b64 + '" alt="새 사진">' +
+          '<button type="button" class="photo-delete-btn" onclick="removeEditNewPhoto(' + idx + ')" title="삭제">✕</button>' +
+        '</div>';
+      });
+
+      grid.innerHTML = html;
+    }
+
+    function handleEditTennisSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnEditSubmit');
+      btn.disabled = true;
+      btn.textContent = '수정 내용 저장 중...';
+
+      let locationVal = document.getElementById('editSelectLocation').value;
+      if (locationVal === 'custom') {
+        locationVal = document.getElementById('editLocationCustom').value.trim() || '기타';
+      }
+
+      const data = {
+        rowIndex: parseInt(document.getElementById('editRowIndex').value),
+        date: document.getElementById('editDate').value,
+        category: curEditCategory,
+        title: document.getElementById('editTitle').value.trim(),
+        duration_minutes: parseInt(document.getElementById('editDuration').value) || 60,
+        intensity: parseInt(document.getElementById('editIntensity').value) || 6,
+        result: curEditCategory === '클럽게임' ? curEditGameResult : '',
+        score: curEditCategory === '클럽게임' ? document.getElementById('editScore').value.trim() : '',
+        players: curEditCategory === '클럽게임' ? document.getElementById('editPlayers').value.trim() : '',
+        court_type: document.getElementById('editCourtType').value,
+        location: locationVal,
+        focus_skill: curEditCategory === '클럽게임' ? '' : document.getElementById('editFocusSkill').value.trim(),
+        notes: document.getElementById('editNotes').value.trim(),
+        ai_summary: document.getElementById('editAiSummary').value.trim(),
+        existingPhotoIds: editExistingPhotoIds,
+        photos: editNewPhotos
+      };
+
+      google.script.run
+        .withSuccessHandler(function() {
+          showToast('테니스 일지가 성공적으로 수정되었습니다! ✏️🎾');
+          btn.disabled = false;
+          btn.textContent = '수정 완료 저장';
+          closeEditTennisModal();
+          loadData();
+          loadStringData();
+        })
+        .withFailureHandler(function(err) {
+          alert('수정 실패: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = '수정 완료 저장';
+        })
+        .updateTennisLog(data);
+    }
+
+        function selectCategory(cat) {
       curCategory = cat;
       document.querySelectorAll('.cat-btn').forEach(function(b) {
         b.classList.toggle('active', b.getAttribute('data-cat') === cat);
@@ -2261,11 +2624,17 @@
             }).join('')
           : '<div style="text-align:center; color:#94a3b8; font-size:11px; padding:4px;">아직 댓글이 없습니다. 첫 댓글을 남겨보세요! ✨</div>';
 
+        const isDarami = savedAuthor === '다람이';
+        const authorSelectHtml = '<select id="comment-author-' + log.rowIndex + '" class="comment-input-author" onchange="localStorage.setItem(\'tennis_author_name\', this.value)">' +
+          '<option value="징징이"' + (!isDarami ? ' selected' : '') + '>징징이</option>' +
+          '<option value="다람이"' + (isDarami ? ' selected' : '') + '>다람이</option>' +
+        '</select>';
+
         const commentsSectionHtml = '<div class="comments-wrapper">' +
           '<div class="comments-header"><span>💬 댓글 (' + comments.length + ')</span></div>' +
           '<div class="comment-list">' + commentItemsHtml + '</div>' +
           '<form class="comment-form" onsubmit="submitComment(event, ' + log.rowIndex + ')">' +
-            '<input type="text" id="comment-author-' + log.rowIndex + '" class="comment-input-author" placeholder="작성자" value="' + escapeHtml(savedAuthor) + '" required>' +
+            authorSelectHtml +
             '<input type="text" id="comment-text-' + log.rowIndex + '" class="comment-input-text" placeholder="댓글 작성..." required>' +
             '<button type="submit" class="comment-submit-btn">등록</button>' +
           '</form>' +
@@ -2279,6 +2648,7 @@
               '<span class="log-date">' + escapeHtml(log.date) + '</span>' +
             '</div>' +
             '<div class="log-actions">' +
+              '<button type="button" class="btn-action edit" onclick="openEditTennisModal(' + log.rowIndex + ')">✏️ 수정</button>' +
               '<button type="button" class="btn-action del" onclick="deleteTennisLog(' + log.rowIndex + ')">🗑️ 삭제</button>' +
             '</div>' +
           '</div>' +

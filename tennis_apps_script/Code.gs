@@ -7,6 +7,10 @@
 var TELEGRAM_BOT_TOKEN = "8954888605:AAEkNvwrNAVUSbTnKeE7mw2hmfeHx19xkVY";
 var TELEGRAM_CHAT_ID = "8667003350";
 
+// 💚 LINE(라인) 메신저 알림 봇 설정 (댓글 등록 시 라인 실시간 알림 발송)
+var LINE_CHANNEL_ACCESS_TOKEN = "ki0Y79Xq6YcpLeBdN5bjtKSUPjgEIevaaNyOJpukIUoaylhBVaKRvqCzAHG2J9Yj8ezDMREpE5aP3K+4i69mMhjtoFH0TJ6/M8Vq7HcLsjQghw/8sCfOEk2QlhFiLQ9ZzXxxqQEIyClkT7L+TLWyvQdB04t89/1O/w1cDnyilFU=";
+var LINE_USER_ID = "U5ba8afd0b3aaaaee7e6270598b0c6f80";
+
 // 🔑 Google Gemini AI API Key (신규 활성화 키)
 var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6INIjH3Md1wSsrIG66nwP_70P-ImQK5eUZiLrfYj5j73g"; 
 
@@ -401,7 +405,14 @@ function addTennisComment(rowIndex, commentData) {
     var rowData = sheet.getRange(rowIndex, 1, 1, 3).getValues()[0];
     var logDate = normalizeDateString(rowData[0]);
     var logTitle = rowData[2] || rowData[1] || '테니스 일지';
-    sendTennisCommentTelegramNotification(logDate, logTitle, newComment);
+    
+    // 💚 LINE(라인) 메신저: '징징이'가 댓글을 달았을 때는 라인으로만 알림 발송 (텔레그램 제외)
+    if (newComment.author && newComment.author.indexOf('징징이') !== -1) {
+      sendTennisCommentLineNotification(logDate, logTitle, newComment);
+    } else {
+      // 🤖 텔레그램: 징징이가 아닐 때(다람이 등)만 텔레그램으로 알림 발송
+      sendTennisCommentTelegramNotification(logDate, logTitle, newComment);
+    }
 
     return { success: true, comments: comments };
   } catch(e) {
@@ -853,6 +864,58 @@ function sendTennisCommentTelegramNotification(logDate, logTitle, comment) {
   sendTelegramMessage(lines.join("\n"));
 }
 
+// -------------------------------------------------------------
+// [7-1. 💚 LINE(라인) 메신저 댓글 실시간 알림]
+// -------------------------------------------------------------
+function sendLineMessage(text) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var token = props.getProperty("LINE_CHANNEL_ACCESS_TOKEN") || LINE_CHANNEL_ACCESS_TOKEN;
+    var userId = props.getProperty("LINE_USER_ID") || LINE_USER_ID;
+    if (!token || !userId) return;
+
+    var url = "https://api.line.me/v2/bot/message/push";
+    var payload = {
+      to: String(userId),
+      messages: [
+        {
+          type: "text",
+          text: text
+        }
+      ]
+    };
+    var options = {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    UrlFetchApp.fetch(url, options);
+  } catch(e) {
+    Logger.log("LINE 알림 발송 실패: " + e.message);
+  }
+}
+
+function sendTennisCommentLineNotification(logDate, logTitle, comment) {
+  try {
+    var message = "💬 [테니스 일지] 새 피드백 & 댓글 도착!\n" +
+      "━━━━━━━━━━━━━━━━━━━━\n" +
+      "🎾 일지: " + (logTitle || "테니스 일지") + " (" + (logDate || "") + ")\n" +
+      "👤 작성자: " + (comment.author || "테니스 동료") + "\n" +
+      "📝 댓글 내용:\n" +
+      comment.text + "\n" +
+      "━━━━━━━━━━━━━━━━━━━━\n" +
+      "⏰ " + (comment.createdAt || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"));
+
+    sendLineMessage(message);
+  } catch(e) {
+    Logger.log("sendTennisCommentLineNotification error: " + e.message);
+  }
+}
+
 function sendTennisStringTelegramNotification(item) {
   var lines = [
     "🎾 <b>[새 스트링 교체 등록]</b>",
@@ -884,6 +947,16 @@ function testTennisTelegramAlert() {
   var text = "🎾 <b>[테니스 일지 텔레그램 알림 테스트]</b>\n텔레그램 봇 알림이 정상적으로 연동되었습니다! 🏆🔥";
   sendTelegramMessage(text);
   Logger.log("테니스일지 텔레그램 테스트 알림 발송 완료!");
+  return { success: true };
+}
+
+function testTennisLineAlert() {
+  var testComment = {
+    author: "테니스 파트너",
+    text: "오늘 복식 경기 랠리 대박이었습니다! 서브 폼 진짜 좋으시네요 🎾🔥",
+    createdAt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm")
+  };
+  sendTennisCommentLineNotification("2026-09-01", "문수 테니스장 클럽 게임", testComment);
   return { success: true };
 }
 
