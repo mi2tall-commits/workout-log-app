@@ -2093,17 +2093,13 @@
     }
 
     function loadStringData() {
-      if (typeof google === 'undefined' || !google.script || !google.script.run) return;
-
-      google.script.run
-        .withSuccessHandler(function(res) {
-          stringDataObj = res;
-          renderStringDashboard();
-        })
-        .withFailureHandler(function(err) {
-          console.error("String load error:", err);
-        })
-        .getTennisStringData();
+      callGasApi('getTennisStringData', undefined, function(res) {
+        stringDataObj = res;
+        if (typeof renderStringDashboard === 'function') renderStringDashboard();
+        else if (typeof applyStringData === 'function') applyStringData(res);
+      }, function(err) {
+        console.error("String load error:", err);
+      });
     }
 
     function updateStats(overview) {
@@ -2335,15 +2331,12 @@
     function deleteString(rowIndex) {
       if (!confirm('이 스트링 교체 기록을 삭제하시겠습니까?')) return;
       showToast('삭제 중...');
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('삭제되었습니다.');
-          loadStringData();
-        })
-        .withFailureHandler(function(err) {
-          alert('삭제 실패: ' + err.message);
-        })
-        .deleteStringRecord(rowIndex);
+      callGasApi('deleteStringRecord', rowIndex, function() {
+        showToast('삭제되었습니다.');
+        loadStringData();
+      }, function(err) {
+        alert('삭제 실패: ' + (err.message || err));
+      });
     }
 
     function openApiKeyModal() {
@@ -2774,14 +2767,11 @@
 
     function testTelegram() {
       showToast('텔레그램 알림 발송 중...');
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('텔레그램 알림 발송 완료! 스마트폰을 확인하세요 🔔');
-        })
-        .withFailureHandler(function(err) {
-          alert('텔레그램 알림 발송 실패: ' + err.message);
-        })
-        .testTennisTelegramAlert();
+      callGasApi('testTennisTelegramAlert', undefined, function() {
+        showToast('텔레그램 알림 발송 완료! 스마트폰을 확인하세요 🔔');
+      }, function(err) {
+        alert('텔레그램 알림 발송 실패: ' + (err.message || err));
+      });
     }
 
     function renderAllCharts() {

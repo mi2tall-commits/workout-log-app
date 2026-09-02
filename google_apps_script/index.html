@@ -2109,22 +2109,17 @@
 
     function loadData() {
       showToast('구글 시트 동기화 중...');
-      if (typeof google === 'undefined' || !google.script || !google.script.run) {
-        console.warn('Google Apps Script API 미연결 (로컬 테스트 환경)');
-        return;
-      }
-      google.script.run
-        .withSuccessHandler(function(res) {
-          allLogs = (res && res.logs) || [];
-          monthlyTrendsData = (res && res.monthly_trends) || [];
-          updateStats(res && res.overview);
-          renderLogs();
-          showToast('동기화 완료!');
-        })
-        .withFailureHandler(function(err) {
-          showToast('오류: ' + err.message);
-        })
-        .getWorkoutData();
+      callGasApi('getWorkoutData', undefined, function(res) {
+        if (!res) return;
+        allLogs = (res && res.logs) || [];
+        monthlyTrendsData = (res && res.monthly_trends) || [];
+        updateStats(res && res.overview);
+        renderLogs();
+        if (typeof renderAllCharts === 'function') renderAllCharts();
+        showToast('동기화 완료!');
+      }, function(err) {
+        showToast('오류: ' + (err.message || err));
+      });
     }
 
     function updateStats(overview) {
