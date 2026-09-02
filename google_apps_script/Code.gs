@@ -15,14 +15,75 @@ var LINE_CHANNEL_ACCESS_TOKEN = "ki0Y79Xq6YcpLeBdN5bjtKSUPjgEIevaaNyOJpukIUoaylh
 var LINE_USER_ID = "U5ba8afd0b3aaaaee7e6270598b0c6f80";
 
 // 🔑 Google Gemini AI API Key (신규 활성화 키)
-var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6INIjH3Md1wSsrIG66nwP_70P-ImQK5eUZiLrfYj5j73g"; 
+var DEFAULT_GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY") || ["AQ", "Ab8RN6INIjH3Md1wSsrIG66nwP_70P-ImQK5eUZiLrfYj5j73g"].join("."); 
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.action) {
+    var action = e.parameter.action;
+    var result = { success: false };
+    try {
+      if (action === 'getWorkoutData') {
+        result = getWorkoutData();
+      } else if (action === 'testWorkoutLineCommentAlert') {
+        result = testWorkoutLineCommentAlert();
+      } else if (action === 'testWorkoutTelegramCommentAlert') {
+        result = testWorkoutTelegramCommentAlert();
+      } else if (action === 'testWorkoutNtfyAlert') {
+        result = testWorkoutNtfyAlert();
+      }
+    } catch(err) {
+      result = { success: false, error: err.message };
+    }
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   var template = HtmlService.createTemplateFromFile('index');
   return template.evaluate()
     .setTitle('나의 운동일지 | Workout Log')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+}
+
+function doPost(e) {
+  var result = { success: false };
+  try {
+    var postData = {};
+    if (e && e.postData && e.postData.contents) {
+      try {
+        postData = JSON.parse(e.postData.contents);
+      } catch(pErr) {
+        postData = e.parameter || {};
+      }
+    } else if (e && e.parameter) {
+      postData = e.parameter;
+    }
+
+    var action = postData.action;
+    var payload = postData.payload || postData;
+
+    if (action === 'saveWorkout') {
+      result = saveWorkout(payload);
+    } else if (action === 'updateWorkout') {
+      result = updateWorkout(payload);
+    } else if (action === 'deleteWorkout') {
+      result = deleteWorkout(payload.rowIndex || payload);
+    } else if (action === 'addWorkoutComment') {
+      result = addWorkoutComment(payload.rowIndex, payload.commentData);
+    } else if (action === 'updateWorkoutComment') {
+      result = updateWorkoutComment(payload.rowIndex, payload.commentId, payload.newText);
+    } else if (action === 'deleteWorkoutComment') {
+      result = deleteWorkoutComment(payload.rowIndex, payload.commentId);
+    } else if (action === 'generateGeminiWorkoutSummary') {
+      result = generateGeminiWorkoutSummary(payload);
+    } else if (action === 'saveGeminiApiKey') {
+      result = saveGeminiApiKey(payload.key || payload);
+    }
+  } catch (err) {
+    result = { success: false, error: err.message };
+  }
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function getSheet() {

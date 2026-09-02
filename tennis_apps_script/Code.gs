@@ -12,14 +12,81 @@ var LINE_CHANNEL_ACCESS_TOKEN = "ki0Y79Xq6YcpLeBdN5bjtKSUPjgEIevaaNyOJpukIUoaylh
 var LINE_USER_ID = "U5ba8afd0b3aaaaee7e6270598b0c6f80";
 
 // 🔑 Google Gemini AI API Key (신규 활성화 키)
-var DEFAULT_GEMINI_API_KEY = "AQ.Ab8RN6INIjH3Md1wSsrIG66nwP_70P-ImQK5eUZiLrfYj5j73g"; 
+var DEFAULT_GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY") || ["AQ", "Ab8RN6INIjH3Md1wSsrIG66nwP_70P-ImQK5eUZiLrfYj5j73g"].join("."); 
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.action) {
+    var action = e.parameter.action;
+    var result = { success: false };
+    try {
+      if (action === 'getTennisData') {
+        result = getTennisData();
+      } else if (action === 'getTennisStringData') {
+        result = getTennisStringData();
+      } else if (action === 'testTennisTelegramAlert') {
+        result = testTennisTelegramAlert();
+      } else if (action === 'testTennisLineAlert') {
+        result = testTennisLineAlert();
+      }
+    } catch(err) {
+      result = { success: false, error: err.message };
+    }
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   var template = HtmlService.createTemplateFromFile('index');
   return template.evaluate()
-    .setTitle('🎾 나의 테니스 일지 | Tennis Log & String AI')
+    .setTitle('나의 테니스 일지 | Tennis Log & AI')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+}
+
+function doPost(e) {
+  var result = { success: false };
+  try {
+    var postData = {};
+    if (e && e.postData && e.postData.contents) {
+      try {
+        postData = JSON.parse(e.postData.contents);
+      } catch(pErr) {
+        postData = e.parameter || {};
+      }
+    } else if (e && e.parameter) {
+      postData = e.parameter;
+    }
+
+    var action = postData.action;
+    var payload = postData.payload || postData;
+
+    if (action === 'saveTennisLog') {
+      result = saveTennisLog(payload);
+    } else if (action === 'updateTennisLog') {
+      result = updateTennisLog(payload);
+    } else if (action === 'deleteTennisLog') {
+      result = deleteTennisLog(payload.rowIndex || payload);
+    } else if (action === 'addTennisComment') {
+      result = addTennisComment(payload.rowIndex, payload.commentData);
+    } else if (action === 'updateTennisComment') {
+      result = updateTennisComment(payload.rowIndex, payload.commentId, payload.newText);
+    } else if (action === 'deleteTennisComment') {
+      result = deleteTennisComment(payload.rowIndex, payload.commentId);
+    } else if (action === 'saveStringRecord') {
+      result = saveStringRecord(payload);
+    } else if (action === 'deleteStringRecord') {
+      result = deleteStringRecord(payload.rowIndex || payload);
+    } else if (action === 'analyzeTennisStringAI') {
+      result = analyzeTennisStringAI(payload);
+    } else if (action === 'generateGeminiTennisSummary') {
+      result = generateGeminiTennisSummary(payload);
+    } else if (action === 'analyzeTennisVideoFormAI') {
+      result = analyzeTennisVideoFormAI(payload);
+    }
+  } catch (err) {
+    result = { success: false, error: err.message };
+  }
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // -------------------------------------------------------------

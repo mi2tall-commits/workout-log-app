@@ -1751,6 +1751,49 @@
   <div id="toast">알림</div>
 
   <script>
+
+    // 🌐 UNIVERSAL GAS / GITHUB PAGES BRIDGE
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwaA5T7vT-EbhQyfi4EOQhio7anXO6pVGR-7fn83uVQcY_TQU3DEagVoXhvocDDlenRWg/exec";
+
+    function callGasApi(action, params, onSuccess, onFailure) {
+      if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run[action] === 'function') {
+        const runner = google.script.run
+          .withSuccessHandler(function(res) { if (onSuccess) onSuccess(res); })
+          .withFailureHandler(function(err) { if (onFailure) onFailure(err); else alert('오류: ' + (err.message || err)); });
+        
+        if (Array.isArray(params)) {
+          runner[action].apply(runner, params);
+        } else if (params !== undefined) {
+          runner[action](params);
+        } else {
+          runner[action]();
+        }
+      } else {
+        // Running on GitHub Pages
+        if (action === 'getTennisData' || action === 'getTennisStringData') {
+          fetch(GAS_API_URL + '?action=' + action + '&t=' + Date.now())
+            .then(function(res) { return res.json(); })
+            .then(function(data) { if (onSuccess) onSuccess(data); })
+            .catch(function(err) { if (onFailure) onFailure(err); else alert('API 조회 오류: ' + (err.message || err)); });
+        } else {
+          fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: action, payload: params })
+          })
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            if (data && data.error) {
+              if (onFailure) onFailure(new Error(data.error));
+              else alert('실행 실패: ' + data.error);
+            } else {
+              if (onSuccess) onSuccess(data);
+            }
+          })
+          .catch(function(err) { if (onFailure) onFailure(err); else alert('네트워크 오류: ' + (err.message || err)); });
+        }
+      }
+    }
+
     let curCategory = '레슨';
     let curGameResult = '승';
     let selectedSkills = [];
@@ -1972,21 +2015,18 @@
         photos: editNewPhotos
       };
 
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('테니스 일지가 성공적으로 수정되었습니다! ✏️🎾');
-          btn.disabled = false;
-          btn.textContent = '수정 완료 저장';
-          closeEditTennisModal();
-          loadData();
-          loadStringData();
-        })
-        .withFailureHandler(function(err) {
-          alert('수정 실패: ' + err.message);
-          btn.disabled = false;
-          btn.textContent = '수정 완료 저장';
-        })
-        .updateTennisLog(data);
+      callGasApi('updateTennisLog', data, function() {
+        showToast('테니스 일지가 성공적으로 수정되었습니다! ✏️🎾');
+        btn.disabled = false;
+        btn.textContent = '수정 완료 저장';
+        closeEditTennisModal();
+        loadData();
+        loadStringData();
+      }, function(err) {
+        alert('수정 실패: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = '수정 완료 저장';
+      });
     }
 
         function selectCategory(cat) {
@@ -2516,35 +2556,32 @@
         photos: selectedPhotos
       };
 
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('테니스 일지가 저장되었습니다! 🎾');
-          document.getElementById('tennisForm').reset();
-          document.getElementById('inputNotes').value = '';
-          document.getElementById('inputAiSummary').value = '';
-          if (document.getElementById('inputPlayers')) document.getElementById('inputPlayers').value = '';
-          if (document.getElementById('inputScore')) document.getElementById('inputScore').value = '';
-          document.getElementById('selectLocation').value = '중구';
-          document.getElementById('inputCourtType').value = '인조잔디';
-          document.getElementById('inputLocationCustom').classList.add('hidden');
-          document.getElementById('inputLocationCustom').value = '';
-          selectedPhotos = [];
-          selectedSkills = [];
-          document.querySelectorAll('.skill-chip').forEach(function(c) { c.classList.remove('active'); });
-          renderPhotosPreview();
-          selectCategory('레슨');
-          btn.disabled = false;
-          btn.textContent = '✨ 테니스 일지 저장하기';
-          loadData();
-          loadStringData();
-          switchTab('list');
-        })
-        .withFailureHandler(function(err) {
-          alert('저장 실패: ' + err.message);
-          btn.disabled = false;
-          btn.textContent = '✨ 테니스 일지 저장하기';
-        })
-        .saveTennisLog(data);
+      callGasApi('saveTennisLog', data, function() {
+        showToast('테니스 일지가 저장되었습니다! 🎾');
+        document.getElementById('tennisForm').reset();
+        document.getElementById('inputNotes').value = '';
+        document.getElementById('inputAiSummary').value = '';
+        if (document.getElementById('inputPlayers')) document.getElementById('inputPlayers').value = '';
+        if (document.getElementById('inputScore')) document.getElementById('inputScore').value = '';
+        document.getElementById('selectLocation').value = '중구';
+        document.getElementById('inputCourtType').value = '인조잔디';
+        document.getElementById('inputLocationCustom').classList.add('hidden');
+        document.getElementById('inputLocationCustom').value = '';
+        selectedPhotos = [];
+        selectedSkills = [];
+        document.querySelectorAll('.skill-chip').forEach(function(c) { c.classList.remove('active'); });
+        renderPhotosPreview();
+        selectCategory('레슨');
+        btn.disabled = false;
+        btn.textContent = '✨ 테니스 일지 저장하기';
+        loadData();
+        loadStringData();
+        switchTab('list');
+      }, function(err) {
+        alert('저장 실패: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = '✨ 테니스 일지 저장하기';
+      });
     }
 
     function filterLogs(cat) {
@@ -2693,15 +2730,12 @@
 
       localStorage.setItem('tennis_author_name', author);
       showToast('댓글 등록 중...');
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('댓글이 등록되었습니다! 💬');
-          loadData();
-        })
-        .withFailureHandler(function(err) {
-          alert('등록 실패: ' + err.message);
-        })
-        .addTennisComment(rowIndex, { author: author, text: text });
+      callGasApi('addTennisComment', { rowIndex: rowIndex, commentData: { author: author, text: text } }, function() {
+        showToast('댓글이 등록되었습니다! 💬');
+        loadData();
+      }, function(err) {
+        alert('등록 실패: ' + err.message);
+      });
     }
 
     function editComment(rowIndex, commentId, safeText) {
