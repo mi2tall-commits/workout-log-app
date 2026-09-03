@@ -2615,7 +2615,11 @@
               if (onFailure) onFailure(new Error(data.error));
               else alert('실행 실패: ' + data.error);
             } else {
-              if (onSuccess) onSuccess(data);
+              try {
+                if (onSuccess) onSuccess(data);
+              } catch(cbErr) {
+                console.error('Success callback UI error:', cbErr);
+              }
             }
           })
           .catch(function(err) { if (onFailure) onFailure(err); else alert('네트워크 오류: ' + (err.message || err)); });
@@ -2651,14 +2655,11 @@
       const btnGpx = document.getElementById('mode-btn-gpx');
       const gpxBox = document.getElementById('gpxDropZone');
 
-      if (mode === 'manual') {
-        btnManual.classList.add('active');
-        btnGpx.classList.remove('active');
-        gpxBox.classList.add('hidden');
-      } else {
-        btnManual.classList.remove('active');
-        btnGpx.classList.add('active');
-        gpxBox.classList.remove('hidden');
+      if (btnManual) btnManual.classList.toggle('active', mode === 'manual');
+      if (btnGpx) btnGpx.classList.toggle('active', mode !== 'manual');
+      if (gpxBox) {
+        if (mode === 'manual') gpxBox.classList.add('hidden');
+        else gpxBox.classList.remove('hidden');
       }
     }
 
