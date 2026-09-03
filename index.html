@@ -2606,6 +2606,7 @@
         } else {
           fetch(GAS_API_URL, {
             method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: action, payload: params })
           })
           .then(function(res) { return res.json(); })
@@ -2789,20 +2790,17 @@
       btn.disabled = true;
       btn.textContent = '저장 중...';
 
-      google.script.run
-        .withSuccessHandler(function() {
-          btn.disabled = false;
-          btn.textContent = '저장하기';
-          closeApiKeyModal();
-          showToast('Gemini API Key가 안전하게 저장되었습니다! 🤖✨');
-        })
-        .withFailureHandler(function(err) {
-          btn.disabled = false;
-          btn.textContent = '저장하기';
-          closeApiKeyModal();
-          showToast('브라우저에 API Key가 저장되었습니다! 🤖✨');
-        })
-        .saveGeminiApiKey(key);
+      callGasApi('saveGeminiApiKey', { key: key }, function() {
+        btn.disabled = false;
+        btn.textContent = '저장하기';
+        closeApiKeyModal();
+        showToast('Gemini API Key가 안전하게 저장되었습니다! 🤖✨');
+      }, function(err) {
+        btn.disabled = false;
+        btn.textContent = '저장하기';
+        closeApiKeyModal();
+        showToast('브라우저에 API Key가 저장되었습니다! 🤖✨');
+      });
     }
 
     function handlePhotosSelect(e, mode) {
@@ -3124,27 +3122,24 @@
         photos: selectedPhotos
       };
 
-      google.script.run
-        .withSuccessHandler(function(res) {
-          showToast('운동 일지가 저장되었습니다! 🎉');
-          document.getElementById('workoutForm').reset();
-          if (document.getElementById('inputAiSummary')) document.getElementById('inputAiSummary').value = '';
-          document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
-          removeAllPhotos('new');
-          clearGpxData();
-          selectSport('런닝');
-          setInputMode('manual');
-          btn.disabled = false;
-          btn.textContent = '✨ 운동 일지 저장하기';
-          loadData();
-          switchTab('list');
-        })
-        .withFailureHandler(function(err) {
-          alert('저장 실패: ' + err.message);
-          btn.disabled = false;
-          btn.textContent = '✨ 운동 일지 저장하기';
-        })
-        .saveWorkoutLog(data);
+      callGasApi('saveWorkout', data, function(res) {
+        showToast('운동 일지가 저장되었습니다! 🎉');
+        document.getElementById('workoutForm').reset();
+        if (document.getElementById('inputAiSummary')) document.getElementById('inputAiSummary').value = '';
+        document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+        removeAllPhotos('new');
+        clearGpxData();
+        selectSport('런닝');
+        setInputMode('manual');
+        btn.disabled = false;
+        btn.textContent = '✨ 운동 일지 저장하기';
+        loadData();
+        switchTab('list');
+      }, function(err) {
+        alert('저장 실패: ' + (err.message || err));
+        btn.disabled = false;
+        btn.textContent = '✨ 운동 일지 저장하기';
+      });
     }
 
     function openEditModal(rowIndex) {
@@ -3258,35 +3253,29 @@
         existingPhotoIds: editExistingPhotoIds
       };
 
-      google.script.run
-        .withSuccessHandler(function(res) {
-          showToast('운동 일지가 수정되었습니다! ✏️');
-          btn.disabled = false;
-          btn.textContent = '💾 수정 내용 저장';
-          closeEditModal();
-          loadData();
-        })
-        .withFailureHandler(function(err) {
-          alert('수정 실패: ' + err.message);
-          btn.disabled = false;
-          btn.textContent = '💾 수정 내용 저장';
-        })
-        .updateWorkoutLog(data);
+      callGasApi('updateWorkout', data, function(res) {
+        showToast('운동 일지가 수정되었습니다! ✏️');
+        btn.disabled = false;
+        btn.textContent = '💾 수정 내용 저장';
+        closeEditModal();
+        loadData();
+      }, function(err) {
+        alert('수정 실패: ' + (err.message || err));
+        btn.disabled = false;
+        btn.textContent = '💾 수정 내용 저장';
+      });
     }
 
     function deleteLog(rowIndex) {
       if (!confirm('정말 이 운동 일지를 삭제하시겠습니까?\n(삭제 후 복구할 수 없습니다)')) return;
 
       showToast('일지 삭제 중...');
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('일지가 삭제되었습니다. 🗑️');
-          loadData();
-        })
-        .withFailureHandler(function(err) {
-          alert('삭제 실패: ' + err.message);
-        })
-        .deleteWorkoutLog(rowIndex);
+      callGasApi('deleteWorkout', { rowIndex: rowIndex }, function() {
+        showToast('일지가 삭제되었습니다. 🗑️');
+        loadData();
+      }, function(err) {
+        alert('삭제 실패: ' + (err.message || err));
+      });
     }
 
     function filterLogs(sport) {
