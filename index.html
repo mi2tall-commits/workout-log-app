@@ -1986,14 +1986,21 @@
         </div>
 
         <!-- 🤖 GEMINI AI COACH SUMMARY SECTION -->
+        <!-- 📝 1. 나의 수기 메모 (사용자 작성 글) -->
         <div class="form-group">
+          <label class="form-label">📝 나의 수기 메모</label>
+          <textarea id="inputNotes" rows="3" placeholder="오늘 운동 컨디션, 코스 느낌, 훈련 메모 등을 자유롭게 작성하세요." class="form-textarea"></textarea>
+        </div>
+
+        <!-- 🤖 2. Gemini AI 코칭 분석 (별도 생성 영역) -->
+        <div class="form-group" style="margin-top: 10px;">
           <div class="ai-coach-bar">
-            <span style="font-size:12px; font-weight:700; color:#4338ca;">🤖 Gemini AI 코치</span>
+            <span style="font-size:12px; font-weight:800; color:#34D399;">🤖 Gemini AI 코칭 분석 (별도 생성)</span>
             <button type="button" id="btnAiCoach" class="ai-coach-btn" onclick="generateAiSummary('new')">
-              <span>✨ AI 훈련 분석 & 후기 생성</span>
+              <span>✨ AI 훈련 분석 & 코칭 생성</span>
             </button>
           </div>
-          <textarea id="inputNotes" rows="4" placeholder="컨디션 및 메모를 입력하거나, 위 'AI 후기 생성' 버튼을 눌러보세요!" class="form-textarea"></textarea>
+          <textarea id="inputAiSummary" rows="4" placeholder="위 'AI 코칭 생성' 버튼을 누르면 운동 센서 데이터와 수기 메모를 바탕으로 맞춤형 코칭 피드백이 여기에 자동 작성됩니다!" class="form-textarea" style="background:#0A0D14; border-color:rgba(16, 185, 129, 0.3); color:#FFFFFF;"></textarea>
         </div>
 
         <!-- MULTI PHOTO UPLOAD (최대 5장) -->
@@ -2215,14 +2222,19 @@
         </div>
 
         <!-- Edit Notes with AI button -->
-        <div class="form-group">
+                <div class="form-group">
+          <label class="form-label">📝 나의 수기 메모</label>
+          <textarea id="editNotes" rows="3" class="form-textarea"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
           <div class="ai-coach-bar">
-            <span style="font-size:12px; font-weight:700; color:#4338ca;">🤖 Gemini AI 코치</span>
+            <span style="font-size:12px; font-weight:800; color:#34D399;">🤖 Gemini AI 코칭 분석 (별도 생성)</span>
             <button type="button" id="btnEditAiCoach" class="ai-coach-btn" onclick="generateAiSummary('edit')">
-              <span>✨ AI 후기 다시 작성</span>
+              <span>✨ AI 훈련 분석 & 코칭 생성</span>
             </button>
           </div>
-          <textarea id="editNotes" rows="4" class="form-textarea"></textarea>
+          <textarea id="editAiSummary" rows="4" class="form-textarea" style="background:#0A0D14; border-color:rgba(16, 185, 129, 0.3); color:#FFFFFF;"></textarea>
         </div>
 
         <!-- Existing Photos & Add Photos -->
@@ -2405,6 +2417,7 @@
       const isEdit = mode === 'edit';
       const btn = document.getElementById(isEdit ? 'btnEditAiCoach' : 'btnAiCoach');
       const notesEl = document.getElementById(isEdit ? 'editNotes' : 'inputNotes');
+      const aiSummaryEl = document.getElementById(isEdit ? 'editAiSummary' : 'inputAiSummary');
 
       const sport = isEdit ? document.getElementById('editSport').value : curSport;
       const data = {
@@ -2437,7 +2450,7 @@
         setTimeout(function() {
           btn.disabled = false;
           btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
-          notesEl.value = "[📊 러닝 데이터 심층 분석]\n" + (data.distance_km ? data.distance_km + "km " : "") + data.sport + " 훈련을 성공적으로 마쳤습니다. 심박수와 케이던스를 안정적으로 유지하여 부상 없이 높은 효율을 기록했습니다!\n\n[💡 코치 처방 & 다음 훈련 가이드]\n충분한 스트레칭과 수분 섭취로 근육 피로를 풀어주세요. 수고하셨습니다! 🔥";
+          if (aiSummaryEl) aiSummaryEl.value = "[📊 러닝 데이터 심층 분석]\n" + (data.distance_km ? data.distance_km + "km " : "") + data.sport + " 훈련을 성공적으로 마쳤습니다. 심박수와 케이던스를 안정적으로 유지하여 부상 없이 높은 효율을 기록했습니다!\n\n[💡 코치 처방 & 다음 훈련 가이드]\n충분한 스트레칭과 수분 섭취로 근육 피로를 풀어주세요. 수고하셨습니다! 🔥";
           showToast('AI 코칭 후기 생성 완료! ✨');
         }, 1000);
         return;
@@ -2449,7 +2462,7 @@
             btn.disabled = false;
             btn.innerHTML = isEdit ? '<span>✨ AI 후기 다시 작성</span>' : '<span>✨ AI 훈련 분석 & 후기 생성</span>';
             if (res && res.summary) {
-              notesEl.value = res.summary;
+              if (aiSummaryEl) aiSummaryEl.value = res.summary;
               if (res.error) {
                 alert(res.error);
               } else if (res.isAi) {
@@ -2817,7 +2830,16 @@
         custom_sport: document.getElementById('inputCustomSport').value.trim(),
         location_course: document.getElementById('inputLocation').value.trim(),
         weather: document.getElementById('inputWeather').value,
-        notes: document.getElementById('inputNotes').value.trim(),
+        notes: (function() {
+          const uNotes = document.getElementById('inputNotes').value.trim();
+          const aiEl = document.getElementById('inputAiSummary');
+          const aiText = aiEl ? aiEl.value.trim() : '';
+          if (aiText) {
+            return uNotes ? (uNotes + "\n\n[🤖 Gemini AI 코칭 피드백]\n" + aiText) : ("[🤖 Gemini AI 코칭 피드백]\n" + aiText);
+          }
+          return uNotes;
+        })(),
+        ai_summary: (document.getElementById('inputAiSummary') ? document.getElementById('inputAiSummary').value.trim() : ''),
         photos: selectedPhotos
       };
 
@@ -2825,6 +2847,7 @@
         .withSuccessHandler(function(res) {
           showToast('운동 일지가 저장되었습니다! 🎉');
           document.getElementById('workoutForm').reset();
+          if (document.getElementById('inputAiSummary')) document.getElementById('inputAiSummary').value = '';
           document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
           removeAllPhotos('new');
           clearGpxData();
@@ -2876,7 +2899,17 @@
 
       document.getElementById('editLocation').value = log.location_course || '';
       document.getElementById('editWeather').value = log.weather || '맑음';
-      document.getElementById('editNotes').value = log.notes || '';
+      let rawNotes = log.notes || '';
+      let aiText = log.ai_summary || '';
+      if (!aiText && rawNotes.includes('[🤖 Gemini AI 코칭 피드백]')) {
+        const parts = rawNotes.split('[🤖 Gemini AI 코칭 피드백]');
+        rawNotes = parts[0].trim();
+        aiText = parts[1].trim();
+      }
+      document.getElementById('editNotes').value = rawNotes;
+      if (document.getElementById('editAiSummary')) {
+        document.getElementById('editAiSummary').value = aiText;
+      }
 
       editExistingPhotoIds = Array.isArray(log.photo_ids) ? [...log.photo_ids] : [];
       editSelectedPhotos = [];
@@ -2930,7 +2963,16 @@
         custom_sport: document.getElementById('editCustomSport').value.trim(),
         location_course: document.getElementById('editLocation').value.trim(),
         weather: document.getElementById('editWeather').value,
-        notes: document.getElementById('editNotes').value.trim(),
+        notes: (function() {
+          const uNotes = document.getElementById('editNotes').value.trim();
+          const aiEl = document.getElementById('editAiSummary');
+          const aiText = aiEl ? aiEl.value.trim() : '';
+          if (aiText) {
+            return uNotes ? (uNotes + "\n\n[🤖 Gemini AI 코칭 피드백]\n" + aiText) : ("[🤖 Gemini AI 코칭 피드백]\n" + aiText);
+          }
+          return uNotes;
+        })(),
+        ai_summary: (document.getElementById('editAiSummary') ? document.getElementById('editAiSummary').value.trim() : ''),
         photos: editSelectedPhotos,
         existingPhotoIds: editExistingPhotoIds
       };
@@ -3094,7 +3136,23 @@
           '<div class="log-metrics">' + metricsHtml + '</div>' +
 
           (log.location || log.weather ? '<div style="font-size:12px; color:#64748b; margin-bottom:4px;">📍 ' + escapeHtml(log.location || '미지정') + ' · ' + escapeHtml(log.weather || '') + (log.gear ? ' · 👟 ' + escapeHtml(log.gear) : '') + '</div>' : '') +
-          (log.notes ? '<div class="log-notes">' + escapeHtml(log.notes) + '</div>' : '') +
+          (function() {
+            let rNotes = log.notes || '';
+            let aText = log.ai_summary || '';
+            if (!aText && rNotes.includes('[🤖 Gemini AI 코칭 피드백]')) {
+              const p = rNotes.split('[🤖 Gemini AI 코칭 피드백]');
+              rNotes = p[0].trim();
+              aText = p[1].trim();
+            }
+            let out = '';
+            if (rNotes) {
+              out += '<div class="log-notes"><div style="font-weight:800; color:#34D399; margin-bottom:4px; font-size:11px;">📝 나의 수기 메모</div>' + escapeHtml(rNotes) + '</div>';
+            }
+            if (aText) {
+              out += '<div class="log-ai-summary" style="background:rgba(16, 185, 129, 0.06); border:1px solid rgba(16, 185, 129, 0.2); border-left:3.5px solid #10B981; border-radius:12px; padding:12px 14px; margin-top:8px; color:#E2E8F0; font-size:13px; line-height:1.6; white-space:pre-wrap;"><div style="font-weight:800; color:#34D399; margin-bottom:4px; font-size:11px;">🤖 Gemini AI 코칭 피드백</div>' + escapeHtml(aText) + '</div>';
+            }
+            return out;
+          })() +
           photosHtml +
           commentsSectionHtml +
         '</div>';
