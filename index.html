@@ -3338,6 +3338,20 @@
         photos: selectedPhotos
       };
 
+      // 로컬 메모리에 즉시 추가 & 렌더링
+      const tempLog = Object.assign({ rowIndex: (allLogs.length ? allLogs[0].rowIndex + 1 : 2) }, data);
+      if (currentGpxTrack && currentGpxTrack.points && currentGpxTrack.points.length >= 2) {
+        tempLog.gpxTrack = currentGpxTrack;
+        try {
+          const gpxJson = JSON.stringify(currentGpxTrack);
+          localStorage.setItem('workout_gpx_' + tempLog.rowIndex, gpxJson);
+          localStorage.setItem('workout_gpx_' + tempLog.date + '_' + tempLog.sport, gpxJson);
+          localStorage.setItem('workout_gpx_' + tempLog.date + '_' + tempLog.distance_km, gpxJson);
+        } catch (err) {
+          console.warn('GPX localStorage save error:', err);
+        }
+      }
+
       // ⚡ 0ms 즉각 UI 반영 (낙관적 갱신)
       showToast('운동 일지가 저장되었습니다! 🎉');
       document.getElementById('workoutForm').reset();
@@ -3350,8 +3364,6 @@
       btn.disabled = false;
       btn.textContent = '✨ 운동 일지 저장하기';
 
-      // 로컬 메모리에 즉시 추가 & 렌더링
-      const tempLog = Object.assign({ rowIndex: (allLogs.length ? allLogs[0].rowIndex + 1 : 2) }, data);
       allLogs.unshift(tempLog);
       renderLogs();
       switchTab('list');
@@ -3441,47 +3453,30 @@
         return;
       }
 
-      // GPX 파일이 없더라도 현재 수정창의 입력 데이터(거리, 고도, 위치, 심박)를 기반으로 즉시 3D 재생
-      const dist = parseFloat(document.getElementById('editDistance').value) || 0;
-      if (dist <= 0) {
-        alert('거리 데이터가 없거나 0km이어서 3D 경로를 생성할 수 없습니다. 상단에서 GPX 파일을 선택하시거나 거리를 입력해주세요.');
-        return;
-      }
-
       const rowIndex = parseInt(document.getElementById('editRowIndex').value);
-      // 현재 수정 폼의 값들을 반영한 임시 객체 생성
-      const tempLog = {
-        rowIndex: rowIndex,
-        date: document.getElementById('editDate').value,
-        sport: document.getElementById('editSport').value,
-        title: document.getElementById('editTitle').value.trim(),
-        duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
-        distance_km: dist,
-        pace: document.getElementById('editPace').value.trim(),
-        avg_hr: parseInt(document.getElementById('editAvgHr').value) || 0,
-        max_hr: parseInt(document.getElementById('editMaxHr').value) || 0,
-        calories: parseInt(document.getElementById('editCalories').value) || 0,
-        cadence: parseInt(document.getElementById('editCadence').value) || 0,
-        elevation_gain: parseInt(document.getElementById('editElevation').value) || 0,
-        elevation_loss: parseInt(document.getElementById('editElevLoss').value) || 0,
-        max_altitude: parseInt(document.getElementById('editMaxAlt').value) || 0,
-        location_course: document.getElementById('editLocation').value.trim(),
-        weather: document.getElementById('editWeather').value
-      };
-
-      // allLogs 내 임시 갱신 후 3D 재생
-      const existingIdx = allLogs.findIndex(l => l.rowIndex === rowIndex);
-      if (existingIdx !== -1) {
-        allLogs[existingIdx] = Object.assign({}, allLogs[existingIdx], tempLog);
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+      if (log) {
+        const stored = getStoredGpxTrack(log);
+        if (stored) {
+          currentGpxTrack = stored;
+          openReliveModal();
+          return;
+        }
       }
-      playLogRelive(rowIndex);
+
+      alert('이 일지에는 아직 등록된 실제 GPX(위치 좌표) 파일이 없습니다.\n상단의 [파일 선택] 버튼을 눌러 스마트워치 GPX 파일을 등록해주세요.');
     }
 
     function openEditModal(rowIndex) {
       const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
       if (!log) return;
       editGpxTrackData = null;
-      if (document.getElementById('editGpxResultBanner')) {
+      
+      const existingGpx = getStoredGpxTrack(log);
+      if (existingGpx && document.getElementById('editGpxResultBanner')) {
+        document.getElementById('editGpxSummaryText').textContent = '✅ 실제 GPX 3D 경로 등록됨 (' + (existingGpx.points ? existingGpx.points.length : 0) + '개 좌표)';
+        document.getElementById('editGpxResultBanner').classList.remove('hidden');
+      } else if (document.getElementById('editGpxResultBanner')) {
         document.getElementById('editGpxResultBanner').classList.add('hidden');
       }
 
@@ -3592,6 +3587,18 @@
         existingPhotoIds: editExistingPhotoIds
       };
 
+      if (editGpxTrackData && editGpxTrackData.points && editGpxTrackData.points.length >= 2) {
+        data.gpxTrack = editGpxTrackData;
+        try {
+          const gpxJson = JSON.stringify(editGpxTrackData);
+          localStorage.setItem('workout_gpx_' + data.rowIndex, gpxJson);
+          localStorage.setItem('workout_gpx_' + data.date + '_' + data.sport, gpxJson);
+          localStorage.setItem('workout_gpx_' + data.date + '_' + data.distance_km, gpxJson);
+        } catch (err) {
+          console.warn('GPX localStorage save error:', err);
+        }
+      }
+
       // ⚡ 0ms 즉각 UI 반영 (수정 모달 즉시 닫고 로컬 일지 실시간 갱신)
       showToast('운동 일지가 수정되었습니다! ✏️');
       btn.disabled = false;
@@ -3603,6 +3610,7 @@
       if (editIdx !== -1) {
         prevLog = Object.assign({}, allLogs[editIdx]);
         Object.assign(allLogs[editIdx], data);
+        if (data.gpxTrack) allLogs[editIdx].gpxTrack = data.gpxTrack;
         renderLogs();
       }
 
@@ -4737,94 +4745,52 @@
       }, 400);
     }
 
-    // 🌟 기존 일지 기록을 기반으로 3D Relive 경로 생성 및 재생
+    function getStoredGpxTrack(log) {
+      if (!log) return null;
+      if (log.gpxTrack && log.gpxTrack.points && log.gpxTrack.points.length >= 2) {
+        return log.gpxTrack;
+      }
+      try {
+        const keys = [
+          'workout_gpx_' + log.rowIndex,
+          'workout_gpx_' + log.date + '_' + (log.sport || ''),
+          'workout_gpx_' + log.date + '_' + (log.distance_km || '')
+        ];
+        for (let i = 0; i < keys.length; i++) {
+          const raw = localStorage.getItem(keys[i]);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.points && parsed.points.length >= 2) {
+              log.gpxTrack = parsed;
+              return parsed;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('GPX load error:', e);
+      }
+      return null;
+    }
+
+    // 🌟 일지 기록의 실제 GPX 데이터를 기반으로 3D Relive 경로 재생
     function playLogRelive(rowIndex) {
-      const log = allLogs.find(l => l.rowIndex === rowIndex);
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
       if (!log) {
         alert('일지 정보를 찾을 수 없습니다.');
         return;
       }
 
-      if (!log.distance_km || log.distance_km <= 0) {
-        alert('이 기록에는 거리 데이터가 없어 3D 이동 경로를 생성할 수 없습니다.');
+      const realTrack = getStoredGpxTrack(log);
+      if (!realTrack) {
+        alert('⚠️ 이 일지는 GPX(위치 좌표) 파일로 등록된 기록이 아니어서 3D 실제 경로를 생성할 수 없습니다.\n\n[✏️ 수정] 버튼을 눌러 스마트워치 GPX 파일을 등록하시면 실제 이동 경로가 3D로 생생하게 재생됩니다.');
         return;
       }
 
-      showToast(log.title + ' 3D 코스를 불러오는 중... 🎬');
-
-      const locText = (log.location_course || '') + ' ' + (log.title || '');
-      let baseLat = 35.5350, baseLon = 129.2550;
-
-      if (locText.includes('태화강') || locText.includes('삼호')) {
-        baseLat = 35.5510; baseLon = 129.2980;
-      } else if (locText.includes('남산') || locText.includes('유곡')) {
-        baseLat = 35.5480; baseLon = 129.3020;
-      } else if (locText.includes('북부순환')) {
-        baseLat = 35.5680; baseLon = 129.3150;
-      } else if (log.sport === '등산' || log.sport === '트레일런닝') {
-        baseLat = 35.5350; baseLon = 129.2550;
-      }
-
-      const distKm = parseFloat(log.distance_km);
-      const elevGain = parseFloat(log.elevation_gain) || (log.sport === '등산' ? 350 : 25);
-      const avgHr = parseInt(log.avg_hr) || 152;
-      const numPts = Math.min(220, Math.max(90, Math.round(distKm * 25)));
-      const pts = [];
-      let cumDist = 0;
-
-      for (let i = 0; i < numPts; i++) {
-        const prog = i / numPts;
-        const angle = prog * Math.PI * 1.5;
-        const lat = baseLat + Math.sin(angle) * (distKm * 0.0035) + Math.sin(i * 0.2) * 0.0006;
-        const lon = baseLon + Math.cos(angle) * (distKm * 0.0045) + Math.cos(i * 0.2) * 0.0007;
-        
-        let ele = 35;
-        if (log.sport === '등산' || log.sport === '트레일런닝') {
-          ele = Math.round(60 + Math.sin(prog * Math.PI) * elevGain);
-        } else {
-          ele = Math.round(25 + Math.sin(prog * Math.PI * 2) * (elevGain > 0 ? elevGain : 15));
-        }
-
-        const hr = Math.round(avgHr - 12 + Math.sin(prog * Math.PI) * 20 + (i % 4));
-        const durMin = parseFloat(log.duration_minutes) || (distKm * 6);
-        const avgSpeed = (distKm / (durMin / 60)).toFixed(1);
-        const speed = parseFloat((avgSpeed * (0.9 + Math.sin(prog * Math.PI) * 0.2 + (i % 3) * 0.05)).toFixed(1));
-
-        if (i > 0) {
-          cumDist += haversineDistance(pts[i-1].lat, pts[i-1].lon, lat, lon);
-        }
-
-        pts.push({
-          lat: lat,
-          lon: lon,
-          ele: ele,
-          hr: hr,
-          speed: speed,
-          dist: cumDist
-        });
-      }
-
-      currentGpxTrack = {
-        date: log.date,
-        sport: log.sport,
-        title: log.title || (log.sport + ' ' + log.distance_km + 'km'),
-        duration: log.duration_minutes || Math.round(distKm * 6),
-        distance: distKm,
-        pace: log.pace || '',
-        avgHr: avgHr,
-        maxHr: log.max_hr || (avgHr + 18),
-        calories: log.calories || Math.round(distKm * 65),
-        cadence: log.cadence || 165,
-        elevGain: Math.round(elevGain),
-        elevLoss: log.elevation_loss || Math.round(elevGain * 0.9),
-        maxAlt: log.max_altitude || (log.sport === '등산' ? Math.round(elevGain + 60) : 65),
-        minAlt: 25,
-        points: pts
-      };
-
+      showToast((log.title || log.sport) + ' 실제 3D 코스를 불러오는 중... 🎬');
+      currentGpxTrack = realTrack;
       setTimeout(function() {
         openReliveModal();
-      }, 300);
+      }, 200);
     }
 
     function openReliveModal() {
