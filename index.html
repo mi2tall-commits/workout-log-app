@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>나의 운동일지 | Workout Log</title>
   <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
     // =================================================================
     // 🏆 MONTHLY AI PERFORMANCE & COACHING ENGINE
     // =================================================================
@@ -3058,8 +3059,8 @@
       distInput.addEventListener('input', calc);
     }
 
-    function loadData() {
-      showToast('구글 시트 동기화 중...');
+    function loadData(silent) {
+      if (!silent) showToast('구글 시트 동기화 중...');
       callGasApi('getWorkoutData', undefined, function(res) {
         if (!res) return;
         allLogs = (res && res.logs) || [];
@@ -3067,9 +3068,9 @@
         updateStats(res && res.overview);
         renderLogs();
         if (typeof renderAllCharts === 'function') renderAllCharts();
-        showToast('동기화 완료!');
+        if (!silent) showToast('동기화 완료!');
       }, function(err) {
-        showToast('오류: ' + (err.message || err));
+        if (!silent) showToast('오류: ' + (err.message || err));
       });
     }
 
@@ -3123,23 +3124,31 @@
         photos: selectedPhotos
       };
 
+      // ⚡ 0ms 즉각 UI 반영 (낙관적 갱신)
+      showToast('운동 일지가 저장되었습니다! 🎉');
+      document.getElementById('workoutForm').reset();
+      if (document.getElementById('inputAiSummary')) document.getElementById('inputAiSummary').value = '';
+      document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+      removeAllPhotos('new');
+      clearGpxData();
+      selectSport('런닝');
+      setInputMode('manual');
+      btn.disabled = false;
+      btn.textContent = '✨ 운동 일지 저장하기';
+
+      // 로컬 메모리에 즉시 추가 & 렌더링
+      const tempLog = Object.assign({ rowIndex: (allLogs.length ? allLogs[0].rowIndex + 1 : 2) }, data);
+      allLogs.unshift(tempLog);
+      renderLogs();
+      switchTab('list');
+
+      // 🔄 백그라운드 무중단 서버 동기화
       callGasApi('saveWorkout', data, function(res) {
-        showToast('운동 일지가 저장되었습니다! 🎉');
-        document.getElementById('workoutForm').reset();
-        if (document.getElementById('inputAiSummary')) document.getElementById('inputAiSummary').value = '';
-        document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
-        removeAllPhotos('new');
-        clearGpxData();
-        selectSport('런닝');
-        setInputMode('manual');
-        btn.disabled = false;
-        btn.textContent = '✨ 운동 일지 저장하기';
-        loadData();
-        switchTab('list');
+        loadData(true);
       }, function(err) {
+        allLogs = allLogs.filter(function(l) { return l !== tempLog; });
+        renderLogs();
         alert('저장 실패: ' + (err.message || err));
-        btn.disabled = false;
-        btn.textContent = '✨ 운동 일지 저장하기';
       });
     }
 
@@ -3254,27 +3263,53 @@
         existingPhotoIds: editExistingPhotoIds
       };
 
+      // ⚡ 0ms 즉각 UI 반영 (수정 모달 즉시 닫고 로컬 일지 실시간 갱신)
+      showToast('운동 일지가 수정되었습니다! ✏️');
+      btn.disabled = false;
+      btn.textContent = '💾 수정 내용 저장';
+      closeEditModal();
+
+      const editIdx = allLogs.findIndex(function(l) { return l.rowIndex === data.rowIndex; });
+      let prevLog = null;
+      if (editIdx !== -1) {
+        prevLog = Object.assign({}, allLogs[editIdx]);
+        Object.assign(allLogs[editIdx], data);
+        renderLogs();
+      }
+
+      // 🔄 백그라운드 무중단 서버 동기화
       callGasApi('updateWorkout', data, function(res) {
-        showToast('운동 일지가 수정되었습니다! ✏️');
-        btn.disabled = false;
-        btn.textContent = '💾 수정 내용 저장';
-        closeEditModal();
-        loadData();
+        loadData(true);
       }, function(err) {
+        if (prevLog && editIdx !== -1) {
+          allLogs[editIdx] = prevLog;
+          renderLogs();
+        }
         alert('수정 실패: ' + (err.message || err));
-        btn.disabled = false;
-        btn.textContent = '💾 수정 내용 저장';
       });
     }
 
     function deleteLog(rowIndex) {
       if (!confirm('정말 이 운동 일지를 삭제하시겠습니까?\n(삭제 후 복구할 수 없습니다)')) return;
 
-      showToast('일지 삭제 중...');
-      callGasApi('deleteWorkout', { rowIndex: rowIndex }, function() {
+      // ⚡ 0ms 즉각 UI 반영 (화면에서 해당 일지 즉시 삭제 제거)
+      const targetIdx = allLogs.findIndex(function(l) { return l.rowIndex === rowIndex; });
+      let removedLog = null;
+      if (targetIdx !== -1) {
+        removedLog = allLogs[targetIdx];
+        allLogs.splice(targetIdx, 1);
+        renderLogs();
         showToast('일지가 삭제되었습니다. 🗑️');
-        loadData();
+      }
+
+      // 🔄 백그라운드 무중단 서버 동기화
+      callGasApi('deleteWorkout', { rowIndex: rowIndex }, function() {
+        loadData(true);
       }, function(err) {
+        if (removedLog && targetIdx !== -1) {
+          allLogs.splice(targetIdx, 0, removedLog);
+          renderLogs();
+        }
         alert('삭제 실패: ' + (err.message || err));
       });
     }
