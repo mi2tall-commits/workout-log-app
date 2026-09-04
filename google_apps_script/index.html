@@ -3399,6 +3399,30 @@
       
       <form id="editForm" onsubmit="handleEditSubmit(event)">
         <input type="hidden" id="editRowIndex">
+
+        <!-- ⌚ T-Rex 3 GPX File Upload for Edit -->
+        <div class="gpx-import-box" id="editGpxDropZone" onclick="if(event.target.tagName !== 'BUTTON' && !event.target.closest('.btn-relive-trigger')) document.getElementById('inputEditGpxFile').click()" style="margin-bottom:14px; padding:12px 14px;">
+          <div class="gpx-import-inner" style="gap:10px;">
+            <div class="gpx-icon" style="width:36px; height:36px; font-size:18px;">⌚</div>
+            <div class="gpx-text">
+              <strong style="font-size:13px;">T-Rex 3 GPX 파일로 이 일지 덮어쓰기</strong>
+              <p style="font-size:11px; margin-top:2px;">스마트워치 GPX 파일을 넣으면 거리·시간·페이스·심박·고도가 이 수정창에 1초 만에 자동 채워집니다.</p>
+            </div>
+            <label for="inputEditGpxFile" class="gpx-upload-btn" onclick="event.stopPropagation();" style="padding:6px 12px; font-size:11.5px; border-radius:10px; cursor:pointer;">
+              <span>파일 선택</span>
+            </label>
+            <input type="file" id="inputEditGpxFile" accept=".gpx,.tcx,.xml,*/*" style="display:none;" onchange="handleEditGpxFileSelect(event)">
+          </div>
+          <div id="editGpxResultBanner" class="gpx-result-banner hidden" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+            <div class="gpx-result-content">
+              <span class="gpx-badge">✅ GPX 적용됨</span>
+              <span id="editGpxSummaryText" class="gpx-summary-text" style="font-size:11.5px;"></span>
+            </div>
+            <button type="button" class="btn-relive-trigger" style="padding:5px 12px; font-size:11.5px;" onclick="previewEditRelive(); event.stopPropagation();">
+              <span>🎬 3D 재생</span>
+            </button>
+          </div>
+        </div>
         
         <div class="form-group">
           <label class="form-label">운동 종목</label>
@@ -3567,8 +3591,9 @@
         </div>
 
         <div style="display:flex; gap:8px; margin-top:16px;">
-          <button type="button" class="btn-header" style="flex:1; justify-content:center; padding:12px;" onclick="closeEditModal()">취소</button>
-          <button type="submit" id="btnEditSubmit" class="submit-btn" style="flex:2; margin-top:0;">💾 수정 내용 저장</button>
+          <button type="button" class="btn-action relive" style="flex:1.2; justify-content:center; padding:12px; font-size:13px; border-radius:14px;" onclick="previewEditRelive()">🎬 3D 경로</button>
+          <button type="button" class="btn-header" style="flex:1; justify-content:center; padding:12px; border-radius:14px;" onclick="closeEditModal()">취소</button>
+          <button type="submit" id="btnEditSubmit" class="submit-btn" style="flex:1.8; margin-top:0; border-radius:14px;">💾 수정 내용 저장</button>
         </div>
       </form>
     </div>
@@ -4192,9 +4217,124 @@
       });
     }
 
+    
+    // ⌚ 수정 창(Edit Modal) GPX 파일 처리 및 3D 경로 미리보기
+    let editGpxTrackData = null;
+
+    function handleEditGpxFileSelect(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      showToast('T-Rex 3 운동 파일 분석 중... ⌚');
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const content = evt.target.result;
+          const parsed = processGpxOrTcxText(content, file.name);
+          if (parsed) {
+            applyParsedDataToEditModal(parsed);
+            showToast('T-Rex 3 운동 데이터가 수정 창에 자동 채워졌습니다! 🎯');
+          } else {
+            alert('운동 파일을 파싱할 수 없습니다. 유효한 GPX/TCX 파일인지 확인해주세요.');
+          }
+        } catch(err) {
+          console.error(err);
+          alert('파일 분석 오류: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+
+    function applyParsedDataToEditModal(data) {
+      if (!data) return;
+      editGpxTrackData = data;
+
+      if (data.date) document.getElementById('editDate').value = data.date;
+      if (data.duration) document.getElementById('editDuration').value = data.duration;
+      if (data.distance) document.getElementById('editDistance').value = data.distance;
+      if (data.pace) document.getElementById('editPace').value = data.pace;
+      if (data.avgHr) document.getElementById('editAvgHr').value = data.avgHr;
+      if (data.maxHr) document.getElementById('editMaxHr').value = data.maxHr;
+      if (data.calories) document.getElementById('editCalories').value = data.calories;
+      if (data.cadence) document.getElementById('editCadence').value = data.cadence;
+      if (data.elevGain) document.getElementById('editElevation').value = data.elevGain;
+      if (data.elevLoss) document.getElementById('editElevLoss').value = data.elevLoss;
+      if (data.maxAlt) document.getElementById('editMaxAlt').value = data.maxAlt;
+      if (data.title && !document.getElementById('editTitle').value.trim()) {
+        document.getElementById('editTitle').value = data.title;
+      }
+      if (data.sport) {
+        document.getElementById('editSport').value = data.sport;
+        handleEditSportChange(data.sport);
+      }
+
+      // Summary text
+      let parts = [];
+      if (data.distance) parts.push(data.distance + 'km');
+      if (data.duration) parts.push(data.duration + '분');
+      if (data.pace) parts.push('페이스 ' + data.pace);
+      if (data.avgHr) parts.push('❤️ ' + data.avgHr + 'bpm');
+      if (data.elevGain) parts.push('⛰️ +' + data.elevGain + 'm');
+
+      const banner = document.getElementById('editGpxResultBanner');
+      const text = document.getElementById('editGpxSummaryText');
+      if (banner && text) {
+        text.textContent = parts.join(' · ');
+        banner.classList.remove('hidden');
+      }
+    }
+
+    function previewEditRelive() {
+      if (editGpxTrackData && editGpxTrackData.points && editGpxTrackData.points.length >= 2) {
+        currentGpxTrack = editGpxTrackData;
+        openReliveModal();
+        return;
+      }
+
+      // GPX 파일이 없더라도 현재 수정창의 입력 데이터(거리, 고도, 위치, 심박)를 기반으로 즉시 3D 재생
+      const dist = parseFloat(document.getElementById('editDistance').value) || 0;
+      if (dist <= 0) {
+        alert('거리 데이터가 없거나 0km이어서 3D 경로를 생성할 수 없습니다. 상단에서 GPX 파일을 선택하시거나 거리를 입력해주세요.');
+        return;
+      }
+
+      const rowIndex = parseInt(document.getElementById('editRowIndex').value);
+      // 현재 수정 폼의 값들을 반영한 임시 객체 생성
+      const tempLog = {
+        rowIndex: rowIndex,
+        date: document.getElementById('editDate').value,
+        sport: document.getElementById('editSport').value,
+        title: document.getElementById('editTitle').value.trim(),
+        duration_minutes: parseInt(document.getElementById('editDuration').value) || 0,
+        distance_km: dist,
+        pace: document.getElementById('editPace').value.trim(),
+        avg_hr: parseInt(document.getElementById('editAvgHr').value) || 0,
+        max_hr: parseInt(document.getElementById('editMaxHr').value) || 0,
+        calories: parseInt(document.getElementById('editCalories').value) || 0,
+        cadence: parseInt(document.getElementById('editCadence').value) || 0,
+        elevation_gain: parseInt(document.getElementById('editElevation').value) || 0,
+        elevation_loss: parseInt(document.getElementById('editElevLoss').value) || 0,
+        max_altitude: parseInt(document.getElementById('editMaxAlt').value) || 0,
+        location_course: document.getElementById('editLocation').value.trim(),
+        weather: document.getElementById('editWeather').value
+      };
+
+      // allLogs 내 임시 갱신 후 3D 재생
+      const existingIdx = allLogs.findIndex(l => l.rowIndex === rowIndex);
+      if (existingIdx !== -1) {
+        allLogs[existingIdx] = Object.assign({}, allLogs[existingIdx], tempLog);
+      }
+      playLogRelive(rowIndex);
+    }
+
     function openEditModal(rowIndex) {
       const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
       if (!log) return;
+      editGpxTrackData = null;
+      if (document.getElementById('editGpxResultBanner')) {
+        document.getElementById('editGpxResultBanner').classList.add('hidden');
+      }
 
       document.getElementById('editRowIndex').value = log.rowIndex;
       document.getElementById('editSport').value = log.sport || '런닝';
