@@ -3277,7 +3277,12 @@
       if (!silent) showToast('구글 시트 동기화 중...');
       callGasApi('getWorkoutData', undefined, function(res) {
         if (!res) return;
-        allLogs = (res && res.logs) || [];
+        const newLogs = (res && res.logs) || [];
+        newLogs.forEach(function(nl) {
+          const cached = getStoredGpxTrack(nl);
+          if (cached) nl.gpxTrack = cached;
+        });
+        allLogs = newLogs;
         monthlyTrendsData = (res && res.monthly_trends) || [];
         updateStats(res && res.overview);
         renderLogs();
@@ -3379,6 +3384,96 @@
     }
 
     
+    // 🌟 3D GPX Global In-Memory & IndexedDB Storage
+    window.globalGpxCache = window.globalGpxCache || {};
+    let gpxDb = null;
+    (function initGpxIndexedDb() {
+      try {
+        const req = indexedDB.open('workout_gpx_db', 1);
+        req.onupgradeneeded = function(e) {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('tracks')) {
+            db.createObjectStore('tracks', { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = function(e) {
+          gpxDb = e.target.result;
+          const tx = gpxDb.transaction('tracks', 'readonly');
+          const store = tx.objectStore('tracks');
+          const getAll = store.getAll();
+          getAll.onsuccess = function() {
+            const items = getAll.result || [];
+            items.forEach(function(item) {
+              if (item && item.id && item.track) {
+                window.globalGpxCache[item.id] = item.track;
+              }
+            });
+            if (typeof renderLogs === 'function') renderLogs();
+          };
+        };
+      } catch(err) {
+        console.warn('IndexedDB not supported or disabled', err);
+      }
+    })();
+
+    function saveGpxToIndexedDb(id, track) {
+      if (!gpxDb) return;
+      try {
+        const tx = gpxDb.transaction('tracks', 'readwrite');
+        tx.objectStore('tracks').put({ id: id, track: track });
+      } catch(e) {}
+    }
+
+    function compressGpxTrack(track) {
+      if (!track || !track.points || track.points.length === 0) return null;
+      const pts = track.points;
+      const targetCount = 350;
+      let sampledPts = [];
+      if (pts.length <= targetCount) {
+        sampledPts = pts.map(function(p) {
+          return {
+            lat: Math.round(p.lat * 1000000) / 1000000,
+            lon: Math.round(p.lon * 1000000) / 1000000,
+            ele: Math.round(p.ele || 0),
+            hr: Math.round(p.hr || 0),
+            speed: Math.round((p.speed || 0) * 10) / 10,
+            dist: Math.round((p.dist || 0) * 100) / 100
+          };
+        });
+      } else {
+        const step = (pts.length - 1) / (targetCount - 1);
+        for (let i = 0; i < targetCount; i++) {
+          const idx = Math.min(pts.length - 1, Math.round(i * step));
+          const p = pts[idx];
+          sampledPts.push({
+            lat: Math.round(p.lat * 1000000) / 1000000,
+            lon: Math.round(p.lon * 1000000) / 1000000,
+            ele: Math.round(p.ele || 0),
+            hr: Math.round(p.hr || 0),
+            speed: Math.round((p.speed || 0) * 10) / 10,
+            dist: Math.round((p.dist || 0) * 100) / 100
+          });
+        }
+      }
+      return {
+        date: track.date,
+        sport: track.sport,
+        title: track.title,
+        duration: track.duration,
+        distance: track.distance,
+        pace: track.pace,
+        avgHr: track.avgHr,
+        maxHr: track.maxHr,
+        calories: track.calories,
+        cadence: track.cadence,
+        elevGain: track.elevGain,
+        elevLoss: track.elevLoss,
+        maxAlt: track.maxAlt,
+        minAlt: track.minAlt,
+        points: sampledPts
+      };
+    }
+
     // ⌚ 수정 창(Edit Modal) GPX 파일 처리 및 3D 경로 미리보기
     let editGpxTrackData = null;
 
@@ -3447,13 +3542,17 @@
     }
 
     function previewEditRelive() {
+      const rowIndex = parseInt(document.getElementById('editRowIndex').value);
       if (editGpxTrackData && editGpxTrackData.points && editGpxTrackData.points.length >= 2) {
-        currentGpxTrack = editGpxTrackData;
+        const comp = compressGpxTrack(editGpxTrackData);
+        currentGpxTrack = comp || editGpxTrackData;
+        if (rowIndex && window.globalGpxCache) {
+          window.globalGpxCache['row_' + rowIndex] = currentGpxTrack;
+        }
         openReliveModal();
         return;
       }
 
-      const rowIndex = parseInt(document.getElementById('editRowIndex').value);
       const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
       if (log) {
         const stored = getStoredGpxTrack(log);
@@ -3588,15 +3687,28 @@
       };
 
       if (editGpxTrackData && editGpxTrackData.points && editGpxTrackData.points.length >= 2) {
-        data.gpxTrack = editGpxTrackData;
+        const compressed = compressGpxTrack(editGpxTrackData);
+        data.gpxTrack = compressed;
+        
+        // 1. In-memory global cache
+        if (window.globalGpxCache) {
+          window.globalGpxCache['row_' + data.rowIndex] = compressed;
+          window.globalGpxCache['date_' + data.date + '_' + data.sport] = compressed;
+          window.globalGpxCache['date_' + data.date + '_' + data.distance_km] = compressed;
+        }
+
+        // 2. localStorage (lightweight ~12KB)
         try {
-          const gpxJson = JSON.stringify(editGpxTrackData);
+          const gpxJson = JSON.stringify(compressed);
           localStorage.setItem('workout_gpx_' + data.rowIndex, gpxJson);
           localStorage.setItem('workout_gpx_' + data.date + '_' + data.sport, gpxJson);
           localStorage.setItem('workout_gpx_' + data.date + '_' + data.distance_km, gpxJson);
         } catch (err) {
           console.warn('GPX localStorage save error:', err);
         }
+
+        // 3. IndexedDB
+        saveGpxToIndexedDb('row_' + data.rowIndex, compressed);
       }
 
       // ⚡ 0ms 즉각 UI 반영 (수정 모달 즉시 닫고 로컬 일지 실시간 갱신)
@@ -3614,8 +3726,11 @@
         renderLogs();
       }
 
-      // 🔄 백그라운드 무중단 서버 동기화
-      callGasApi('updateWorkout', data, function(res) {
+      // 🔄 백그라운드 무중단 서버 동기화 (gpxTrack은 로컬에서 관리하므로 네트워크 페이로드에서 제외)
+      const postData = Object.assign({}, data);
+      delete postData.gpxTrack;
+
+      callGasApi('updateWorkout', postData, function(res) {
         loadData(true);
       }, function(err) {
         if (prevLog && editIdx !== -1) {
@@ -4750,6 +4865,16 @@
       if (log.gpxTrack && log.gpxTrack.points && log.gpxTrack.points.length >= 2) {
         return log.gpxTrack;
       }
+      // 1. In-memory global cache
+      if (window.globalGpxCache) {
+        const c1 = window.globalGpxCache['row_' + log.rowIndex];
+        if (c1 && c1.points && c1.points.length >= 2) { log.gpxTrack = c1; return c1; }
+        const c2 = window.globalGpxCache['date_' + log.date + '_' + (log.sport || '')];
+        if (c2 && c2.points && c2.points.length >= 2) { log.gpxTrack = c2; return c2; }
+        const c3 = window.globalGpxCache['date_' + log.date + '_' + (log.distance_km || '')];
+        if (c3 && c3.points && c3.points.length >= 2) { log.gpxTrack = c3; return c3; }
+      }
+      // 2. localStorage
       try {
         const keys = [
           'workout_gpx_' + log.rowIndex,
@@ -4762,6 +4887,7 @@
             const parsed = JSON.parse(raw);
             if (parsed && parsed.points && parsed.points.length >= 2) {
               log.gpxTrack = parsed;
+              if (window.globalGpxCache) window.globalGpxCache['row_' + log.rowIndex] = parsed;
               return parsed;
             }
           }
@@ -4840,6 +4966,13 @@
 
       if (reliveMap) {
         reliveMap.resize();
+        reliveCurrentBearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        reliveMap.jumpTo({
+          center: [pts[0].lon, pts[0].lat],
+          zoom: 15.6,
+          pitch: 62,
+          bearing: reliveCurrentBearing
+        });
         setupReliveSourcesAndLayers();
         playRelive();
         return;
