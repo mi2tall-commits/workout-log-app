@@ -2100,7 +2100,7 @@
           <span>⚙️</span>
           <span class="btn-text">AI설정</span>
         </button>
-        <button class="btn-header" onclick="testNtfy()" title="알림 테스트">
+        <button class="btn-header" onclick="testTelegram()" title="텔레그램 알림 테스트">
           <span>🔔</span>
         </button>
       </div>
@@ -2830,7 +2830,7 @@
         }
       } else {
         // Running on GitHub Pages
-        if (action === 'getWorkoutData' || action === 'testWorkoutNtfyAlert') {
+        if (action === 'getWorkoutData' || action === 'testWorkoutTelegramAlert' || action === 'testWorkoutTelegramCommentAlert') {
           fetch(GAS_API_URL + '?action=' + action + '&t=' + Date.now())
             .then(function(res) { return res.json(); })
             .then(function(data) { if (onSuccess) onSuccess(data); })
@@ -4077,10 +4077,10 @@
       });
     }
 
-    function testNtfy() {
-      showToast('스마트폰 알림 발송 중...');
-      callGasApi('testWorkoutNtfyAlert', undefined, function() {
-        showToast('ntfy 알림 발송 완료! 스마트폰을 확인해보세요 🔔');
+    function testTelegram() {
+      showToast('텔레그램 알림 발송 중...');
+      callGasApi('testWorkoutTelegramAlert', undefined, function() {
+        showToast('텔레그램 알림 발송 완료! 텔레그램을 확인해보세요 🤖');
       }, function(err) {
         alert('알림 발송 실패: ' + (err.message || err));
       });
