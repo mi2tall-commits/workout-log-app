@@ -2814,7 +2814,13 @@
           .withSuccessHandler(function(res) { if (onSuccess) onSuccess(res); })
           .withFailureHandler(function(err) { if (onFailure) onFailure(err); else alert('오류: ' + (err.message || err)); });
         
-        if (Array.isArray(params)) {
+        if (action === 'addWorkoutComment' && params && params.rowIndex !== undefined) {
+          runner.addWorkoutComment(params.rowIndex, params.commentData);
+        } else if (action === 'updateWorkoutComment' && params && params.rowIndex !== undefined) {
+          runner.updateWorkoutComment(params.rowIndex, params.commentId, params.newText);
+        } else if (action === 'deleteWorkoutComment' && params && params.rowIndex !== undefined) {
+          runner.deleteWorkoutComment(params.rowIndex, params.commentId);
+        } else if (Array.isArray(params)) {
           runner[action].apply(runner, params);
         } else if (params !== undefined) {
           runner[action](params);
@@ -2823,7 +2829,7 @@
         }
       } else {
         // Running on GitHub Pages
-        if (action === 'getWorkoutData') {
+        if (action === 'getWorkoutData' || action === 'testWorkoutNtfyAlert') {
           fetch(GAS_API_URL + '?action=' + action + '&t=' + Date.now())
             .then(function(res) { return res.json(); })
             .then(function(data) { if (onSuccess) onSuccess(data); })
@@ -3945,34 +3951,40 @@
       const textInput = document.getElementById('comment-text-' + rowIndex);
       const submitBtn = document.getElementById('comment-btn-' + rowIndex);
 
-      const author = authorInput.value.trim() || '작성자';
-      const text = textInput.value.trim();
+      const author = authorInput ? authorInput.value.trim() || '작성자' : '작성자';
+      const text = textInput ? textInput.value.trim() : '';
       if (!text) return;
 
       localStorage.setItem('workout_author_name', author);
 
-      submitBtn.disabled = true;
-      submitBtn.textContent = '...';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '...';
+      }
 
-      google.script.run
-        .withSuccessHandler(function(res) {
+      showToast('댓글 등록 중...');
+      callGasApi('addWorkoutComment', { rowIndex: rowIndex, commentData: { author: author, text: text } }, function(res) {
+        if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = '등록';
-          textInput.value = '';
-          showToast('댓글이 등록되었습니다! 💬');
-          
-          const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
-          if (log) {
-            log.comments = res.comments;
-            renderLogs();
-          }
-        })
-        .withFailureHandler(function(err) {
+        }
+        if (textInput) textInput.value = '';
+        showToast('댓글이 등록되었습니다! 💬');
+        
+        const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+        if (log && res && res.comments) {
+          log.comments = res.comments;
+          renderLogs();
+        } else {
+          loadData();
+        }
+      }, function(err) {
+        if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = '등록';
-          alert('댓글 등록 실패: ' + err.message);
-        })
-        .addWorkoutComment(rowIndex, { author: author, text: text });
+        }
+        alert('댓글 등록 실패: ' + (err.message || err));
+      });
     }
 
     function editComment(rowIndex, commentId, safeText) {
@@ -3981,50 +3993,45 @@
       if (newText === null || newText.trim() === '' || newText.trim() === currentText) return;
 
       showToast('댓글 수정 중...');
-      google.script.run
-        .withSuccessHandler(function(res) {
-          showToast('댓글이 수정되었습니다! ✏️');
-          const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
-          if (log) {
-            log.comments = res.comments;
-            renderLogs();
-          }
-        })
-        .withFailureHandler(function(err) {
-          alert('댓글 수정 실패: ' + err.message);
-        })
-        .updateWorkoutComment(rowIndex, commentId, newText.trim());
+      callGasApi('updateWorkoutComment', { rowIndex: rowIndex, commentId: commentId, newText: newText.trim() }, function(res) {
+        showToast('댓글이 수정되었습니다! ✏️');
+        const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+        if (log && res && res.comments) {
+          log.comments = res.comments;
+          renderLogs();
+        } else {
+          loadData();
+        }
+      }, function(err) {
+        alert('댓글 수정 실패: ' + (err.message || err));
+      });
     }
 
     function deleteComment(rowIndex, commentId) {
       if (!confirm('이 댓글/피드백을 삭제하시겠습니까?')) return;
 
       showToast('댓글 삭제 중...');
-      google.script.run
-        .withSuccessHandler(function(res) {
-          showToast('댓글이 삭제되었습니다! 🗑️');
-          const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
-          if (log) {
-            log.comments = res.comments;
-            renderLogs();
-          }
-        })
-        .withFailureHandler(function(err) {
-          alert('댓글 삭제 실패: ' + err.message);
-        })
-        .deleteWorkoutComment(rowIndex, commentId);
+      callGasApi('deleteWorkoutComment', { rowIndex: rowIndex, commentId: commentId }, function(res) {
+        showToast('댓글이 삭제되었습니다! 🗑️');
+        const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+        if (log && res && res.comments) {
+          log.comments = res.comments;
+          renderLogs();
+        } else {
+          loadData();
+        }
+      }, function(err) {
+        alert('댓글 삭제 실패: ' + (err.message || err));
+      });
     }
 
     function testNtfy() {
       showToast('스마트폰 알림 발송 중...');
-      google.script.run
-        .withSuccessHandler(function() {
-          showToast('ntfy 알림 발송 완료! 스마트폰을 확인해보세요 🔔');
-        })
-        .withFailureHandler(function(err) {
-          alert('알림 발송 실패: ' + err.message);
-        })
-        .testWorkoutNtfyAlert();
+      callGasApi('testWorkoutNtfyAlert', undefined, function() {
+        showToast('ntfy 알림 발송 완료! 스마트폰을 확인해보세요 🔔');
+      }, function(err) {
+        alert('알림 발송 실패: ' + (err.message || err));
+      });
     }
 
     // CHARTS RENDERING
