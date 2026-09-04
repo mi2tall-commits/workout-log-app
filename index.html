@@ -2830,7 +2830,7 @@
         }
       } else {
         // Running on GitHub Pages
-        if (action === 'getWorkoutData' || action === 'testWorkoutTelegramAlert' || action === 'testWorkoutTelegramCommentAlert') {
+        if (action === 'getWorkoutData' || action === 'testWorkoutTelegramAlert' || action === 'testWorkoutTelegramCommentAlert' || action === 'testWorkoutLineCommentAlert') {
           fetch(GAS_API_URL + '?action=' + action + '&t=' + Date.now())
             .then(function(res) { return res.json(); })
             .then(function(data) { if (onSuccess) onSuccess(data); })
