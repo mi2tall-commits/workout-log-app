@@ -4664,17 +4664,22 @@
 
 
     // =========================================================================
-    // 🎬 3D RELIVE ROUTE PLAYER CONTROLLER (MapLibre GL JS + 3D Terrain)
+    // 🎬 3D RELIVE ROUTE PLAYER CONTROLLER (Ultra-smooth 60fps Lerp Engine)
     // =========================================================================
     let currentGpxTrack = null;
     let reliveMap = null;
     let reliveIsPlaying = false;
-    let reliveCurrentIndex = 0;
-    let relivePlaybackSpeed = 5; // 1x, 2x, 5x, 10x, 20x
+    let reliveProgress = 0.0; // Float index: 0.0 ~ (points.length - 1)
+    let relivePlaybackSpeed = 2; // Default 2x (comfortable & majestic)
+    const reliveSpeeds = [1, 2, 4, 8, 15];
     let reliveCamMode = 0; // 0: 시네마틱 팔로우, 1: 버드아이 3D, 2: 자유 회전
     const reliveCamModes = ['🎥 시네마틱 팔로우', '🚁 버드아이 3D', '🔄 자유 회전 (3D)'];
     let reliveAnimFrame = null;
+    let reliveLastTimestamp = null;
+    let reliveCurrentBearing = 0;
     let reliveMarker = null;
+    let reliveFrameCount = 0;
+    let reliveLastDrawnIdx = -1;
     let reliveMediaRecorder = null;
     let reliveRecordedChunks = [];
     let reliveIsRecording = false;
@@ -4734,10 +4739,9 @@
       applyParsedWorkoutData(sampleData);
       setTimeout(function() {
         openReliveModal();
-      }, 500);
+      }, 400);
     }
 
-    
     // 🌟 기존 일지 기록을 기반으로 3D Relive 경로 생성 및 재생
     function playLogRelive(rowIndex) {
       const log = allLogs.find(l => l.rowIndex === rowIndex);
@@ -4753,37 +4757,32 @@
 
       showToast(log.title + ' 3D 코스를 불러오는 중... 🎬');
 
-      // 1. 위치 좌표 기준점 판별 (울산 태화강, 문수산, 남산, 북부순환도로 등 실제 위치 연동)
       const locText = (log.location_course || '') + ' ' + (log.title || '');
-      let baseLat = 35.5350, baseLon = 129.2550; // 기본: 문수산 체육공원/트레일
+      let baseLat = 35.5350, baseLon = 129.2550;
 
       if (locText.includes('태화강') || locText.includes('삼호')) {
-        baseLat = 35.5510; baseLon = 129.2980; // 태화강 국가정원 / 삼호교 코스
+        baseLat = 35.5510; baseLon = 129.2980;
       } else if (locText.includes('남산') || locText.includes('유곡')) {
-        baseLat = 35.5480; baseLon = 129.3020; // 남산 솔마루길 코스
+        baseLat = 35.5480; baseLon = 129.3020;
       } else if (locText.includes('북부순환')) {
-        baseLat = 35.5680; baseLon = 129.3150; // 북부순환로 코스
+        baseLat = 35.5680; baseLon = 129.3150;
       } else if (log.sport === '등산' || log.sport === '트레일런닝') {
-        baseLat = 35.5350; baseLon = 129.2550; // 문수산 정상 등산로
+        baseLat = 35.5350; baseLon = 129.2550;
       }
 
-      // 2. 기록된 거리(km)와 고도, 심박수에 맞춘 정밀 3D 트랙포인트 생성 (120~180개 포인트)
       const distKm = parseFloat(log.distance_km);
       const elevGain = parseFloat(log.elevation_gain) || (log.sport === '등산' ? 350 : 25);
       const avgHr = parseInt(log.avg_hr) || 152;
-      const numPts = Math.min(200, Math.max(80, Math.round(distKm * 25)));
+      const numPts = Math.min(220, Math.max(90, Math.round(distKm * 25)));
       const pts = [];
       let cumDist = 0;
 
-      // 러닝/걷기/등산 코스 경로 궤적 모델링
       for (let i = 0; i < numPts; i++) {
         const prog = i / numPts;
-        // 지형 굴곡을 따라 자연스럽게 굽이치는 코스 경로
         const angle = prog * Math.PI * 1.5;
         const lat = baseLat + Math.sin(angle) * (distKm * 0.0035) + Math.sin(i * 0.2) * 0.0006;
         const lon = baseLon + Math.cos(angle) * (distKm * 0.0045) + Math.cos(i * 0.2) * 0.0007;
         
-        // 실제 기록된 고도 상승치(elevation_gain) 반영
         let ele = 35;
         if (log.sport === '등산' || log.sport === '트레일런닝') {
           ele = Math.round(60 + Math.sin(prog * Math.PI) * elevGain);
@@ -4791,7 +4790,6 @@
           ele = Math.round(25 + Math.sin(prog * Math.PI * 2) * (elevGain > 0 ? elevGain : 15));
         }
 
-        // 실제 기록된 평균 심박수 및 페이스에 비례한 속도
         const hr = Math.round(avgHr - 12 + Math.sin(prog * Math.PI) * 20 + (i % 4));
         const durMin = parseFloat(log.duration_minutes) || (distKm * 6);
         const avgSpeed = (distKm / (durMin / 60)).toFixed(1);
@@ -4843,7 +4841,6 @@
       document.getElementById('reliveModal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
 
-      // Setup Title & Meta
       document.getElementById('reliveTitle').textContent = (currentGpxTrack.sport === '등산' ? '⛰️ ' : '🏃 ') + (currentGpxTrack.title || (currentGpxTrack.sport + ' 3D 코스'));
       document.getElementById('reliveMeta').textContent = (currentGpxTrack.date || '') + ' · 총 ' + (currentGpxTrack.distance || 0) + ' km · 고도 +' + (currentGpxTrack.elevGain || 0) + 'm · ' + (currentGpxTrack.duration || 0) + '분';
 
@@ -4865,17 +4862,29 @@
       const pts = currentGpxTrack.points;
       if (!pts || pts.length < 2) return;
 
-      reliveCurrentIndex = 0;
-      updateReliveHUD(0);
+      reliveProgress = 0.0;
+      reliveLastDrawnIdx = -1;
+      reliveLastTimestamp = null;
+      
+      // Calculate initial bearing
+      const dLon = (pts[1].lon - pts[0].lon) * Math.PI / 180;
+      const lat1 = pts[0].lat * Math.PI / 180;
+      const lat2 = pts[1].lat * Math.PI / 180;
+      const y = Math.sin(dLon) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+      reliveCurrentBearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+
+      renderFrameAtProgress(0.0);
       drawElevationProfile();
 
       if (reliveMap) {
         reliveMap.resize();
         setupReliveSourcesAndLayers();
+        playRelive();
         return;
       }
 
-      // Initialize MapLibre GL 3D Terrain
+      // Initialize MapLibre GL with 3D Terrain
       reliveMap = new maplibregl.Map({
         container: 'reliveMap',
         style: {
@@ -4909,13 +4918,13 @@
           ],
           terrain: {
             source: 'terrainSource',
-            exaggeration: 1.6
+            exaggeration: 1.5
           }
         },
         center: [pts[0].lon, pts[0].lat],
-        zoom: 15.2,
-        pitch: 65,
-        bearing: 0,
+        zoom: 15.6,
+        pitch: 62,
+        bearing: reliveCurrentBearing,
         maxPitch: 85
       });
 
@@ -4931,7 +4940,7 @@
       const pts = currentGpxTrack.points;
       const fullCoordinates = pts.map(p => [p.lon, p.lat]);
 
-      // 1. Full Path Background (Glowing Trail)
+      // 1. Full Path Background (Glowing Line)
       if (reliveMap.getSource('relive-full-route')) {
         reliveMap.getSource('relive-full-route').setData({
           type: 'Feature',
@@ -4960,7 +4969,7 @@
         });
       }
 
-      // 2. Active Animated Route Line (Solid Neon Red/Pink)
+      // 2. Active Animated Trail (Neon Red)
       if (reliveMap.getSource('relive-active-route')) {
         reliveMap.getSource('relive-active-route').setData({
           type: 'Feature',
@@ -5008,50 +5017,108 @@
       } else {
         reliveMarker.setLngLat([pts[0].lon, pts[0].lat]);
       }
-
-      // Set initial camera view
-      reliveMap.flyTo({
-        center: [pts[0].lon, pts[0].lat],
-        zoom: 15.5,
-        pitch: 65,
-        bearing: 0,
-        duration: 1000
-      });
     }
 
-    function updateReliveHUD(idx) {
+    // 🌟 Ultra-smooth 60fps Frame Renderer (Sub-point Lerp + Direct JumpTo)
+    function renderFrameAtProgress(prog) {
       if (!currentGpxTrack || !currentGpxTrack.points) return;
       const pts = currentGpxTrack.points;
-      const p = pts[idx] || pts[0];
 
-      // Speed / Pace
-      const speed = p.speed || 0;
+      const idx0 = Math.floor(prog);
+      const idx1 = Math.min(pts.length - 1, idx0 + 1);
+      const frac = prog - idx0;
+
+      const p0 = pts[idx0];
+      const p1 = pts[idx1];
+
+      // 1. Continuous Sub-point Linear Interpolation (Lerp)
+      const curLon = p0.lon + (p1.lon - p0.lon) * frac;
+      const curLat = p0.lat + (p1.lat - p0.lat) * frac;
+      const curEle = p0.ele + (p1.ele - p0.ele) * frac;
+      const curHr = Math.round(p0.hr + ((p1.hr || p0.hr) - p0.hr) * frac);
+      const curSpeed = (p0.speed + ((p1.speed || p0.speed) - p0.speed) * frac).toFixed(1);
+      const curDist = ((p0.dist || 0) + (((p1.dist !== undefined ? p1.dist : p0.dist) - (p0.dist || 0)) * frac)).toFixed(1);
+
+      // 2. Continuous Bearing Smoothing
+      if (idx0 < pts.length - 1) {
+        const dLon = (p1.lon - p0.lon) * Math.PI / 180;
+        const lat1 = p0.lat * Math.PI / 180;
+        const lat2 = p1.lat * Math.PI / 180;
+        const y = Math.sin(dLon) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+        const targetBearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        
+        // Smooth spherical angle interpolation
+        let diff = (targetBearing - reliveCurrentBearing + 540) % 360 - 180;
+        reliveCurrentBearing = (reliveCurrentBearing + diff * 0.07 + 360) % 360;
+      }
+
+      // 3. Move Camera using jumpTo (No animation conflicts, 60fps liquid smooth)
+      if (reliveMap) {
+        if (reliveCamMode === 0) {
+          reliveMap.jumpTo({
+            center: [curLon, curLat],
+            bearing: reliveCurrentBearing,
+            pitch: 62
+          });
+        } else if (reliveCamMode === 1) {
+          reliveMap.jumpTo({
+            center: [curLon, curLat],
+            pitch: 35
+          });
+        } else {
+          // Free mode
+          reliveMap.jumpTo({
+            center: [curLon, curLat]
+          });
+        }
+
+        // Marker position
+        if (reliveMarker) reliveMarker.setLngLat([curLon, curLat]);
+
+        // Active polyline line update (throttled for GPU efficiency)
+        reliveFrameCount++;
+        if (reliveFrameCount % 2 === 0 || idx0 !== reliveLastDrawnIdx) {
+          reliveLastDrawnIdx = idx0;
+          const activeCoords = pts.slice(0, idx0 + 1).map(pt => [pt.lon, pt.lat]);
+          activeCoords.push([curLon, curLat]);
+          if (reliveMap.getSource('relive-active-route')) {
+            reliveMap.getSource('relive-active-route').setData({
+              type: 'Feature',
+              geometry: { type: 'LineString', coordinates: activeCoords }
+            });
+          }
+        }
+      }
+
+      // 4. Update HUD
+      const speedVal = parseFloat(curSpeed) || 0;
       let paceStr = '';
-      if (speed > 0) {
-        const pDec = 60 / speed;
+      if (speedVal > 0) {
+        const pDec = 60 / speedVal;
         const m = Math.floor(pDec);
         const s = Math.round((pDec - m) * 60);
         paceStr = " (" + m + "'" + (s < 10 ? '0' : '') + s + '")';
       }
-      document.getElementById('reliveHudSpeed').textContent = speed.toFixed(1) + ' km/h' + paceStr;
-
-      // Heart Rate
-      const hr = p.hr || currentGpxTrack.avgHr || 0;
-      document.getElementById('reliveHudHrVal').textContent = hr;
-
-      // Current Elevation
-      document.getElementById('reliveHudEle').textContent = '▲ ' + Math.round(p.ele || 0) + ' m';
-
-      // Distance
-      const curDist = (p.dist !== undefined ? p.dist : (idx / pts.length) * (currentGpxTrack.distance || 0)).toFixed(1);
+      document.getElementById('reliveHudSpeed').textContent = curSpeed + ' km/h' + paceStr;
+      document.getElementById('reliveHudHrVal').textContent = curHr;
+      document.getElementById('reliveHudEle').textContent = '▲ ' + Math.round(curEle) + ' m';
       document.getElementById('reliveHudDist').textContent = curDist + ' / ' + (currentGpxTrack.distance || 0) + ' km';
+      document.getElementById('reliveProgressSlider').value = (prog / (pts.length - 1)) * 100;
 
-      // Slider & Time
-      const pct = (idx / (pts.length - 1)) * 100;
-      document.getElementById('reliveProgressSlider').value = pct;
+      // Elapsed Time Display
+      const totalSec = (currentGpxTrack.duration || 30) * 60;
+      const curSec = Math.round((prog / (pts.length - 1)) * totalSec);
+      const curM = Math.floor(curSec / 60);
+      const curS = curSec % 60;
+      document.getElementById('reliveTimeCurrent').textContent = (curM < 10 ? '0' : '') + curM + ':' + (curS < 10 ? '0' : '') + curS;
+      const totM = Math.floor(totalSec / 60);
+      const totS = totalSec % 60;
+      document.getElementById('reliveTimeTotal').textContent = (totM < 10 ? '0' : '') + totM + ':' + (totS < 10 ? '0' : '') + totS;
 
-      // Check for milestones
-      checkReliveMilestone(idx, p);
+      // Check milestones
+      checkReliveMilestone(idx0, { ele: curEle, dist: parseFloat(curDist) });
+      drawElevationProfile();
     }
 
     let lastMilestoneTriggered = '';
@@ -5061,14 +5128,12 @@
       const text = document.getElementById('reliveMilestoneText');
       const maxAlt = currentGpxTrack.maxAlt;
 
-      // Peak milestone
       if (maxAlt && p.ele >= maxAlt - 2 && lastMilestoneTriggered !== 'peak') {
         lastMilestoneTriggered = 'peak';
         text.textContent = '🏔️ 정상 코스 통과! 최고 고도 ' + Math.round(p.ele) + 'm 도달!';
         badge.classList.add('show');
         setTimeout(() => badge.classList.remove('show'), 3500);
       }
-      // 1km, 2km, 3km lap milestone
       const curD = Math.floor(p.dist || 0);
       if (curD > 0 && lastMilestoneTriggered !== ('km_' + curD)) {
         lastMilestoneTriggered = 'km_' + curD;
@@ -5078,72 +5143,30 @@
       }
     }
 
-    function stepRelive() {
+    // 🌟 Continuous 60fps Loop
+    function stepRelive(timestamp) {
       if (!reliveIsPlaying || !currentGpxTrack) return;
       const pts = currentGpxTrack.points;
 
-      reliveCurrentIndex += 1;
-      if (reliveCurrentIndex >= pts.length) {
+      if (!reliveLastTimestamp) reliveLastTimestamp = timestamp;
+      const dt = Math.min(0.1, (timestamp - reliveLastTimestamp) / 1000); // delta in seconds
+      reliveLastTimestamp = timestamp;
+
+      // Complete full route in ~45 seconds at 1x speed
+      const totalFlyoverDuration = Math.max(25, Math.min(65, pts.length * 0.28));
+      const progressInc = (pts.length / totalFlyoverDuration) * relivePlaybackSpeed * dt;
+      reliveProgress += progressInc;
+
+      if (reliveProgress >= pts.length - 1) {
+        reliveProgress = pts.length - 1;
+        renderFrameAtProgress(reliveProgress);
         pauseRelive();
         document.getElementById('btnRelivePlay').textContent = '🔄 다시 재생';
         return;
       }
 
-      const p = pts[reliveCurrentIndex];
-
-      // Update Active Route Polyline
-      const activeCoords = pts.slice(0, reliveCurrentIndex + 1).map(pt => [pt.lon, pt.lat]);
-      if (reliveMap && reliveMap.getSource('relive-active-route')) {
-        reliveMap.getSource('relive-active-route').setData({
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: activeCoords }
-        });
-      }
-
-      // Update Runner Marker
-      if (reliveMarker) reliveMarker.setLngLat([p.lon, p.lat]);
-
-      // Calculate Bearing
-      let bearing = reliveMap.getBearing();
-      if (reliveCurrentIndex < pts.length - 1) {
-        const next = pts[reliveCurrentIndex + 1];
-        const dLon = (next.lon - p.lon) * Math.PI / 180;
-        const lat1 = p.lat * Math.PI / 180;
-        const lat2 = next.lat * Math.PI / 180;
-        const y = Math.sin(dLon) * Math.cos(lat2);
-        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-        bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-      }
-
-      // Smooth Camera Animation based on Cam Mode
-      if (reliveCamMode === 0) {
-        // 시네마틱 팔로우 (Drone Follow)
-        reliveMap.easeTo({
-          center: [p.lon, p.lat],
-          bearing: bearing,
-          pitch: 65,
-          zoom: 15.6,
-          duration: 120
-        });
-      } else if (reliveCamMode === 1) {
-        // 버드아이 3D (High-altitude bird's eye)
-        reliveMap.easeTo({
-          center: [p.lon, p.lat],
-          pitch: 35,
-          zoom: 14.5,
-          duration: 120
-        });
-      } // In Mode 2 (자유 회전), camera center follows but pitch/bearing kept as user dragged
-
-      updateReliveHUD(reliveCurrentIndex);
-      drawElevationProfile();
-
-      const delay = Math.max(16, 200 / relivePlaybackSpeed);
-      setTimeout(() => {
-        if (reliveIsPlaying) {
-          reliveAnimFrame = requestAnimationFrame(stepRelive);
-        }
-      }, delay);
+      renderFrameAtProgress(reliveProgress);
+      reliveAnimFrame = requestAnimationFrame(stepRelive);
     }
 
     function toggleRelivePlay() {
@@ -5156,12 +5179,13 @@
 
     function playRelive() {
       if (!currentGpxTrack || !currentGpxTrack.points) return;
-      if (reliveCurrentIndex >= currentGpxTrack.points.length - 1) {
-        reliveCurrentIndex = 0;
+      if (reliveProgress >= currentGpxTrack.points.length - 1) {
+        reliveProgress = 0.0;
       }
       reliveIsPlaying = true;
+      reliveLastTimestamp = null;
       document.getElementById('btnRelivePlay').textContent = '⏸️ 일시정지';
-      stepRelive();
+      reliveAnimFrame = requestAnimationFrame(stepRelive);
     }
 
     function pauseRelive() {
@@ -5171,12 +5195,13 @@
         cancelAnimationFrame(reliveAnimFrame);
         reliveAnimFrame = null;
       }
+      reliveLastTimestamp = null;
     }
 
     function resetReliveRoute() {
       pauseRelive();
-      reliveCurrentIndex = 0;
-      updateReliveHUD(0);
+      reliveProgress = 0.0;
+      renderFrameAtProgress(0.0);
       drawElevationProfile();
       if (reliveMap && currentGpxTrack && currentGpxTrack.points) {
         const p = currentGpxTrack.points[0];
@@ -5185,15 +5210,13 @@
           geometry: { type: 'LineString', coordinates: [[p.lon, p.lat]] }
         });
         if (reliveMarker) reliveMarker.setLngLat([p.lon, p.lat]);
-        reliveMap.flyTo({ center: [p.lon, p.lat], zoom: 15.5, pitch: 65, duration: 800 });
       }
     }
 
     function cycleReliveSpeed() {
-      const speeds = [1, 2, 5, 10, 20];
-      let curIdx = speeds.indexOf(relivePlaybackSpeed);
-      curIdx = (curIdx + 1) % speeds.length;
-      relivePlaybackSpeed = speeds[curIdx];
+      let curIdx = reliveSpeeds.indexOf(relivePlaybackSpeed);
+      curIdx = (curIdx + 1) % reliveSpeeds.length;
+      relivePlaybackSpeed = reliveSpeeds[curIdx];
       document.getElementById('btnReliveSpeed').textContent = '배속: ' + relivePlaybackSpeed + 'x';
     }
 
@@ -5211,21 +5234,8 @@
           if (!currentGpxTrack || !currentGpxTrack.points) return;
           const val = parseFloat(e.target.value);
           const pts = currentGpxTrack.points;
-          reliveCurrentIndex = Math.round((val / 100) * (pts.length - 1));
-          
-          const p = pts[reliveCurrentIndex];
-          const activeCoords = pts.slice(0, reliveCurrentIndex + 1).map(pt => [pt.lon, pt.lat]);
-          if (reliveMap && reliveMap.getSource('relive-active-route')) {
-            reliveMap.getSource('relive-active-route').setData({
-              type: 'Feature',
-              geometry: { type: 'LineString', coordinates: activeCoords }
-            });
-          }
-          if (reliveMarker) reliveMarker.setLngLat([p.lon, p.lat]);
-          if (reliveMap) reliveMap.setCenter([p.lon, p.lat]);
-
-          updateReliveHUD(reliveCurrentIndex);
-          drawElevationProfile();
+          reliveProgress = (val / 100) * (pts.length - 1);
+          renderFrameAtProgress(reliveProgress);
         });
       }
     });
@@ -5239,6 +5249,7 @@
 
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0) return;
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       ctx.scale(dpr, dpr);
@@ -5285,8 +5296,13 @@
       ctx.stroke();
 
       // Draw current progress runner pin on canvas
-      const curX = (reliveCurrentIndex / (pts.length - 1)) * w;
-      const curY = h - ((pts[reliveCurrentIndex].ele - minEle) / (maxEle - minEle)) * (h - 8) - 4;
+      const curIdxFloor = Math.floor(reliveProgress);
+      const curIdxCeil = Math.min(pts.length - 1, curIdxFloor + 1);
+      const frac = reliveProgress - curIdxFloor;
+      const curPinEle = pts[curIdxFloor].ele + (pts[curIdxCeil].ele - pts[curIdxFloor].ele) * frac;
+
+      const curX = (reliveProgress / (pts.length - 1)) * w;
+      const curY = h - ((curPinEle - minEle) / (maxEle - minEle)) * (h - 8) - 4;
 
       ctx.beginPath();
       ctx.arc(curX, curY, 5, 0, Math.PI * 2);
@@ -5301,7 +5317,6 @@
     function toggleReliveRecording() {
       const btn = document.getElementById('btnReliveRecord');
       if (reliveIsRecording) {
-        // Stop recording
         reliveIsRecording = false;
         if (reliveMediaRecorder && reliveMediaRecorder.state !== 'inactive') {
           reliveMediaRecorder.stop();
@@ -5310,7 +5325,6 @@
         btn.textContent = '📹 3D 영상 녹화 & 저장';
         showToast('3D 영상 인코딩 완료! 다운로드를 시작합니다... 🎬');
       } else {
-        // Start recording canvas
         if (!reliveMap) return;
         const canvas = reliveMap.getCanvas();
         if (!canvas || !canvas.captureStream) {
@@ -5360,7 +5374,6 @@
         showToast('3D 화면 녹화가 시작되었습니다! 코스 재생이 끝나면 버튼을 눌러 저장하세요 🔴');
       }
     }
-
   </script>
 
   <!-- 🎬 3D RELIVE ROUTE PLAYER FULLSCREEN MODAL -->
@@ -5421,7 +5434,7 @@
       <div class="relive-controls">
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
           <button type="button" id="btnRelivePlay" class="relive-btn" onclick="toggleRelivePlay()">▶️ 재생</button>
-          <button type="button" id="btnReliveSpeed" class="relive-btn secondary" onclick="cycleReliveSpeed()">배속: 5x</button>
+          <button type="button" id="btnReliveSpeed" class="relive-btn secondary" onclick="cycleReliveSpeed()">배속: 2x</button>
           <button type="button" id="btnReliveCam" class="relive-btn secondary" onclick="cycleReliveCameraMode()">🎥 시네마틱 팔로우</button>
           <button type="button" class="relive-btn secondary" onclick="resetReliveRoute()">⏮️ 처음부터</button>
         </div>
