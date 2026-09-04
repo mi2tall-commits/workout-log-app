@@ -4788,7 +4788,7 @@
     let reliveMap = null;
     let reliveIsPlaying = false;
     let reliveProgress = 0.0; // Float index: 0.0 ~ (points.length - 1)
-    let relivePlaybackSpeed = 2; // Default 2x (comfortable & majestic)
+    let relivePlaybackSpeed = 4; // Default 4x
     const reliveSpeeds = [1, 2, 4, 8, 15];
     let reliveCamMode = 0; // 0: 시네마틱 팔로우, 1: 버드아이 3D, 2: 자유 회전
     const reliveCamModes = ['🎥 시네마틱 팔로우', '🚁 버드아이 3D', '🔄 자유 회전 (3D)'];
@@ -4927,6 +4927,12 @@
 
       document.getElementById('reliveModal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
+
+      // 🎬 Default: 4x playback speed & Cinematic Follow mode
+      reliveCamMode = 0;
+      relivePlaybackSpeed = 4;
+      if (document.getElementById('btnReliveCam')) document.getElementById('btnReliveCam').textContent = reliveCamModes[0];
+      if (document.getElementById('btnReliveSpeed')) document.getElementById('btnReliveSpeed').textContent = '배속: 4x';
 
       document.getElementById('reliveTitle').textContent = (currentGpxTrack.sport === '등산' ? '⛰️ ' : '🏃 ') + (currentGpxTrack.title || (currentGpxTrack.sport + ' 3D 코스'));
       document.getElementById('reliveMeta').textContent = (currentGpxTrack.date || '') + ' · 총 ' + (currentGpxTrack.distance || 0) + ' km · 고도 +' + (currentGpxTrack.elevGain || 0) + 'm · ' + (currentGpxTrack.duration || 0) + '분';
@@ -5528,7 +5534,7 @@
       <div class="relive-controls">
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
           <button type="button" id="btnRelivePlay" class="relive-btn" onclick="toggleRelivePlay()">▶️ 재생</button>
-          <button type="button" id="btnReliveSpeed" class="relive-btn secondary" onclick="cycleReliveSpeed()">배속: 2x</button>
+          <button type="button" id="btnReliveSpeed" class="relive-btn secondary" onclick="cycleReliveSpeed()">배속: 4x</button>
           <button type="button" id="btnReliveCam" class="relive-btn secondary" onclick="cycleReliveCameraMode()">🎥 시네마틱 팔로우</button>
           <button type="button" class="relive-btn secondary" onclick="resetReliveRoute()">⏮️ 처음부터</button>
         </div>
