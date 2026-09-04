@@ -1085,22 +1085,23 @@
       position: fixed;
       bottom: calc(env(safe-area-inset-bottom, 20px) + 28px);
       left: 50%;
-      transform: translateX(-50%);
-      background: rgba(28, 28, 30, 0.94);
+      transform: translateX(-50%) translateY(0);
+      background: rgba(15, 23, 42, 0.96) !important;
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      color: #FFFFFF;
-      padding: 12px 22px;
+      color: #34D399 !important;
+      border: 1.5px solid #10B981 !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(16, 185, 129, 0.35) !important;
+      padding: 12px 24px;
       border-radius: 24px;
-      font-size: 13.5px;
-      font-weight: 700;
+      font-size: 14px;
+      font-weight: 800;
       opacity: 0;
       transition: opacity 0.25s, transform 0.25s;
       pointer-events: none;
-      z-index: 200;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      z-index: 9999999 !important;
     }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(-5px); }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
     .hidden { display: none !important; }
   
     /* ================================================================= */
@@ -3957,32 +3958,56 @@
 
       localStorage.setItem('workout_author_name', author);
 
+      // ⚡ 0ms 즉각 UI 반영 (낙관적 업데이트)
+      if (textInput) {
+        textInput.value = '';
+        textInput.blur(); // 모바일 가상 키보드 즉시 내려서 화면 확보
+      }
+
+      const tempId = 'temp-' + Date.now();
+      const now = new Date();
+      const nowStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      
+      const tempComment = {
+        id: tempId,
+        author: author,
+        text: text,
+        createdAt: nowStr
+      };
+
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+      if (log) {
+        log.comments = log.comments || [];
+        log.comments.push(tempComment);
+        renderLogs();
+      }
+
+      showToast('댓글이 등록되었습니다! 💬');
+
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = '...';
       }
 
-      showToast('댓글 등록 중...');
       callGasApi('addWorkoutComment', { rowIndex: rowIndex, commentData: { author: author, text: text } }, function(res) {
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = '등록';
         }
-        if (textInput) textInput.value = '';
-        showToast('댓글이 등록되었습니다! 💬');
-        
-        const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
         if (log && res && res.comments) {
           log.comments = res.comments;
           renderLogs();
-        } else {
-          loadData();
         }
       }, function(err) {
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = '등록';
         }
+        if (log && log.comments) {
+          log.comments = log.comments.filter(function(c) { return c.id !== tempId; });
+          renderLogs();
+        }
+        if (textInput) textInput.value = text;
         alert('댓글 등록 실패: ' + (err.message || err));
       });
     }
@@ -3992,17 +4017,32 @@
       const newText = prompt('댓글/피드백을 수정하세요:', currentText);
       if (newText === null || newText.trim() === '' || newText.trim() === currentText) return;
 
-      showToast('댓글 수정 중...');
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+      let oldText = '';
+      if (log && log.comments) {
+        const c = log.comments.find(function(item) { return item.id === commentId; });
+        if (c) {
+          oldText = c.text;
+          c.text = newText.trim();
+          c.updatedAt = new Date().toISOString();
+          renderLogs();
+        }
+      }
+
+      showToast('댓글이 수정되었습니다! ✏️');
       callGasApi('updateWorkoutComment', { rowIndex: rowIndex, commentId: commentId, newText: newText.trim() }, function(res) {
-        showToast('댓글이 수정되었습니다! ✏️');
-        const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
         if (log && res && res.comments) {
           log.comments = res.comments;
           renderLogs();
-        } else {
-          loadData();
         }
       }, function(err) {
+        if (log && log.comments) {
+          const c = log.comments.find(function(item) { return item.id === commentId; });
+          if (c) {
+            c.text = oldText;
+            renderLogs();
+          }
+        }
         alert('댓글 수정 실패: ' + (err.message || err));
       });
     }
@@ -4010,17 +4050,29 @@
     function deleteComment(rowIndex, commentId) {
       if (!confirm('이 댓글/피드백을 삭제하시겠습니까?')) return;
 
-      showToast('댓글 삭제 중...');
+      const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
+      let removedComment = null;
+      let removedIdx = -1;
+      if (log && log.comments) {
+        removedIdx = log.comments.findIndex(function(c) { return c.id === commentId; });
+        if (removedIdx !== -1) {
+          removedComment = log.comments[removedIdx];
+          log.comments.splice(removedIdx, 1);
+          renderLogs();
+        }
+      }
+
+      showToast('댓글이 삭제되었습니다! 🗑️');
       callGasApi('deleteWorkoutComment', { rowIndex: rowIndex, commentId: commentId }, function(res) {
-        showToast('댓글이 삭제되었습니다! 🗑️');
-        const log = allLogs.find(function(l) { return l.rowIndex === rowIndex; });
         if (log && res && res.comments) {
           log.comments = res.comments;
           renderLogs();
-        } else {
-          loadData();
         }
       }, function(err) {
+        if (log && removedComment) {
+          log.comments.splice(removedIdx, 0, removedComment);
+          renderLogs();
+        }
         alert('댓글 삭제 실패: ' + (err.message || err));
       });
     }
@@ -4643,12 +4695,14 @@
         .replace(/'/g, '&#039;');
     }
 
+    let toastTimeout = null;
     function showToast(msg) {
       const t = document.getElementById('toast');
       if (!t) return;
       t.textContent = msg;
       t.classList.add('show');
-      setTimeout(function() { t.classList.remove('show'); }, 2200);
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(function() { t.classList.remove('show'); }, 2800);
     }
   
     // =================================================================
