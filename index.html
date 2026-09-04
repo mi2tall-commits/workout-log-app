@@ -163,6 +163,608 @@
       }, 1200);
     }
 
+
+    // =========================================================================
+    // 🎬 3D RELIVE ROUTE PLAYER CONTROLLER (MapLibre GL JS + 3D Terrain)
+    // =========================================================================
+    let currentGpxTrack = null;
+    let reliveMap = null;
+    let reliveIsPlaying = false;
+    let reliveCurrentIndex = 0;
+    let relivePlaybackSpeed = 5; // 1x, 2x, 5x, 10x, 20x
+    let reliveCamMode = 0; // 0: 시네마틱 팔로우, 1: 버드아이 3D, 2: 자유 회전
+    const reliveCamModes = ['🎥 시네마틱 팔로우', '🚁 버드아이 3D', '🔄 자유 회전 (3D)'];
+    let reliveAnimFrame = null;
+    let reliveMarker = null;
+    let reliveMediaRecorder = null;
+    let reliveRecordedChunks = [];
+    let reliveIsRecording = false;
+
+    // 🌟 샘플 GPX 데모 데이터 생성 (울산 문수산 트레일러닝 3D 코스)
+    function loadSampleGpxDemo() {
+      showToast('울산 문수산 3D 트레일러닝 코스를 불러오는 중... 🏔️✨');
+      const startLat = 35.5350, startLon = 129.2550;
+      const numPts = 160;
+      const pts = [];
+      let cumDist = 0;
+      let startTime = new Date(Date.now() - 3600 * 1000);
+
+      for (let i = 0; i < numPts; i++) {
+        const prog = i / numPts;
+        const lat = startLat + (i * 0.00035) + Math.sin(i * 0.12) * 0.0012;
+        const lon = startLon + (i * 0.00045) + Math.cos(i * 0.12) * 0.0014;
+        const ele = Math.round(95 + Math.sin(prog * Math.PI) * 445);
+        const hr = Math.round(138 + Math.sin(prog * Math.PI) * 38 + (i % 5));
+        const speed = parseFloat((10.5 + Math.cos(prog * Math.PI) * 3.2 + (i % 3) * 0.4).toFixed(1));
+        const ptTime = new Date(startTime.getTime() + i * 15 * 1000);
+
+        if (i > 0) {
+          cumDist += haversineDistance(pts[i-1].lat, pts[i-1].lon, lat, lon);
+        }
+
+        pts.push({
+          lat: lat,
+          lon: lon,
+          ele: ele,
+          hr: hr,
+          speed: speed,
+          dist: cumDist,
+          time: ptTime.toISOString()
+        });
+      }
+
+      const sampleData = {
+        date: new Date().toISOString().split('T')[0],
+        sport: '트레일런닝',
+        title: '문수산 정상 힐클라임 트레일러닝 🏔️',
+        duration: 40,
+        distance: Math.round(cumDist * 100) / 100,
+        pace: "5'25\"",
+        avgHr: 161,
+        maxHr: 178,
+        calories: 520,
+        cadence: 168,
+        elevGain: 445,
+        elevLoss: 380,
+        maxAlt: 540,
+        minAlt: 95,
+        waterTemp: '',
+        points: pts
+      };
+
+      applyParsedWorkoutData(sampleData);
+      setTimeout(function() {
+        openReliveModal();
+      }, 500);
+    }
+
+    function openReliveModal() {
+      if (!currentGpxTrack || !currentGpxTrack.points || currentGpxTrack.points.length < 2) {
+        alert('3D 재생을 위한 GPX 경로 데이터가 없습니다. 먼저 GPX 파일을 선택해주세요.');
+        return;
+      }
+
+      document.getElementById('reliveModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      // Setup Title & Meta
+      document.getElementById('reliveTitle').textContent = (currentGpxTrack.sport === '등산' ? '⛰️ ' : '🏃 ') + (currentGpxTrack.title || (currentGpxTrack.sport + ' 3D 코스'));
+      document.getElementById('reliveMeta').textContent = (currentGpxTrack.date || '') + ' · 총 ' + (currentGpxTrack.distance || 0) + ' km · 고도 +' + (currentGpxTrack.elevGain || 0) + 'm · ' + (currentGpxTrack.duration || 0) + '분';
+
+      initRelive3DMap();
+    }
+
+    function closeReliveModal() {
+      pauseRelive();
+      if (reliveIsRecording) toggleReliveRecording();
+      document.getElementById('reliveModal').classList.add('hidden');
+      document.body.style.overflow = '';
+      if (reliveAnimFrame) {
+        cancelAnimationFrame(reliveAnimFrame);
+        reliveAnimFrame = null;
+      }
+    }
+
+    function initRelive3DMap() {
+      const pts = currentGpxTrack.points;
+      if (!pts || pts.length < 2) return;
+
+      reliveCurrentIndex = 0;
+      updateReliveHUD(0);
+      drawElevationProfile();
+
+      if (reliveMap) {
+        reliveMap.resize();
+        setupReliveSourcesAndLayers();
+        return;
+      }
+
+      // Initialize MapLibre GL 3D Terrain
+      reliveMap = new maplibregl.Map({
+        container: 'reliveMap',
+        style: {
+          version: 8,
+          sources: {
+            'satellite': {
+              type: 'raster',
+              tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+              ],
+              tileSize: 256,
+              attribution: 'Esri World Imagery'
+            },
+            'terrainSource': {
+              type: 'raster-dem',
+              tiles: [
+                'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+              ],
+              encoding: 'terrarium',
+              tileSize: 256
+            }
+          },
+          layers: [
+            {
+              id: 'satellite-layer',
+              type: 'raster',
+              source: 'satellite',
+              minzoom: 0,
+              maxzoom: 20
+            }
+          ],
+          terrain: {
+            source: 'terrainSource',
+            exaggeration: 1.6
+          }
+        },
+        center: [pts[0].lon, pts[0].lat],
+        zoom: 15.2,
+        pitch: 65,
+        bearing: 0,
+        maxPitch: 85
+      });
+
+      reliveMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+
+      reliveMap.on('load', function() {
+        setupReliveSourcesAndLayers();
+        playRelive();
+      });
+    }
+
+    function setupReliveSourcesAndLayers() {
+      const pts = currentGpxTrack.points;
+      const fullCoordinates = pts.map(p => [p.lon, p.lat]);
+
+      // 1. Full Path Background (Glowing Trail)
+      if (reliveMap.getSource('relive-full-route')) {
+        reliveMap.getSource('relive-full-route').setData({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: fullCoordinates }
+        });
+      } else {
+        reliveMap.addSource('relive-full-route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: fullCoordinates }
+          }
+        });
+
+        reliveMap.addLayer({
+          id: 'relive-full-route-glow',
+          type: 'line',
+          source: 'relive-full-route',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 5,
+            'line-opacity': 0.35,
+            'line-dasharray': [2, 2]
+          }
+        });
+      }
+
+      // 2. Active Animated Route Line (Solid Neon Red/Pink)
+      if (reliveMap.getSource('relive-active-route')) {
+        reliveMap.getSource('relive-active-route').setData({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [fullCoordinates[0]] }
+        });
+      } else {
+        reliveMap.addSource('relive-active-route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: [fullCoordinates[0]] }
+          }
+        });
+
+        reliveMap.addLayer({
+          id: 'relive-active-route-line',
+          type: 'line',
+          source: 'relive-active-route',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': '#ff0055',
+            'line-width': 7,
+            'line-opacity': 0.95
+          }
+        });
+      }
+
+      // 3. 3D Glowing Runner Marker
+      if (!reliveMarker) {
+        const markerEl = document.createElement('div');
+        markerEl.style.width = '24px';
+        markerEl.style.height = '24px';
+        markerEl.style.borderRadius = '50%';
+        markerEl.style.background = '#ffffff';
+        markerEl.style.border = '4px solid #ff0055';
+        markerEl.style.boxShadow = '0 0 16px #ff0055, 0 0 32px rgba(255, 0, 85, 0.8)';
+        markerEl.style.display = 'flex';
+        markerEl.style.alignItems = 'center';
+        markerEl.style.justifyContent = 'center';
+        markerEl.innerHTML = '<div style="width:6px; height:6px; border-radius:50%; background:#ff0055;"></div>';
+
+        reliveMarker = new maplibregl.Marker({ element: markerEl })
+          .setLngLat([pts[0].lon, pts[0].lat])
+          .addTo(reliveMap);
+      } else {
+        reliveMarker.setLngLat([pts[0].lon, pts[0].lat]);
+      }
+
+      // Set initial camera view
+      reliveMap.flyTo({
+        center: [pts[0].lon, pts[0].lat],
+        zoom: 15.5,
+        pitch: 65,
+        bearing: 0,
+        duration: 1000
+      });
+    }
+
+    function updateReliveHUD(idx) {
+      if (!currentGpxTrack || !currentGpxTrack.points) return;
+      const pts = currentGpxTrack.points;
+      const p = pts[idx] || pts[0];
+
+      // Speed / Pace
+      const speed = p.speed || 0;
+      let paceStr = '';
+      if (speed > 0) {
+        const pDec = 60 / speed;
+        const m = Math.floor(pDec);
+        const s = Math.round((pDec - m) * 60);
+        paceStr = " (" + m + "'" + (s < 10 ? '0' : '') + s + '")';
+      }
+      document.getElementById('reliveHudSpeed').textContent = speed.toFixed(1) + ' km/h' + paceStr;
+
+      // Heart Rate
+      const hr = p.hr || currentGpxTrack.avgHr || 0;
+      document.getElementById('reliveHudHrVal').textContent = hr;
+
+      // Current Elevation
+      document.getElementById('reliveHudEle').textContent = '▲ ' + Math.round(p.ele || 0) + ' m';
+
+      // Distance
+      const curDist = (p.dist !== undefined ? p.dist : (idx / pts.length) * (currentGpxTrack.distance || 0)).toFixed(1);
+      document.getElementById('reliveHudDist').textContent = curDist + ' / ' + (currentGpxTrack.distance || 0) + ' km';
+
+      // Slider & Time
+      const pct = (idx / (pts.length - 1)) * 100;
+      document.getElementById('reliveProgressSlider').value = pct;
+
+      // Check for milestones
+      checkReliveMilestone(idx, p);
+    }
+
+    let lastMilestoneTriggered = '';
+    function checkReliveMilestone(idx, p) {
+      if (!currentGpxTrack) return;
+      const badge = document.getElementById('reliveMilestoneBadge');
+      const text = document.getElementById('reliveMilestoneText');
+      const maxAlt = currentGpxTrack.maxAlt;
+
+      // Peak milestone
+      if (maxAlt && p.ele >= maxAlt - 2 && lastMilestoneTriggered !== 'peak') {
+        lastMilestoneTriggered = 'peak';
+        text.textContent = '🏔️ 정상 코스 통과! 최고 고도 ' + Math.round(p.ele) + 'm 도달!';
+        badge.classList.add('show');
+        setTimeout(() => badge.classList.remove('show'), 3500);
+      }
+      // 1km, 2km, 3km lap milestone
+      const curD = Math.floor(p.dist || 0);
+      if (curD > 0 && lastMilestoneTriggered !== ('km_' + curD)) {
+        lastMilestoneTriggered = 'km_' + curD;
+        text.textContent = '🚩 ' + curD + 'km 지점 통과!';
+        badge.classList.add('show');
+        setTimeout(() => badge.classList.remove('show'), 3000);
+      }
+    }
+
+    function stepRelive() {
+      if (!reliveIsPlaying || !currentGpxTrack) return;
+      const pts = currentGpxTrack.points;
+
+      reliveCurrentIndex += 1;
+      if (reliveCurrentIndex >= pts.length) {
+        pauseRelive();
+        document.getElementById('btnRelivePlay').textContent = '🔄 다시 재생';
+        return;
+      }
+
+      const p = pts[reliveCurrentIndex];
+
+      // Update Active Route Polyline
+      const activeCoords = pts.slice(0, reliveCurrentIndex + 1).map(pt => [pt.lon, pt.lat]);
+      if (reliveMap && reliveMap.getSource('relive-active-route')) {
+        reliveMap.getSource('relive-active-route').setData({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: activeCoords }
+        });
+      }
+
+      // Update Runner Marker
+      if (reliveMarker) reliveMarker.setLngLat([p.lon, p.lat]);
+
+      // Calculate Bearing
+      let bearing = reliveMap.getBearing();
+      if (reliveCurrentIndex < pts.length - 1) {
+        const next = pts[reliveCurrentIndex + 1];
+        const dLon = (next.lon - p.lon) * Math.PI / 180;
+        const lat1 = p.lat * Math.PI / 180;
+        const lat2 = next.lat * Math.PI / 180;
+        const y = Math.sin(dLon) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+        bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+      }
+
+      // Smooth Camera Animation based on Cam Mode
+      if (reliveCamMode === 0) {
+        // 시네마틱 팔로우 (Drone Follow)
+        reliveMap.easeTo({
+          center: [p.lon, p.lat],
+          bearing: bearing,
+          pitch: 65,
+          zoom: 15.6,
+          duration: 120
+        });
+      } else if (reliveCamMode === 1) {
+        // 버드아이 3D (High-altitude bird's eye)
+        reliveMap.easeTo({
+          center: [p.lon, p.lat],
+          pitch: 35,
+          zoom: 14.5,
+          duration: 120
+        });
+      } // In Mode 2 (자유 회전), camera center follows but pitch/bearing kept as user dragged
+
+      updateReliveHUD(reliveCurrentIndex);
+      drawElevationProfile();
+
+      const delay = Math.max(16, 200 / relivePlaybackSpeed);
+      setTimeout(() => {
+        if (reliveIsPlaying) {
+          reliveAnimFrame = requestAnimationFrame(stepRelive);
+        }
+      }, delay);
+    }
+
+    function toggleRelivePlay() {
+      if (reliveIsPlaying) {
+        pauseRelive();
+      } else {
+        playRelive();
+      }
+    }
+
+    function playRelive() {
+      if (!currentGpxTrack || !currentGpxTrack.points) return;
+      if (reliveCurrentIndex >= currentGpxTrack.points.length - 1) {
+        reliveCurrentIndex = 0;
+      }
+      reliveIsPlaying = true;
+      document.getElementById('btnRelivePlay').textContent = '⏸️ 일시정지';
+      stepRelive();
+    }
+
+    function pauseRelive() {
+      reliveIsPlaying = false;
+      document.getElementById('btnRelivePlay').textContent = '▶️ 재생';
+      if (reliveAnimFrame) {
+        cancelAnimationFrame(reliveAnimFrame);
+        reliveAnimFrame = null;
+      }
+    }
+
+    function resetReliveRoute() {
+      pauseRelive();
+      reliveCurrentIndex = 0;
+      updateReliveHUD(0);
+      drawElevationProfile();
+      if (reliveMap && currentGpxTrack && currentGpxTrack.points) {
+        const p = currentGpxTrack.points[0];
+        reliveMap.getSource('relive-active-route').setData({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [[p.lon, p.lat]] }
+        });
+        if (reliveMarker) reliveMarker.setLngLat([p.lon, p.lat]);
+        reliveMap.flyTo({ center: [p.lon, p.lat], zoom: 15.5, pitch: 65, duration: 800 });
+      }
+    }
+
+    function cycleReliveSpeed() {
+      const speeds = [1, 2, 5, 10, 20];
+      let curIdx = speeds.indexOf(relivePlaybackSpeed);
+      curIdx = (curIdx + 1) % speeds.length;
+      relivePlaybackSpeed = speeds[curIdx];
+      document.getElementById('btnReliveSpeed').textContent = '배속: ' + relivePlaybackSpeed + 'x';
+    }
+
+    function cycleReliveCameraMode() {
+      reliveCamMode = (reliveCamMode + 1) % reliveCamModes.length;
+      document.getElementById('btnReliveCam').textContent = reliveCamModes[reliveCamMode];
+      showToast(reliveCamModes[reliveCamMode] + ' 모드로 전환되었습니다.');
+    }
+
+    // Scrubber drag listener
+    document.addEventListener('DOMContentLoaded', function() {
+      const slider = document.getElementById('reliveProgressSlider');
+      if (slider) {
+        slider.addEventListener('input', function(e) {
+          if (!currentGpxTrack || !currentGpxTrack.points) return;
+          const val = parseFloat(e.target.value);
+          const pts = currentGpxTrack.points;
+          reliveCurrentIndex = Math.round((val / 100) * (pts.length - 1));
+          
+          const p = pts[reliveCurrentIndex];
+          const activeCoords = pts.slice(0, reliveCurrentIndex + 1).map(pt => [pt.lon, pt.lat]);
+          if (reliveMap && reliveMap.getSource('relive-active-route')) {
+            reliveMap.getSource('relive-active-route').setData({
+              type: 'Feature',
+              geometry: { type: 'LineString', coordinates: activeCoords }
+            });
+          }
+          if (reliveMarker) reliveMarker.setLngLat([p.lon, p.lat]);
+          if (reliveMap) reliveMap.setCenter([p.lon, p.lat]);
+
+          updateReliveHUD(reliveCurrentIndex);
+          drawElevationProfile();
+        });
+      }
+    });
+
+    // ⛰️ Mini Elevation Profile Canvas
+    function drawElevationProfile() {
+      const canvas = document.getElementById('reliveEleCanvas');
+      if (!canvas || !currentGpxTrack || !currentGpxTrack.points) return;
+      const pts = currentGpxTrack.points;
+      const ctx = canvas.getContext('2d');
+
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+
+      let minEle = Infinity, maxEle = -Infinity;
+      pts.forEach(p => {
+        if (p.ele < minEle) minEle = p.ele;
+        if (p.ele > maxEle) maxEle = p.ele;
+      });
+      if (maxEle <= minEle) maxEle = minEle + 50;
+
+      // Draw elevation gradient curve
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      pts.forEach((p, idx) => {
+        const x = (idx / (pts.length - 1)) * w;
+        const y = h - ((p.ele - minEle) / (maxEle - minEle)) * (h - 8) - 4;
+        if (idx === 0) ctx.lineTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.lineTo(w, h);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+      grad.addColorStop(1, 'rgba(56, 189, 248, 0.02)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Top line
+      ctx.beginPath();
+      pts.forEach((p, idx) => {
+        const x = (idx / (pts.length - 1)) * w;
+        const y = h - ((p.ele - minEle) / (maxEle - minEle)) * (h - 8) - 4;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw current progress runner pin on canvas
+      const curX = (reliveCurrentIndex / (pts.length - 1)) * w;
+      const curY = h - ((pts[reliveCurrentIndex].ele - minEle) / (maxEle - minEle)) * (h - 8) - 4;
+
+      ctx.beginPath();
+      ctx.arc(curX, curY, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff0055';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // 📹 3D Relive Video Recording & Download
+    function toggleReliveRecording() {
+      const btn = document.getElementById('btnReliveRecord');
+      if (reliveIsRecording) {
+        // Stop recording
+        reliveIsRecording = false;
+        if (reliveMediaRecorder && reliveMediaRecorder.state !== 'inactive') {
+          reliveMediaRecorder.stop();
+        }
+        btn.classList.remove('recording');
+        btn.textContent = '📹 3D 영상 녹화 & 저장';
+        showToast('3D 영상 인코딩 완료! 다운로드를 시작합니다... 🎬');
+      } else {
+        // Start recording canvas
+        if (!reliveMap) return;
+        const canvas = reliveMap.getCanvas();
+        if (!canvas || !canvas.captureStream) {
+          alert('현재 브라우저 환경에서는 캔버스 영상 녹화가 지원되지 않습니다.');
+          return;
+        }
+
+        reliveRecordedChunks = [];
+        const stream = canvas.captureStream(30);
+        let mimeType = 'video/webm;codecs=vp9';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'video/webm';
+        }
+
+        try {
+          reliveMediaRecorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 4000000 });
+        } catch (e) {
+          alert('비디오 녹화기 초기화 실패: ' + e.message);
+          return;
+        }
+
+        reliveMediaRecorder.ondataavailable = function(e) {
+          if (e.data && e.data.size > 0) {
+            reliveRecordedChunks.push(e.data);
+          }
+        };
+
+        reliveMediaRecorder.onstop = function() {
+          const blob = new Blob(reliveRecordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = (currentGpxTrack.title || 'relive_3d_flight') + '_' + new Date().toISOString().split('T')[0] + '.webm';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 1000);
+        };
+
+        reliveMediaRecorder.start();
+        reliveIsRecording = true;
+        btn.classList.add('recording');
+        btn.textContent = '⏹️ 녹화 중지 및 다운로드';
+        showToast('3D 화면 녹화가 시작되었습니다! 코스 재생이 끝나면 버튼을 눌러 저장하세요 🔴');
+      }
+    }
+
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap');
@@ -1889,7 +2491,316 @@
       border-radius: 6px !important;
     }
 
+  
+    /* 🎬 3D RELIVE ROUTE PLAYER STYLES */
+    .btn-relive-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #ff0055 0%, #ff5e3a 100%);
+      color: #ffffff !important;
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(255, 0, 85, 0.35);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+    }
+    .btn-relive-trigger:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 6px 20px rgba(255, 0, 85, 0.5);
+    }
+    .relive-demo-link {
+      display: inline-block;
+      margin-top: 4px;
+      color: #007AFF;
+      font-weight: 700;
+      font-size: 11.5px;
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.15s ease;
+    }
+    .relive-demo-link:hover {
+      color: #0056b3;
+    }
+
+    /* 🏔️ FULLSCREEN RELIVE 3D MODAL */
+    #reliveModal {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000000;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #reliveModal.hidden {
+      display: none !important;
+    }
+    #reliveMap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Top Navigation & Info */
+    .relive-top-bar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .relive-title-card {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 18px;
+      padding: 10px 18px;
+      color: #ffffff;
+      pointer-events: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      max-width: 80%;
+    }
+    .relive-title-card h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.3px;
+    }
+    .relive-title-card p {
+      margin: 4px 0 0 0;
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+    .relive-close-btn {
+      pointer-events: auto;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      transition: all 0.2s;
+    }
+    .relive-close-btn:hover {
+      background: rgba(239, 68, 68, 0.9);
+      transform: scale(1.05);
+    }
+
+    /* Left Stats HUD */
+    .relive-hud-card {
+      position: absolute;
+      top: 88px;
+      left: 16px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 20px;
+      padding: 14px 18px;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 140px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+    .relive-stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .relive-stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .relive-stat-val {
+      font-size: 19px;
+      font-weight: 900;
+      color: #38bdf8;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.5px;
+    }
+    .relive-stat-val.hr {
+      color: #ff3b30;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .relive-stat-val.hr .heart-pulse {
+      display: inline-block;
+      animation: heartBeat 0.8s infinite ease-in-out;
+    }
+    @keyframes heartBeat {
+      0% { transform: scale(1); }
+      14% { transform: scale(1.3); }
+      28% { transform: scale(1); }
+      42% { transform: scale(1.2); }
+      70% { transform: scale(1); }
+    }
+    .relive-stat-val.ele { color: #34d399; }
+    .relive-stat-val.dist { color: #fbbf24; }
+
+    /* Milestone Badge Popup */
+    #reliveMilestoneBadge {
+      position: absolute;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      z-index: 15;
+      background: linear-gradient(135deg, #ff0055 0%, #ff5e3a 100%);
+      color: #ffffff;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      font-weight: 800;
+      font-size: 13px;
+      box-shadow: 0 8px 24px rgba(255, 0, 85, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #reliveMilestoneBadge.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Bottom Control Deck */
+    .relive-bottom-deck {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 22px;
+      padding: 12px 18px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+    }
+    /* Mini Elevation Canvas */
+    .relive-ele-canvas-wrap {
+      width: 100%;
+      height: 38px;
+      position: relative;
+    }
+    #reliveEleCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 8px;
+    }
+    .relive-progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .relive-time {
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      min-width: 44px;
+    }
+    .relive-slider {
+      flex: 1;
+      accent-color: #ff0055;
+      cursor: pointer;
+      height: 6px;
+    }
+    .relive-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .relive-btn {
+      background: #ff0055;
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .relive-btn:hover {
+      background: #ff2a70;
+      transform: scale(1.02);
+    }
+    .relive-btn.secondary {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+    .relive-btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+    .relive-btn.record {
+      background: rgba(244, 63, 94, 0.18);
+      border: 1px solid rgba(244, 63, 94, 0.5);
+      color: #fda4af;
+    }
+    .relive-btn.record:hover {
+      background: rgba(244, 63, 94, 0.35);
+      color: #ffffff;
+    }
+    .relive-btn.recording {
+      background: #ef4444 !important;
+      color: #ffffff !important;
+      animation: recPulse 1s infinite alternate;
+    }
+    @keyframes recPulse {
+      0% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+    
   </style>
+  <!-- 🗺️ MapLibre GL JS for 3D Relive Route Player -->
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 </head>
 <body>
 
@@ -1958,7 +2869,9 @@
           <div class="gpx-icon">⌚</div>
           <div class="gpx-text">
             <strong>T-Rex 3 Pro / Zepp GPX 파일 불러오기</strong>
-            <p>스마트워치 GPX/TCX 파일을 넣으면 날짜·거리·페이스·심박·케이던스·고도가 <b>1초 만에 자동 완성</b>됩니다.</p>
+            <p>스마트워치 GPX/TCX 파일을 넣으면 날짜·거리·페이스·심박·케이던스·고도가 <b>1초 만에 자동 완성</b>됩니다.
+              <span class="relive-demo-link" onclick="loadSampleGpxDemo(); event.stopPropagation();">✨ 3D Relive 데모 체험하기</span>
+            </p>
           </div>
           <label for="inputGpxFile" class="gpx-upload-btn" onclick="event.stopPropagation()">
             <span>📂 GPX 파일 선택</span>
@@ -1970,7 +2883,12 @@
             <span class="gpx-badge">✅ T-Rex 3 Pro 분석 완료</span>
             <span id="gpxSummaryText" class="gpx-summary-text"></span>
           </div>
-          <button type="button" class="gpx-clear-btn" onclick="clearGpxData(); event.stopPropagation();" title="초기화">✕</button>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button type="button" id="btnOpenRelive" class="btn-relive-trigger" onclick="openReliveModal(); event.stopPropagation();">
+              <span>🎬 3D Relive 재생</span>
+            </button>
+            <button type="button" class="gpx-clear-btn" onclick="clearGpxData(); event.stopPropagation();" title="초기화">✕</button>
+          </div>
         </div>
       </div>
 
@@ -3837,15 +4755,42 @@
       let maxAlt = pts[0].ele;
       let minAlt = pts[0].ele;
 
+      let cumDist = 0;
+      pts[0].dist = 0;
+      pts[0].speed = 0;
+
       for (let i = 0; i < pts.length - 1; i++) {
         const d = haversineDistance(pts[i].lat, pts[i].lon, pts[i+1].lat, pts[i+1].lon);
         totalDist += d;
+        cumDist += d;
+        pts[i+1].dist = cumDist;
+
+        // Calculate speed between points (km/h)
+        let spd = 0;
+        if (pts[i].time && pts[i+1].time) {
+          const dt = (new Date(pts[i+1].time) - new Date(pts[i].time)) / 1000;
+          if (dt > 0 && dt < 120) {
+            spd = (d / (dt / 3600));
+          }
+        }
+        if (spd <= 0 || spd > 90) {
+          spd = pts[i].speed > 0 ? pts[i].speed : 10.5;
+        }
+        pts[i+1].speed = Math.round(spd * 10) / 10;
+
+        // Assign hr if available in hrValues
+        if (!pts[i+1].hr && hrValues.length > 0) {
+          const hrIdx = Math.floor((i / pts.length) * hrValues.length);
+          pts[i+1].hr = hrValues[hrIdx] || 150;
+        }
+
         const de = pts[i+1].ele - pts[i].ele;
         if (de > 0.5) elevGain += de;
         if (de < -0.5) elevLoss += Math.abs(de);
         if (pts[i+1].ele > maxAlt) maxAlt = pts[i+1].ele;
         if (pts[i+1].ele < minAlt) minAlt = pts[i+1].ele;
       }
+      if (!pts[0].hr && hrValues.length > 0) pts[0].hr = hrValues[0];
 
       let dateStr = new Date().toISOString().split('T')[0];
       let durMinutes = 0;
@@ -3968,7 +4913,8 @@
         maxAlt: Math.round(maxAlt),
         minAlt: Math.round(minAlt),
         waterTemp: avgWaterTemp,
-        title: titleStr
+        title: titleStr,
+        points: pts
       };
     }
 
@@ -4086,6 +5032,7 @@
 
     function applyParsedWorkoutData(data) {
       if (!data) return;
+      currentGpxTrack = data;
 
       if (data.date) document.getElementById('inputDate').value = data.date;
       if (data.duration) document.getElementById('inputDuration').value = data.duration;
@@ -4308,6 +5255,678 @@
       }, 1200);
     }
 
+
+    // =========================================================================
+    // 🎬 3D RELIVE ROUTE PLAYER CONTROLLER (MapLibre GL JS + 3D Terrain)
+    // =========================================================================
+    let currentGpxTrack = null;
+    let reliveMap = null;
+    let reliveIsPlaying = false;
+    let reliveCurrentIndex = 0;
+    let relivePlaybackSpeed = 5; // 1x, 2x, 5x, 10x, 20x
+    let reliveCamMode = 0; // 0: 시네마틱 팔로우, 1: 버드아이 3D, 2: 자유 회전
+    const reliveCamModes = ['🎥 시네마틱 팔로우', '🚁 버드아이 3D', '🔄 자유 회전 (3D)'];
+    let reliveAnimFrame = null;
+    let reliveMarker = null;
+    let reliveMediaRecorder = null;
+    let reliveRecordedChunks = [];
+    let reliveIsRecording = false;
+
+    // 🌟 샘플 GPX 데모 데이터 생성 (울산 문수산 트레일러닝 3D 코스)
+    function loadSampleGpxDemo() {
+      showToast('울산 문수산 3D 트레일러닝 코스를 불러오는 중... 🏔️✨');
+      const startLat = 35.5350, startLon = 129.2550;
+      const numPts = 160;
+      const pts = [];
+      let cumDist = 0;
+      let startTime = new Date(Date.now() - 3600 * 1000);
+
+      for (let i = 0; i < numPts; i++) {
+        const prog = i / numPts;
+        const lat = startLat + (i * 0.00035) + Math.sin(i * 0.12) * 0.0012;
+        const lon = startLon + (i * 0.00045) + Math.cos(i * 0.12) * 0.0014;
+        const ele = Math.round(95 + Math.sin(prog * Math.PI) * 445);
+        const hr = Math.round(138 + Math.sin(prog * Math.PI) * 38 + (i % 5));
+        const speed = parseFloat((10.5 + Math.cos(prog * Math.PI) * 3.2 + (i % 3) * 0.4).toFixed(1));
+        const ptTime = new Date(startTime.getTime() + i * 15 * 1000);
+
+        if (i > 0) {
+          cumDist += haversineDistance(pts[i-1].lat, pts[i-1].lon, lat, lon);
+        }
+
+        pts.push({
+          lat: lat,
+          lon: lon,
+          ele: ele,
+          hr: hr,
+          speed: speed,
+          dist: cumDist,
+          time: ptTime.toISOString()
+        });
+      }
+
+      const sampleData = {
+        date: new Date().toISOString().split('T')[0],
+        sport: '트레일런닝',
+        title: '문수산 정상 힐클라임 트레일러닝 🏔️',
+        duration: 40,
+        distance: Math.round(cumDist * 100) / 100,
+        pace: "5'25\"",
+        avgHr: 161,
+        maxHr: 178,
+        calories: 520,
+        cadence: 168,
+        elevGain: 445,
+        elevLoss: 380,
+        maxAlt: 540,
+        minAlt: 95,
+        waterTemp: '',
+        points: pts
+      };
+
+      applyParsedWorkoutData(sampleData);
+      setTimeout(function() {
+        openReliveModal();
+      }, 500);
+    }
+
+    function openReliveModal() {
+      if (!currentGpxTrack || !currentGpxTrack.points || currentGpxTrack.points.length < 2) {
+        alert('3D 재생을 위한 GPX 경로 데이터가 없습니다. 먼저 GPX 파일을 선택해주세요.');
+        return;
+      }
+
+      document.getElementById('reliveModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      // Setup Title & Meta
+      document.getElementById('reliveTitle').textContent = (currentGpxTrack.sport === '등산' ? '⛰️ ' : '🏃 ') + (currentGpxTrack.title || (currentGpxTrack.sport + ' 3D 코스'));
+      document.getElementById('reliveMeta').textContent = (currentGpxTrack.date || '') + ' · 총 ' + (currentGpxTrack.distance || 0) + ' km · 고도 +' + (currentGpxTrack.elevGain || 0) + 'm · ' + (currentGpxTrack.duration || 0) + '분';
+
+      initRelive3DMap();
+    }
+
+    function closeReliveModal() {
+      pauseRelive();
+      if (reliveIsRecording) toggleReliveRecording();
+      document.getElementById('reliveModal').classList.add('hidden');
+      document.body.style.overflow = '';
+      if (reliveAnimFrame) {
+        cancelAnimationFrame(reliveAnimFrame);
+        reliveAnimFrame = null;
+      }
+    }
+
+    function initRelive3DMap() {
+      const pts = currentGpxTrack.points;
+      if (!pts || pts.length < 2) return;
+
+      reliveCurrentIndex = 0;
+      updateReliveHUD(0);
+      drawElevationProfile();
+
+      if (reliveMap) {
+        reliveMap.resize();
+        setupReliveSourcesAndLayers();
+        return;
+      }
+
+      // Initialize MapLibre GL 3D Terrain
+      reliveMap = new maplibregl.Map({
+        container: 'reliveMap',
+        style: {
+          version: 8,
+          sources: {
+            'satellite': {
+              type: 'raster',
+              tiles: [
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+              ],
+              tileSize: 256,
+              attribution: 'Esri World Imagery'
+            },
+            'terrainSource': {
+              type: 'raster-dem',
+              tiles: [
+                'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+              ],
+              encoding: 'terrarium',
+              tileSize: 256
+            }
+          },
+          layers: [
+            {
+              id: 'satellite-layer',
+              type: 'raster',
+              source: 'satellite',
+              minzoom: 0,
+              maxzoom: 20
+            }
+          ],
+          terrain: {
+            source: 'terrainSource',
+            exaggeration: 1.6
+          }
+        },
+        center: [pts[0].lon, pts[0].lat],
+        zoom: 15.2,
+        pitch: 65,
+        bearing: 0,
+        maxPitch: 85
+      });
+
+      reliveMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+
+      reliveMap.on('load', function() {
+        setupReliveSourcesAndLayers();
+        playRelive();
+      });
+    }
+
+    function setupReliveSourcesAndLayers() {
+      const pts = currentGpxTrack.points;
+      const fullCoordinates = pts.map(p => [p.lon, p.lat]);
+
+      // 1. Full Path Background (Glowing Trail)
+      if (reliveMap.getSource('relive-full-route')) {
+        reliveMap.getSource('relive-full-route').setData({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: fullCoordinates }
+        });
+      } else {
+        reliveMap.addSource('relive-full-route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: fullCoordinates }
+          }
+        });
+
+        reliveMap.addLayer({
+          id: 'relive-full-route-glow',
+          type: 'line',
+          source: 'relive-full-route',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 5,
+            'line-opacity': 0.35,
+            'line-dasharray': [2, 2]
+          }
+        });
+      }
+
+      // 2. Active Animated Route Line (Solid Neon Red/Pink)
+      if (reliveMap.getSource('relive-active-route')) {
+        reliveMap.getSource('relive-active-route').setData({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [fullCoordinates[0]] }
+        });
+      } else {
+        reliveMap.addSource('relive-active-route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: [fullCoordinates[0]] }
+          }
+        });
+
+        reliveMap.addLayer({
+          id: 'relive-active-route-line',
+          type: 'line',
+          source: 'relive-active-route',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': '#ff0055',
+            'line-width': 7,
+            'line-opacity': 0.95
+          }
+        });
+      }
+
+      // 3. 3D Glowing Runner Marker
+      if (!reliveMarker) {
+        const markerEl = document.createElement('div');
+        markerEl.style.width = '24px';
+        markerEl.style.height = '24px';
+        markerEl.style.borderRadius = '50%';
+        markerEl.style.background = '#ffffff';
+        markerEl.style.border = '4px solid #ff0055';
+        markerEl.style.boxShadow = '0 0 16px #ff0055, 0 0 32px rgba(255, 0, 85, 0.8)';
+        markerEl.style.display = 'flex';
+        markerEl.style.alignItems = 'center';
+        markerEl.style.justifyContent = 'center';
+        markerEl.innerHTML = '<div style="width:6px; height:6px; border-radius:50%; background:#ff0055;"></div>';
+
+        reliveMarker = new maplibregl.Marker({ element: markerEl })
+          .setLngLat([pts[0].lon, pts[0].lat])
+          .addTo(reliveMap);
+      } else {
+        reliveMarker.setLngLat([pts[0].lon, pts[0].lat]);
+      }
+
+      // Set initial camera view
+      reliveMap.flyTo({
+        center: [pts[0].lon, pts[0].lat],
+        zoom: 15.5,
+        pitch: 65,
+        bearing: 0,
+        duration: 1000
+      });
+    }
+
+    function updateReliveHUD(idx) {
+      if (!currentGpxTrack || !currentGpxTrack.points) return;
+      const pts = currentGpxTrack.points;
+      const p = pts[idx] || pts[0];
+
+      // Speed / Pace
+      const speed = p.speed || 0;
+      let paceStr = '';
+      if (speed > 0) {
+        const pDec = 60 / speed;
+        const m = Math.floor(pDec);
+        const s = Math.round((pDec - m) * 60);
+        paceStr = " (" + m + "'" + (s < 10 ? '0' : '') + s + '")';
+      }
+      document.getElementById('reliveHudSpeed').textContent = speed.toFixed(1) + ' km/h' + paceStr;
+
+      // Heart Rate
+      const hr = p.hr || currentGpxTrack.avgHr || 0;
+      document.getElementById('reliveHudHrVal').textContent = hr;
+
+      // Current Elevation
+      document.getElementById('reliveHudEle').textContent = '▲ ' + Math.round(p.ele || 0) + ' m';
+
+      // Distance
+      const curDist = (p.dist !== undefined ? p.dist : (idx / pts.length) * (currentGpxTrack.distance || 0)).toFixed(1);
+      document.getElementById('reliveHudDist').textContent = curDist + ' / ' + (currentGpxTrack.distance || 0) + ' km';
+
+      // Slider & Time
+      const pct = (idx / (pts.length - 1)) * 100;
+      document.getElementById('reliveProgressSlider').value = pct;
+
+      // Check for milestones
+      checkReliveMilestone(idx, p);
+    }
+
+    let lastMilestoneTriggered = '';
+    function checkReliveMilestone(idx, p) {
+      if (!currentGpxTrack) return;
+      const badge = document.getElementById('reliveMilestoneBadge');
+      const text = document.getElementById('reliveMilestoneText');
+      const maxAlt = currentGpxTrack.maxAlt;
+
+      // Peak milestone
+      if (maxAlt && p.ele >= maxAlt - 2 && lastMilestoneTriggered !== 'peak') {
+        lastMilestoneTriggered = 'peak';
+        text.textContent = '🏔️ 정상 코스 통과! 최고 고도 ' + Math.round(p.ele) + 'm 도달!';
+        badge.classList.add('show');
+        setTimeout(() => badge.classList.remove('show'), 3500);
+      }
+      // 1km, 2km, 3km lap milestone
+      const curD = Math.floor(p.dist || 0);
+      if (curD > 0 && lastMilestoneTriggered !== ('km_' + curD)) {
+        lastMilestoneTriggered = 'km_' + curD;
+        text.textContent = '🚩 ' + curD + 'km 지점 통과!';
+        badge.classList.add('show');
+        setTimeout(() => badge.classList.remove('show'), 3000);
+      }
+    }
+
+    function stepRelive() {
+      if (!reliveIsPlaying || !currentGpxTrack) return;
+      const pts = currentGpxTrack.points;
+
+      reliveCurrentIndex += 1;
+      if (reliveCurrentIndex >= pts.length) {
+        pauseRelive();
+        document.getElementById('btnRelivePlay').textContent = '🔄 다시 재생';
+        return;
+      }
+
+      const p = pts[reliveCurrentIndex];
+
+      // Update Active Route Polyline
+      const activeCoords = pts.slice(0, reliveCurrentIndex + 1).map(pt => [pt.lon, pt.lat]);
+      if (reliveMap && reliveMap.getSource('relive-active-route')) {
+        reliveMap.getSource('relive-active-route').setData({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: activeCoords }
+        });
+      }
+
+      // Update Runner Marker
+      if (reliveMarker) reliveMarker.setLngLat([p.lon, p.lat]);
+
+      // Calculate Bearing
+      let bearing = reliveMap.getBearing();
+      if (reliveCurrentIndex < pts.length - 1) {
+        const next = pts[reliveCurrentIndex + 1];
+        const dLon = (next.lon - p.lon) * Math.PI / 180;
+        const lat1 = p.lat * Math.PI / 180;
+        const lat2 = next.lat * Math.PI / 180;
+        const y = Math.sin(dLon) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+        bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+      }
+
+      // Smooth Camera Animation based on Cam Mode
+      if (reliveCamMode === 0) {
+        // 시네마틱 팔로우 (Drone Follow)
+        reliveMap.easeTo({
+          center: [p.lon, p.lat],
+          bearing: bearing,
+          pitch: 65,
+          zoom: 15.6,
+          duration: 120
+        });
+      } else if (reliveCamMode === 1) {
+        // 버드아이 3D (High-altitude bird's eye)
+        reliveMap.easeTo({
+          center: [p.lon, p.lat],
+          pitch: 35,
+          zoom: 14.5,
+          duration: 120
+        });
+      } // In Mode 2 (자유 회전), camera center follows but pitch/bearing kept as user dragged
+
+      updateReliveHUD(reliveCurrentIndex);
+      drawElevationProfile();
+
+      const delay = Math.max(16, 200 / relivePlaybackSpeed);
+      setTimeout(() => {
+        if (reliveIsPlaying) {
+          reliveAnimFrame = requestAnimationFrame(stepRelive);
+        }
+      }, delay);
+    }
+
+    function toggleRelivePlay() {
+      if (reliveIsPlaying) {
+        pauseRelive();
+      } else {
+        playRelive();
+      }
+    }
+
+    function playRelive() {
+      if (!currentGpxTrack || !currentGpxTrack.points) return;
+      if (reliveCurrentIndex >= currentGpxTrack.points.length - 1) {
+        reliveCurrentIndex = 0;
+      }
+      reliveIsPlaying = true;
+      document.getElementById('btnRelivePlay').textContent = '⏸️ 일시정지';
+      stepRelive();
+    }
+
+    function pauseRelive() {
+      reliveIsPlaying = false;
+      document.getElementById('btnRelivePlay').textContent = '▶️ 재생';
+      if (reliveAnimFrame) {
+        cancelAnimationFrame(reliveAnimFrame);
+        reliveAnimFrame = null;
+      }
+    }
+
+    function resetReliveRoute() {
+      pauseRelive();
+      reliveCurrentIndex = 0;
+      updateReliveHUD(0);
+      drawElevationProfile();
+      if (reliveMap && currentGpxTrack && currentGpxTrack.points) {
+        const p = currentGpxTrack.points[0];
+        reliveMap.getSource('relive-active-route').setData({
+          type: 'Feature',
+          geometry: { type: 'LineString', coordinates: [[p.lon, p.lat]] }
+        });
+        if (reliveMarker) reliveMarker.setLngLat([p.lon, p.lat]);
+        reliveMap.flyTo({ center: [p.lon, p.lat], zoom: 15.5, pitch: 65, duration: 800 });
+      }
+    }
+
+    function cycleReliveSpeed() {
+      const speeds = [1, 2, 5, 10, 20];
+      let curIdx = speeds.indexOf(relivePlaybackSpeed);
+      curIdx = (curIdx + 1) % speeds.length;
+      relivePlaybackSpeed = speeds[curIdx];
+      document.getElementById('btnReliveSpeed').textContent = '배속: ' + relivePlaybackSpeed + 'x';
+    }
+
+    function cycleReliveCameraMode() {
+      reliveCamMode = (reliveCamMode + 1) % reliveCamModes.length;
+      document.getElementById('btnReliveCam').textContent = reliveCamModes[reliveCamMode];
+      showToast(reliveCamModes[reliveCamMode] + ' 모드로 전환되었습니다.');
+    }
+
+    // Scrubber drag listener
+    document.addEventListener('DOMContentLoaded', function() {
+      const slider = document.getElementById('reliveProgressSlider');
+      if (slider) {
+        slider.addEventListener('input', function(e) {
+          if (!currentGpxTrack || !currentGpxTrack.points) return;
+          const val = parseFloat(e.target.value);
+          const pts = currentGpxTrack.points;
+          reliveCurrentIndex = Math.round((val / 100) * (pts.length - 1));
+          
+          const p = pts[reliveCurrentIndex];
+          const activeCoords = pts.slice(0, reliveCurrentIndex + 1).map(pt => [pt.lon, pt.lat]);
+          if (reliveMap && reliveMap.getSource('relive-active-route')) {
+            reliveMap.getSource('relive-active-route').setData({
+              type: 'Feature',
+              geometry: { type: 'LineString', coordinates: activeCoords }
+            });
+          }
+          if (reliveMarker) reliveMarker.setLngLat([p.lon, p.lat]);
+          if (reliveMap) reliveMap.setCenter([p.lon, p.lat]);
+
+          updateReliveHUD(reliveCurrentIndex);
+          drawElevationProfile();
+        });
+      }
+    });
+
+    // ⛰️ Mini Elevation Profile Canvas
+    function drawElevationProfile() {
+      const canvas = document.getElementById('reliveEleCanvas');
+      if (!canvas || !currentGpxTrack || !currentGpxTrack.points) return;
+      const pts = currentGpxTrack.points;
+      const ctx = canvas.getContext('2d');
+
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+
+      let minEle = Infinity, maxEle = -Infinity;
+      pts.forEach(p => {
+        if (p.ele < minEle) minEle = p.ele;
+        if (p.ele > maxEle) maxEle = p.ele;
+      });
+      if (maxEle <= minEle) maxEle = minEle + 50;
+
+      // Draw elevation gradient curve
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      pts.forEach((p, idx) => {
+        const x = (idx / (pts.length - 1)) * w;
+        const y = h - ((p.ele - minEle) / (maxEle - minEle)) * (h - 8) - 4;
+        if (idx === 0) ctx.lineTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.lineTo(w, h);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+      grad.addColorStop(1, 'rgba(56, 189, 248, 0.02)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Top line
+      ctx.beginPath();
+      pts.forEach((p, idx) => {
+        const x = (idx / (pts.length - 1)) * w;
+        const y = h - ((p.ele - minEle) / (maxEle - minEle)) * (h - 8) - 4;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw current progress runner pin on canvas
+      const curX = (reliveCurrentIndex / (pts.length - 1)) * w;
+      const curY = h - ((pts[reliveCurrentIndex].ele - minEle) / (maxEle - minEle)) * (h - 8) - 4;
+
+      ctx.beginPath();
+      ctx.arc(curX, curY, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff0055';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // 📹 3D Relive Video Recording & Download
+    function toggleReliveRecording() {
+      const btn = document.getElementById('btnReliveRecord');
+      if (reliveIsRecording) {
+        // Stop recording
+        reliveIsRecording = false;
+        if (reliveMediaRecorder && reliveMediaRecorder.state !== 'inactive') {
+          reliveMediaRecorder.stop();
+        }
+        btn.classList.remove('recording');
+        btn.textContent = '📹 3D 영상 녹화 & 저장';
+        showToast('3D 영상 인코딩 완료! 다운로드를 시작합니다... 🎬');
+      } else {
+        // Start recording canvas
+        if (!reliveMap) return;
+        const canvas = reliveMap.getCanvas();
+        if (!canvas || !canvas.captureStream) {
+          alert('현재 브라우저 환경에서는 캔버스 영상 녹화가 지원되지 않습니다.');
+          return;
+        }
+
+        reliveRecordedChunks = [];
+        const stream = canvas.captureStream(30);
+        let mimeType = 'video/webm;codecs=vp9';
+        if (!MediaRecorder.isTypeSupported(mimeType)) {
+          mimeType = 'video/webm';
+        }
+
+        try {
+          reliveMediaRecorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 4000000 });
+        } catch (e) {
+          alert('비디오 녹화기 초기화 실패: ' + e.message);
+          return;
+        }
+
+        reliveMediaRecorder.ondataavailable = function(e) {
+          if (e.data && e.data.size > 0) {
+            reliveRecordedChunks.push(e.data);
+          }
+        };
+
+        reliveMediaRecorder.onstop = function() {
+          const blob = new Blob(reliveRecordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = (currentGpxTrack.title || 'relive_3d_flight') + '_' + new Date().toISOString().split('T')[0] + '.webm';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 1000);
+        };
+
+        reliveMediaRecorder.start();
+        reliveIsRecording = true;
+        btn.classList.add('recording');
+        btn.textContent = '⏹️ 녹화 중지 및 다운로드';
+        showToast('3D 화면 녹화가 시작되었습니다! 코스 재생이 끝나면 버튼을 눌러 저장하세요 🔴');
+      }
+    }
+
   </script>
+
+  <!-- 🎬 3D RELIVE ROUTE PLAYER FULLSCREEN MODAL -->
+  <div id="reliveModal" class="hidden">
+    <div id="reliveMap"></div>
+
+    <!-- Top Bar -->
+    <div class="relive-top-bar">
+      <div class="relive-title-card">
+        <h2 id="reliveTitle">🏃 문수산 힐클라임 트레일러닝</h2>
+        <p id="reliveMeta">2026-09-04 · 총 5.8 km · 고도 +420m · 38분</p>
+      </div>
+      <button type="button" class="relive-close-btn" onclick="closeReliveModal()" title="닫기">✕</button>
+    </div>
+
+    <!-- Milestone Popup -->
+    <div id="reliveMilestoneBadge">
+      <span id="reliveMilestoneText">🏔️ 최고 고도 542m 도달!</span>
+    </div>
+
+    <!-- Stats HUD -->
+    <div class="relive-hud-card">
+      <div class="relive-stat-item">
+        <span class="relive-stat-label">⚡ 속도 / 페이스</span>
+        <span class="relive-stat-val" id="reliveHudSpeed">11.4 km/h</span>
+      </div>
+      <div class="relive-stat-item">
+        <span class="relive-stat-label">❤️ 심박수</span>
+        <span class="relive-stat-val hr" id="reliveHudHr">
+          <span class="heart-pulse">❤️</span> <span id="reliveHudHrVal">162</span> <span style="font-size:12px; font-weight:700; color:#cbd5e1;">bpm</span>
+        </span>
+      </div>
+      <div class="relive-stat-item">
+        <span class="relive-stat-label">⛰️ 현재 고도</span>
+        <span class="relive-stat-val ele" id="reliveHudEle">▲ 342 m</span>
+      </div>
+      <div class="relive-stat-item">
+        <span class="relive-stat-label">📍 진행 거리</span>
+        <span class="relive-stat-val dist" id="reliveHudDist">2.4 / 5.8 km</span>
+      </div>
+    </div>
+
+    <!-- Bottom Deck -->
+    <div class="relive-bottom-deck">
+      <!-- Mini Elevation Profile Curve -->
+      <div class="relive-ele-canvas-wrap">
+        <canvas id="reliveEleCanvas"></canvas>
+      </div>
+
+      <!-- Scrubber -->
+      <div class="relive-progress-wrap">
+        <span id="reliveTimeCurrent" class="relive-time">00:00</span>
+        <input type="range" id="reliveProgressSlider" class="relive-slider" min="0" max="100" value="0">
+        <span id="reliveTimeTotal" class="relive-time" style="text-align:right;">38:40</span>
+      </div>
+
+      <!-- Control Buttons -->
+      <div class="relive-controls">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button type="button" id="btnRelivePlay" class="relive-btn" onclick="toggleRelivePlay()">▶️ 재생</button>
+          <button type="button" id="btnReliveSpeed" class="relive-btn secondary" onclick="cycleReliveSpeed()">배속: 5x</button>
+          <button type="button" id="btnReliveCam" class="relive-btn secondary" onclick="cycleReliveCameraMode()">🎥 시네마틱 팔로우</button>
+          <button type="button" class="relive-btn secondary" onclick="resetReliveRoute()">⏮️ 처음부터</button>
+        </div>
+        <div>
+          <button type="button" id="btnReliveRecord" class="relive-btn record" onclick="toggleReliveRecording()">📹 3D 영상 녹화 & 저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
